@@ -2,6 +2,19 @@ packages:
   - packages/*
   - website
 
+# Which dependencies may run install scripts. allowBuilds is the setting of
+# pnpm 11 and later; onlyBuiltDependencies and ignoredBuiltDependencies say
+# the same for pnpm 10. core-js only prints a message in its install script.
+allowBuilds:
+  "@biomejs/biome": true
+  esbuild: true
+  core-js: false
 onlyBuiltDependencies:
   - "@biomejs/biome"
   - esbuild
+ignoredBuiltDependencies:
+  - core-js
+
+# Resolve only versions published at least a day ago, the default of
+# pnpm 11 and later, so the lockfile passes their supply-chain check.
+minimumReleaseAge: 1440
