@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { basename, resolve } from "node:path";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { runDoctor } from "./doctor";
+import { productionEnv, validateDomain } from "./production";
 import {
   FRONTENDS,
   type Frontend,
@@ -21,6 +23,7 @@ const HELP = `django-stack ${CLI_VERSION}
 
 Usage:
   django-stack init [directory] [options]   Create a project
+  django-stack production [directory]       Write .env.production for a server
   django-stack doctor [directory]           Check a project and its services
   django-stack secret [bytes]               Print a random secret
   django-stack --version
@@ -29,10 +32,17 @@ Options for init:
   --name <name>            The project name (default: from the directory)
   --frontend <frontend>    ${FRONTENDS.join(", ")} (default: astro)
   --database-url <url>     Use an external Postgres instead of the bundled one
+  --local-s3               Store uploads in a local S3 service in development
   --no-demo-content        Start with an empty site
   --no-git                 Don't create a git repository
   --start                  Run \`docker compose up\` when done
   -y, --yes                Accept the defaults without asking
+
+Options for production:
+  --domain <domain>        The domain of the site, such as example.com
+  --email-url <url>        The SMTP server, such as smtp+tls://user:pass@host:587
+  --force                  Overwrite an existing .env.production
+  -y, --yes                Don't ask; fail when --domain is missing
 `;
 
 function fail(message: string): never {
@@ -62,6 +72,7 @@ async function init(argv: string[]) {
       name: { type: "string" },
       frontend: { type: "string" },
       "database-url": { type: "string" },
+      "local-s3": { type: "boolean" },
       "no-demo-content": { type: "boolean" },
       "no-git": { type: "boolean" },
       start: { type: "boolean" },
@@ -132,6 +143,19 @@ async function init(argv: string[]) {
     }
   }
 
+  let localS3: boolean = Boolean(values["local-s3"]);
+  if (interactive && !values["local-s3"]) {
+    localS3 = unwrap(
+      await p.select({
+        message: "Uploads in development",
+        options: [
+          { value: false, label: "On disk", hint: "simplest" },
+          { value: true, label: "Local S3 service", hint: "the same code path as S3 in production" },
+        ],
+      }),
+    );
+  }
+
   let demoContent: boolean = !values["no-demo-content"];
   if (interactive && !values["no-demo-content"]) {
     demoContent = unwrap(await p.confirm({ message: "Add demo pages and posts?", initialValue: true }));
@@ -141,7 +165,15 @@ async function init(argv: string[]) {
   spinner.start("Creating the project");
   let result: ReturnType<typeof scaffold>;
   try {
-    result = scaffold({ directory: target, name, frontend, demoContent, databaseUrl, link: values.link });
+    result = scaffold({
+      directory: target,
+      name,
+      frontend,
+      demoContent,
+      databaseUrl,
+      localS3,
+      link: values.link,
+    });
   } catch (error) {
     spinner.error("The project was not created.");
     fail((error as Error).message);
@@ -197,6 +229,59 @@ async function init(argv: string[]) {
   }
 }
 
+async function production(argv: string[]) {
+  const { values, positionals } = parseArgs({
+    args: argv,
+    allowPositionals: true,
+    options: {
+      domain: { type: "string" },
+      "email-url": { type: "string" },
+      force: { type: "boolean" },
+      yes: { type: "boolean", short: "y" },
+    },
+  });
+  const interactive = !values.yes && process.stdin.isTTY;
+  const directory = resolve(positionals[0] ?? ".");
+  const envPath = join(directory, ".env");
+  const target = join(directory, ".env.production");
+  p.intro(pc.bold(`DjangoStack ${CLI_VERSION}: production settings`));
+  if (!existsSync(envPath)) fail(`${envPath} does not exist. Run this in a project directory.`);
+  if (existsSync(target) && !values.force) fail(`${target} exists. Pass --force to replace it.`);
+
+  let domain = values.domain;
+  if (!domain) {
+    if (!interactive) fail("Pass --domain, such as --domain example.com.");
+    domain = unwrap(
+      await p.text({
+        message: "Domain of the site",
+        placeholder: "example.com",
+        validate: (v) => validateDomain(v ?? ""),
+      }),
+    );
+  }
+  let result: ReturnType<typeof productionEnv>;
+  try {
+    result = productionEnv(readFileSync(envPath, "utf8"), { domain, emailUrl: values["email-url"] });
+  } catch (error) {
+    fail((error as Error).message);
+  }
+  writeFileSync(target, result.text, { mode: 0o600 });
+  p.log.success(`Wrote ${relativeDirectory(target)} with new secrets for the server.`);
+  if (result.todo.length)
+    p.note(result.todo.map((item) => `- ${item}`).join("\n"), "Before the first deploy");
+  p.note(
+    [
+      `Copy the project to the server, with ${pc.bold(".env.production")} as ${pc.bold(".env")}, then:`,
+      "docker compose up -d --build",
+      "",
+      `Admin  https://${domain}/admin/  user ${pc.bold("admin")}, password ${pc.bold(result.adminPassword)}`,
+      pc.dim("Point the domain's DNS at the server first: Caddy needs it for the certificate."),
+    ].join("\n"),
+    "Deploy",
+  );
+  p.outro("Done");
+}
+
 async function doctor(argv: string[]) {
   const directory = resolve(argv[0] ?? ".");
   p.intro(pc.bold(`DjangoStack doctor ${CLI_VERSION}`));
@@ -223,6 +308,8 @@ async function main() {
       return init(rest);
     case "doctor":
       return doctor(rest);
+    case "production":
+      return production(rest);
     case "secret":
       console.log(generateSecret(Number(rest[0] ?? 32)));
       return;

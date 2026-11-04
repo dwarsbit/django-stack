@@ -11,6 +11,16 @@ export default defineConfig({
   output: "server",
   adapter: node({ mode: "standalone" }),
   server: { host: true, port: 3000 },
+  // A Content-Security-Policy on every page: scripts and styles only from
+  // this site, with hashes for the ones Astro inlines. src/middleware.ts adds
+  // the origin of the media files.
+  security: {
+    csp: {
+      directives: ["default-src 'self'", "base-uri 'self'", "form-action 'self'", "object-src 'none'"],
+      // Inline style attributes, such as the focal point of an image.
+      styleDirective: { resources: ["'self'", { resource: "'unsafe-inline'", kind: "attribute" }] },
+    },
+  },
   vite: {
     server: {
       // Django calls /revalidate at http://frontend:3000 on the Compose network.

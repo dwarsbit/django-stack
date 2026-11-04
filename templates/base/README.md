@@ -46,6 +46,30 @@ site with drafts shown, for an hour.
 When an editor saves, Django tells the frontend (`REVALIDATE_URL`), which
 empties its page cache, so the change shows on the next visit.
 
+## Deploy
+
+On a server with Docker and a domain pointing at it:
+
+```bash
+npx @django-stack/cli production --domain example.com --email-url smtp+tls://user:pass@smtp.example.com:587
+# copy the project to the server, with .env.production as .env, then there:
+docker compose up -d --build
+```
+
+The `prod` profile runs production images behind Caddy, which gets the HTTPS
+certificate, and backs up the database every day. Media can go to S3 and the
+database to a managed Postgres. `.github/workflows/deploy.yml` deploys from
+GitHub Actions. The [deployment guide](https://dwarsbit.github.io/django-stack/docs/production/server)
+has every step.
+
+| Task | Command (on the server) |
+|------|---------|
+| Update | `git pull && docker compose up -d --build` |
+| Back up now | `docker compose exec backup python manage.py backup_database` |
+| List backups | `docker compose exec backup python manage.py backup_database --list` |
+| Restore | `docker compose exec backup python manage.py restore_database <name>` |
+| Logs | `docker compose logs --follow backend-prod` |
+
 ## Security
 
 - The API answers only requests with a key. The frontend holds the

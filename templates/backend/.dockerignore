@@ -7,3 +7,5 @@ media
 staticfiles
 db.sqlite3
 .env
+backups
+huey-stats.db*

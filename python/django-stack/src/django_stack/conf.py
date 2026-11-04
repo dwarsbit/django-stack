@@ -15,6 +15,12 @@ DEFAULTS = {
     "ADMIN_USERNAME": "admin",
     "ADMIN_EMAIL": None,
     "ADMIN_PASSWORD": None,
+    "BACKUP_DIR": None,
+    "BACKUP_KEEP": 14,
+    "BACKUP_TIME": "03:00",
+    "BACKUP_S3_BUCKET": None,
+    "BACKUP_S3_PREFIX": "backups/",
+    "BACKUP_S3": {},
 }
 
 

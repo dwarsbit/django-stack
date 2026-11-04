@@ -19,6 +19,8 @@ Postgres and Valkey. It is not a CMS of its own.
   from this checkout (`init --link`, which builds the local packages into
   the project's `vendor/` directories), starts it with Docker Compose, runs
   the template tests in the containers and smoke-tests the site.
+  `scripts/e2e-prod.sh` does the same with the prod profile behind Caddy
+  at https://site.localhost, and tests a backup and a restore.
 - `website/`: the Docusaurus docs.
 
 ## Commands
@@ -36,7 +38,8 @@ uv sync
 uv run pytest
 uv run ruff check . && uv run ruff format --check .
 
-scripts/e2e.sh   # after pnpm build; needs Docker and uv
+scripts/e2e.sh        # after pnpm build; needs Docker and uv
+scripts/e2e-prod.sh   # the same in production; needs ports 80 and 443
 ```
 
 ## Rules
@@ -47,6 +50,9 @@ scripts/e2e.sh   # after pnpm build; needs Docker and uv
 - Secure by default: generated API routes stay closed, the frontend gets
   the read-only key only, secrets are generated, and every relaxation is an
   explicit setting with a system check.
+- Production containers are read-only and run without privileges. A
+  service that needs to write gets a volume or `/tmp`, never a writable
+  image.
 - Every CLI prompt has a flag, and every command exits non-zero with a
   one-line reason on failure.
 - Add a changeset (`pnpm changeset`) for every change to an npm package.

@@ -11,6 +11,8 @@ DjangoStack's system checks.
 - ``django_stack.W003`` (deploy): ``SECRET_KEY`` shorter than 50 characters.
 - ``django_stack.W004`` (deploy): the cache is per process, so throttles,
   sessions and presence are not shared between workers.
+- ``django_stack.W005`` (deploy): ``SITE_URL`` is https but ``NUM_PROXIES`` is 0,
+  so Django does not see that requests came in over HTTPS.
 """
 
 from django.apps import apps
@@ -119,6 +121,15 @@ def check_deploy(app_configs, **kwargs):
                 "The default cache is not shared between processes.",
                 hint="Set CACHE_URL to the Valkey or Redis service.",
                 id="django_stack.W004",
+            )
+        )
+    site_url = getattr(settings, "SITE_URL", "") or ""
+    if site_url.startswith("https://") and not getattr(settings, "SECURE_PROXY_SSL_HEADER", None):
+        warnings.append(
+            Warning(
+                "SITE_URL is https, but Django does not trust the proxy's X-Forwarded-Proto header.",
+                hint="Set NUM_PROXIES=1 behind Caddy, so secure cookies and CSRF checks see HTTPS.",
+                id="django_stack.W005",
             )
         )
     return warnings

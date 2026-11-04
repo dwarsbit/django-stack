@@ -1,0 +1,51 @@
+# {{project_name}}: the reverse proxy of the prod profile.
+#
+# One domain: Django serves /admin, /api and /static; uploads on the server's
+# disk are served from /media; the frontend serves everything else. Caddy
+# gets and renews the HTTPS certificate for SITE_URL by itself.
+#
+# Behind a platform's proxy (Coolify, Dokploy), CADDY_ADDRESS=:80 serves
+# plain HTTP to that proxy, and TRUSTED_PROXIES=private_ranges keeps the
+# client's address and scheme it forwards. See the deployment docs.
+
+{
+	servers {
+		trusted_proxies static {$TRUSTED_PROXIES}
+	}
+}
+
+{$CADDY_ADDRESS} {
+	encode zstd gzip
+
+	# Defaults for every response; Django and the frontend set their own,
+	# stricter ones where they need them. One directive per header: Caddy
+	# skips a whole block of `?` headers when any one of them is set.
+	header ?Strict-Transport-Security "max-age=31536000"
+	header ?X-Content-Type-Options "nosniff"
+	header ?Referrer-Policy "strict-origin-when-cross-origin"
+	header ?X-Frame-Options "DENY"
+	header -Server
+
+	# Uploads, when media is stored on the server instead of S3. No scripts
+	# run from uploaded files, whatever their type.
+	handle_path /media/* {
+		root * /srv/media
+		header Content-Security-Policy "script-src 'none'; object-src 'none'"
+		header Cache-Control "public, max-age=604800"
+		file_server
+	}
+
+	@django path /admin /admin/* /api /api/* /static/*
+	handle @django {
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

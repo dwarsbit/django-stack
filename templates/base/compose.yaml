@@ -1,69 +1,95 @@
-# {{project_name}}: development with `docker compose up`.
+# {{project_name}}: one Compose file for development and production.
 #
-# Services: frontend (Astro, http://localhost:3000), backend (Django, also
-# serving /admin, /api and /media through the frontend's dev server),
-# worker (background tasks), db (Postgres), cache (Valkey) and mailpit
-# (outgoing mail at http://localhost:8025).
+# COMPOSE_PROFILES in .env picks the services:
+#   dev,db    `docker compose up` on a laptop: dev servers with hot reload,
+#             http://localhost:3000, Mailpit at http://localhost:8025.
+#   prod,db   `docker compose up -d` on a server: production images behind
+#             Caddy on ports 80 and 443, with automatic HTTPS and backups.
+#   Leave out `db` to use an external Postgres through DATABASE_URL, and add
+#   `s3` in development for a local S3 service (see .env).
 #
-# Variables come from .env. The frontend only receives the variables it
-# needs: never the full-access API key or the database password.
+# The frontend only receives the variables it needs: never the full-access
+# API key or the database password.
 
 name: {{project_name}}
 
-x-backend: &backend
-  build:
-    context: ./backend
-    target: dev
-  env_file: .env
-  volumes:
-    - ./backend:/app
-    - media:/app/media
-  depends_on:
-    db:
-      condition: service_healthy
-      required: false
-    cache:
-      condition: service_healthy
-  restart: unless-stopped
+# Production containers: read-only file system, no privileges.
+x-hardened: &hardened
+  read_only: true
+  tmpfs:
+    - /tmp
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+x-frontend-env: &frontend-env
+  SITE_URL: ${SITE_URL}
+  API_URL: http://backend:8000/api
+  BACKEND_INTERNAL_URL: http://backend:8000
+  API_READ_KEY: ${API_READ_KEY}
+  PREVIEW_SECRET: ${PREVIEW_SECRET}
+  REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+  MEDIA_ORIGINS: ${S3_PUBLIC_URL:-${S3_ENDPOINT_URL:-}}
+
+x-backend-depends: &backend-depends
+  db:
+    condition: service_healthy
+    required: false
+  cache:
+    condition: service_healthy
+  s3:
+    condition: service_started
+    required: false
+
+x-backend-health: &backend-health
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz', timeout=4)"]
+  interval: 5s
+  timeout: 5s
+  start_period: 60s
+  retries: 30
 
 services:
+  # Development ------------------------------------------------------------
+
   backend:
-    <<: *backend
+    profiles: [dev]
+    build:
+      context: ./backend
+      target: dev
+    env_file: .env
     environment:
       DJANGO_MIGRATE: "1"
+    volumes:
+      - ./backend:/app
+      - media:/app/media
     ports:
       - "127.0.0.1:8000:8000"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz', timeout=4)",
-        ]
-      interval: 5s
-      timeout: 5s
-      start_period: 60s
-      retries: 30
+    depends_on: *backend-depends
+    healthcheck: *backend-health
+    restart: unless-stopped
 
   worker:
-    <<: *backend
+    profiles: [dev]
+    build:
+      context: ./backend
+      target: dev
+    env_file: .env
     command: ["python", "manage.py", "run_huey"]
+    volumes:
+      - ./backend:/app
+      - media:/app/media
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
 
   frontend:
+    profiles: [dev]
     build:
       context: ./frontend
       target: dev
-    environment:
-      SITE_URL: ${SITE_URL}
-      API_URL: http://backend:8000/api
-      BACKEND_INTERNAL_URL: http://backend:8000
-      API_READ_KEY: ${API_READ_KEY}
-      PREVIEW_SECRET: ${PREVIEW_SECRET}
-      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+    environment: *frontend-env
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
@@ -74,9 +100,162 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  mailpit:
+    profiles: [dev]
+    image: axllent/mailpit:v1.27
+    ports:
+      - "127.0.0.1:8025:8025"
+    restart: unless-stopped
+
+  # A local S3 service, so development runs the same storage code as
+  # production with S3. Files are public at http://localhost:8333/<bucket>/.
+  s3:
+    profiles: [s3]
+    image: chrislusf/seaweedfs:4.52
+    command: ["server", "-s3", "-dir=/data", "-ip.bind=0.0.0.0"]
+    volumes:
+      - s3data:/data
+    ports:
+      - "127.0.0.1:8333:8333"
+    restart: unless-stopped
+
+  # Production -------------------------------------------------------------
+
+  backend-prod:
+    profiles: [prod]
+    image: ${BACKEND_IMAGE:-{{project_name}}-backend}
+    build:
+      context: ./backend
+      target: prod
+    <<: *hardened
+    env_file: .env
+    environment:
+      DJANGO_DEBUG: "0"
+      DJANGO_MIGRATE: "1"
+      DJANGO_CHECK_DEPLOY: "1"
+      NUM_PROXIES: ${NUM_PROXIES:-1}
+    volumes:
+      - media:/app/media
+    depends_on: *backend-depends
+    healthcheck: *backend-health
+    networks:
+      default:
+        aliases: [backend]
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+    restart: unless-stopped
+
+  worker-prod:
+    profiles: [prod]
+    image: ${BACKEND_IMAGE:-{{project_name}}-backend}
+    build:
+      context: ./backend
+      target: prod
+    <<: *hardened
+    env_file: .env
+    command: ["python", "manage.py", "run_huey"]
+    environment:
+      DJANGO_DEBUG: "0"
+      NUM_PROXIES: ${NUM_PROXIES:-1}
+    volumes:
+      - media:/app/media
+    depends_on:
+      backend-prod:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    restart: unless-stopped
+
+  frontend-prod:
+    profiles: [prod]
+    image: ${FRONTEND_IMAGE:-{{project_name}}-frontend}
+    build:
+      context: ./frontend
+      target: prod
+    <<: *hardened
+    environment: *frontend-env
+    depends_on:
+      backend-prod:
+        condition: service_healthy
+    networks:
+      default:
+        aliases: [frontend]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    restart: unless-stopped
+
+  # The only service with public ports: HTTPS for SITE_URL with a
+  # certificate from Let's Encrypt, routing to Django and the frontend.
+  # Behind a platform's proxy, see CADDY_ADDRESS in .env.
+  proxy:
+    profiles: [prod]
+    image: caddy:2.11-alpine
+    <<: *hardened
+    cap_add:
+      - NET_BIND_SERVICE
+    environment:
+      CADDY_ADDRESS: ${CADDY_ADDRESS:-${SITE_URL}}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - media:/srv/media:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    depends_on:
+      backend-prod:
+        condition: service_healthy
+      frontend-prod:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    restart: unless-stopped
+
+  # Backs up the database every day at BACKUP_TIME (UTC) into the backups
+  # volume, and into BACKUP_S3_BUCKET when it is set. See README.md.
+  backup:
+    profiles: [prod]
+    image: ${BACKEND_IMAGE:-{{project_name}}-backend}
+    build:
+      context: ./backend
+      target: prod
+    <<: *hardened
+    env_file: .env
+    command: ["python", "manage.py", "run_backups"]
+    environment:
+      DJANGO_DEBUG: "0"
+      BACKUP_DIR: /app/backups
+    volumes:
+      - backups:/app/backups
+    depends_on:
+      backend-prod:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    restart: unless-stopped
+
+  # Shared -----------------------------------------------------------------
+
   db:
-    image: postgres:17-alpine
     profiles: [db]
+    image: postgres:17-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-app}
       POSTGRES_USER: ${POSTGRES_USER:-app}
@@ -88,25 +267,37 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     restart: unless-stopped
 
+  # Cache, sessions and the task queue. Only keys with an expiry are
+  # evicted when memory runs out, so queued tasks are never dropped.
   cache:
     image: valkey/valkey:8-alpine
-    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    user: valkey
+    command: ["valkey-server", "--save", "", "--appendonly", "no", "--maxmemory", "200mb", "--maxmemory-policy", "volatile-lru"]
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 3s
       timeout: 3s
       retries: 20
-    restart: unless-stopped
-
-  mailpit:
-    image: axllent/mailpit:v1.27
-    ports:
-      - "127.0.0.1:8025:8025"
+    <<: *hardened
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     restart: unless-stopped
 
 volumes:
   pgdata:
   media:
+  backups:
+  s3data:
   frontend_node_modules:
+  caddy_data:
+  caddy_config:

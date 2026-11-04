@@ -87,7 +87,7 @@ describe("scaffold", () => {
     expect(env.DATABASE_URL).toBe(`postgres://app:${env.POSTGRES_PASSWORD}@db:5432/app`);
     expect(env.ADMIN_PASSWORD).toBe(result.adminPassword);
     expect(env.SEED_DEMO_CONTENT).toBe("1");
-    expect(env.COMPOSE_PROFILES).toBe("db");
+    expect(env.COMPOSE_PROFILES).toBe("dev,db");
 
     const example = parseEnv(readFileSync(join(directory, ".env.example"), "utf8"));
     expect(example.DJANGO_SECRET_KEY).toBe("");
@@ -121,8 +121,17 @@ describe("scaffold", () => {
     });
     const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
     expect(env.DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require");
-    expect(env.COMPOSE_PROFILES).toBe("");
+    expect(env.COMPOSE_PROFILES).toBe("dev");
     expect(env.SEED_DEMO_CONTENT).toBe("0");
+  });
+
+  it("uses the local S3 service", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true, localS3: true });
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.COMPOSE_PROFILES).toBe("dev,db,s3");
+    expect(env.S3_ENDPOINT_URL).toBe("http://s3:8333");
+    expect(env.S3_PUBLIC_URL).toBe("http://localhost:8333/media");
   });
 
   it("refuses a directory that is not empty", () => {

@@ -10,3 +10,5 @@ __pycache__/
 frontend/dist/
 frontend/.astro/
 .DS_Store
+backend/backups/
+backend/huey-stats.db*
