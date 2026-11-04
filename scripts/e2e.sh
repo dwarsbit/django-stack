@@ -40,8 +40,9 @@ expect() {
   local want="$1"; shift
   local got
   got="$(status "$@")"
-  [ "$got" = "$want" ] || fail "$* answered $got, expected $want"
-  echo "ok $want $*"
+  # Only the URL, the last argument: the others can hold keys.
+  [ "$got" = "$want" ] || fail "${*: -1} answered $got, expected $want"
+  echo "ok $want ${*: -1}"
 }
 
 read_key="$(grep '^API_READ_KEY=' .env | cut -d= -f2)"
