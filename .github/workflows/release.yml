@@ -29,12 +29,14 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
+      # npm trusted publishing (OIDC) needs npm 11.5.1 or later.
+      - run: npm install --global npm@11
       - uses: changesets/action@v2.1.2
         with:
-          version: pnpm version-packages
-          publish: pnpm release
-          title: Version packages
-          commit: Version packages
+          version-script: pnpm version-packages
+          publish-script: pnpm release
+          pr-title: Version packages
+          commit-message: Version packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
