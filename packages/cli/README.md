@@ -10,9 +10,15 @@ docker compose up
 
 | Command | Description |
 |---------|-------------|
-| `init [directory]` | Create a project. Flags: `--name`, `--frontend`, `--database-url`, `--no-demo-content`, `--no-git`, `--start`, `--yes` |
+| `init [directory]` | Create a project. Flags: `--name`, `--frontend`, `--database-url`, `--time-zone`, `--local-s3`, `--no-demo-content`, `--no-git`, `--start`, `--yes` |
+| `production [directory]` | Write `.env.production` for a server. Flags: `--domain`, `--email-url`, `--force`, `--yes` |
 | `doctor [directory]` | Check a project and its running services |
 | `secret [bytes]` | Print a random secret |
+| `completion <shell>` | Print a Tab completion script for zsh, bash, fish or PowerShell |
+
+Run `django-stack help <command>` for the options of a command. Each command
+checks for a newer version once a day; turn that off with
+`--no-update-check` or `DJANGO_STACK_NO_UPDATE_CHECK=1`.
 
 Read the [documentation](https://github.com/dwarsbit/django-stack/tree/main/website/docs) of
 [DjangoStack](https://github.com/dwarsbit/django-stack).
