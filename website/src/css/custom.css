@@ -1,0 +1,21 @@
+/* DjangoStack docs theme: Django green as the primary color. */
+:root {
+  --ifm-color-primary: #0c4b33;
+  --ifm-color-primary-dark: #0b442e;
+  --ifm-color-primary-darker: #0a402b;
+  --ifm-color-primary-darkest: #083524;
+  --ifm-color-primary-light: #0d5238;
+  --ifm-color-primary-lighter: #0e563b;
+  --ifm-color-primary-lightest: #106142;
+  --ifm-footer-background-color: #092e20;
+}
+
+[data-theme="dark"] {
+  --ifm-color-primary: #44b78b;
+  --ifm-color-primary-dark: #3ca57d;
+  --ifm-color-primary-darker: #399c76;
+  --ifm-color-primary-darkest: #2f8061;
+  --ifm-color-primary-light: #5bc298;
+  --ifm-color-primary-lighter: #66c69f;
+  --ifm-color-primary-lightest: #88d3b4;
+}

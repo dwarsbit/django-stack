@@ -1,0 +1,44 @@
+{
+  "name": "@django-stack/react",
+  "version": "0.0.1",
+  "description": "React components for DjangoStack frontends: blocks, rich text, images and SEO.",
+  "license": "MIT",
+  "author": "Leon van der Grient",
+  "homepage": "https://github.com/dwarsbit/django-stack/tree/main/packages/react#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dwarsbit/django-stack.git",
+    "directory": "packages/react"
+  },
+  "bugs": "https://github.com/dwarsbit/django-stack/issues",
+  "keywords": ["django", "django-stack", "headless-cms", "jamstack"],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  },
+  "dependencies": {
+    "@django-stack/utils": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
