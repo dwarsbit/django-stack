@@ -1,0 +1,52 @@
+---
+sidebar_position: 4
+---
+
+# Configuration
+
+A project is configured with environment variables in `.env`. Docker Compose
+passes them to the backend and the worker. The frontend receives only the
+variables it needs: never the full-access API key or the database password.
+
+The backend reads them in `config/settings.py` through
+`django_stack.settings.configure()`, which sets Django's settings from the
+environment. Settings you define in `config/settings.py` before the call are
+kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
+
+## Variables
+
+| Variable | Description |
+|----------|-------------|
+| `SITE_URL` | The public URL of the site. |
+| `BACKEND_URL` | The public URL of the backend. In development the frontend's dev server serves `/admin`, `/api` and `/media`, so it is the same as `SITE_URL`. |
+| `DJANGO_SECRET_KEY` | Django's secret key. Required. |
+| `DJANGO_DEBUG` | `1` in development, `0` in production. |
+| `DATABASE_URL` | `postgres://user:password@host:5432/name`, or `sqlite:///path`. |
+| `CACHE_URL` | `redis://` or `valkey://` for the cache and the task queue. Without it, tasks run right away in the request. |
+| `EMAIL_URL` | `smtp://user:password@host:25`, `smtp+tls://` for STARTTLS on port 587, `smtps://` for TLS on port 465, or `console://` to print mail. |
+| `DEFAULT_FROM_EMAIL` | The sender of the mail the site sends. |
+| `API_SECRET_KEY` | The full-access API key, for scripts. |
+| `API_READ_KEY` | The read-only API key, for the frontend. It must differ from `API_SECRET_KEY`. |
+| `PREVIEW_SECRET` | Signs preview links. Shared with the frontend. |
+| `REVALIDATE_SECRET` | Signs the requests that tell the frontend content changed. Shared with the frontend. |
+| `REVALIDATE_URL` | Where the backend sends those requests. |
+| `ALLOWED_HOSTS` | Extra host names, separated by commas. The hosts of `SITE_URL` and `BACKEND_URL` are always allowed. |
+| `NUM_PROXIES` | The number of reverse proxies in front of the backend, so client IPs and HTTPS are detected. |
+| `S3_BUCKET` | Store uploads in S3 instead of on disk; see `S3_*` in the settings module. |
+| `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The admin user created on the first start. |
+| `SEED_DEMO_CONTENT` | `1` adds the demo content to an empty site on the first start. |
+
+## System checks
+
+`python manage.py check` reports configurations that are not safe:
+
+| Check | Problem |
+|-------|---------|
+| `django_stack.E001` | The two API keys are the same. |
+| `django_stack.E002` | There is no read-only API key. |
+| `django_stack.E003` | Debug is on for an `https` site. |
+| `django_stack.E004` | An entry of `DJANGO_STACK["PUBLIC_CREATE"]` is not a model. |
+| `django_stack.W001` | A revalidation URL without a secret. |
+| `django_stack.W002` | No preview secret. |
+| `django_stack.W003` | The secret key is short (with `--deploy`). |
+| `django_stack.W004` | The cache is in local memory (with `--deploy`). |

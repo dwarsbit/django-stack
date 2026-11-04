@@ -1,0 +1,8 @@
+---
+import type { TextBlock } from "@django-stack/utils";
+import RichText from "../RichText.astro";
+
+const { block } = Astro.props as { block: TextBlock };
+---
+
+<RichText html={block.value.body} />

@@ -27,7 +27,14 @@ importers:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.1))
 
-  packages/cli: {}
+  packages/cli:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^1.8.1
+        version: 1.8.1
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
 
   packages/next:
     dependencies:
@@ -53,7 +60,11 @@ importers:
         specifier: '>=19'
         version: 19.3.1
 
-  packages/utils: {}
+  packages/utils:
+    dependencies:
+      '@django-headless/client':
+        specifier: ^1.1.1
+        version: 1.1.1
 
   website:
     devDependencies:
@@ -1179,6 +1190,11 @@ packages:
   '@discoveryjs/json-ext@0.5.7':
     resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}
     engines: {node: '>=10.0.0'}
+
+  '@django-headless/client@1.1.1':
+    resolution: {integrity: sha512-DXRfUGC3rymNTdwCSA3QhptugV2dKNKizVEGgeXIy0nG/Cai/oNgYb+nWtKVFrYcgul9ysTscpLyeEDhy3GFTA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   '@docsearch/core@4.7.1':
     resolution: {integrity: sha512-uzIFuu2Wsf3+/ZdLGDl6MhpjCZQ5DTMBGe1u/2DdQV+GlHEerOcthWZAoptCsNtjk+DX4Tbx3HmEgJE7RuMQhw==}
@@ -7417,6 +7433,8 @@ snapshots:
       postcss: 8.5.32
 
   '@discoveryjs/json-ext@0.5.7': {}
+
+  '@django-headless/client@1.1.1': {}
 
   '@docsearch/core@4.7.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     optionalDependencies:

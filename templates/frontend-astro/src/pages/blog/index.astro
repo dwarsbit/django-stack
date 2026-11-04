@@ -1,0 +1,15 @@
+---
+import PostList from "../../components/PostList.astro";
+import Base from "../../layouts/Base.astro";
+import { getContent } from "../../lib/api";
+
+const page = Math.max(1, Number(Astro.url.searchParams.get("page")) || 1);
+const result = await getContent(Astro.cookies).getPosts({ page, limit: 9 });
+---
+
+<Base page={{ title: "Blog" }}>
+  <section class="container">
+    <h1>Blog</h1>
+    <PostList result={result} base="/blog" />
+  </section>
+</Base>

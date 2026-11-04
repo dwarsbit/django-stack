@@ -1,0 +1,112 @@
+# {{project_name}}: development with `docker compose up`.
+#
+# Services: frontend (Astro, http://localhost:3000), backend (Django, also
+# serving /admin, /api and /media through the frontend's dev server),
+# worker (background tasks), db (Postgres), cache (Valkey) and mailpit
+# (outgoing mail at http://localhost:8025).
+#
+# Variables come from .env. The frontend only receives the variables it
+# needs: never the full-access API key or the database password.
+
+name: {{project_name}}
+
+x-backend: &backend
+  build:
+    context: ./backend
+    target: dev
+  env_file: .env
+  volumes:
+    - ./backend:/app
+    - media:/app/media
+  depends_on:
+    db:
+      condition: service_healthy
+      required: false
+    cache:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  backend:
+    <<: *backend
+    environment:
+      DJANGO_MIGRATE: "1"
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz', timeout=4)",
+        ]
+      interval: 5s
+      timeout: 5s
+      start_period: 60s
+      retries: 30
+
+  worker:
+    <<: *backend
+    command: ["python", "manage.py", "run_huey"]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    environment:
+      SITE_URL: ${SITE_URL}
+      API_URL: http://backend:8000/api
+      BACKEND_INTERNAL_URL: http://backend:8000
+      API_READ_KEY: ${API_READ_KEY}
+      PREVIEW_SECRET: ${PREVIEW_SECRET}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:17-alpine
+    profiles: [db]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  cache:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "127.0.0.1:8025:8025"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  media:
+  frontend_node_modules:

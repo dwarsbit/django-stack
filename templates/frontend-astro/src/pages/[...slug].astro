@@ -1,0 +1,21 @@
+---
+import Blocks from "../components/Blocks.astro";
+import ContactForm from "../components/ContactForm.astro";
+import Base from "../layouts/Base.astro";
+import { getContent } from "../lib/api";
+
+const path = Astro.params.slug ?? "";
+const page = await getContent(Astro.cookies).getPage(path);
+
+if (!page) {
+  return Astro.rewrite("/404");
+}
+---
+
+<Base page={page}>
+  <article class="narrow">
+    <h1>{page.title}</h1>
+    <Blocks blocks={page.body} />
+    {page.path === "contact" && <ContactForm />}
+  </article>
+</Base>

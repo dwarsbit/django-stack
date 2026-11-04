@@ -11,7 +11,12 @@
     "directory": "packages/utils"
   },
   "bugs": "https://github.com/dwarsbit/django-stack/issues",
-  "keywords": ["django", "django-stack", "headless-cms", "jamstack"],
+  "keywords": [
+    "django",
+    "django-stack",
+    "headless-cms",
+    "jamstack"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -21,7 +26,10 @@
     "./package.json": "./package.json"
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "sideEffects": false,
   "engines": {
     "node": ">=22"
@@ -34,5 +42,8 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "dependencies": {
+    "@django-headless/client": "^1.1.1"
   }
 }

@@ -1,6 +1,6 @@
 [project]
 name = "django-stack"
-version = "0.0.1"
+version = "0.1.0"
 description = "The backend glue of DjangoStack: settings from environment variables, API defaults, health checks and system checks."
 readme = "README.md"
 license = "MIT"
@@ -20,7 +20,23 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-dependencies = ["Django>=5.2,<7"]
+dependencies = [
+    "Django>=5.2,<7",
+    "djangorestframework>=3.17,<4",
+    "django-headless[schema]>=1.1.1,<2",
+    "django-content-studio[images,huey]>=1.8,<2",
+]
+
+[project.optional-dependencies]
+server = [
+    "gunicorn>=23",
+    "uvicorn[standard]>=0.34",
+    "uvicorn-worker>=0.3",
+    "whitenoise>=6.9",
+    "psycopg[binary]>=3.2",
+    "redis>=5",
+]
+s3 = ["django-storages[s3]>=1.14"]
 
 [project.urls]
 Homepage = "https://github.com/dwarsbit/django-stack"
@@ -28,7 +44,7 @@ Source = "https://github.com/dwarsbit/django-stack/tree/main/python/django-stack
 Issues = "https://github.com/dwarsbit/django-stack/issues"
 
 [dependency-groups]
-dev = ["pytest>=8", "pytest-django>=4.11", "ruff>=0.15"]
+dev = ["pytest>=8", "pytest-django>=4.11", "ruff>=0.15", "django-storages[s3]>=1.14"]
 
 [build-system]
 requires = ["hatchling>=1.27"]

@@ -1,0 +1,24 @@
+---
+import PostList from "../../components/PostList.astro";
+import Base from "../../layouts/Base.astro";
+import { getContent } from "../../lib/api";
+
+const content = getContent(Astro.cookies);
+const slug = Astro.params.slug ?? "";
+const tag = await content.getTag(slug);
+
+if (!tag) {
+  return Astro.rewrite("/404");
+}
+
+const page = Math.max(1, Number(Astro.url.searchParams.get("page")) || 1);
+const result = await content.getPosts({ tag: slug, page, limit: 9 });
+---
+
+<Base page={{ title: `#${tag.name}` }}>
+  <section class="container">
+    <p class="muted">Tag</p>
+    <h1>#{tag.name}</h1>
+    <PostList result={result} base={`/tag/${slug}`} />
+  </section>
+</Base>

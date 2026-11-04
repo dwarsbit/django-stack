@@ -1,0 +1,12 @@
+.env
+node_modules/
+backend/.venv/
+backend/media/
+backend/staticfiles/
+backend/openapi.json
+backend/db.sqlite3
+__pycache__/
+*.pyc
+frontend/dist/
+frontend/.astro/
+.DS_Store

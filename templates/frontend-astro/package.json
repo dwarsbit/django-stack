@@ -1,0 +1,31 @@
+{
+  "name": "{{project_name}}-frontend",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "start": "node ./dist/server/entry.mjs",
+    "preview": "astro preview",
+    "check": "astro check",
+    "test": "vitest run",
+    "generate:types": "headless generate --url \"${API_URL:-http://localhost:8000/api}/schema\" --out src/lib/headless.ts"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.9",
+    "@astrojs/rss": "^4.0.19",
+    "@django-headless/client": "^1.1.1",
+    "@django-stack/utils": "^0.1.0",
+    "astro": "^7.4.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@types/node": "^22.20.5",
+    "typescript": "~5.9.3",
+    "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

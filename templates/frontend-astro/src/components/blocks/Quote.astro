@@ -1,0 +1,10 @@
+---
+import type { QuoteBlock } from "@django-stack/utils";
+
+const { block } = Astro.props as { block: QuoteBlock };
+---
+
+<blockquote class="prose">
+  <p>{block.value.text}</p>
+  {block.value.attribution && <footer class="muted">{block.value.attribution}</footer>}
+</blockquote>

@@ -1,0 +1,24 @@
+---
+import type { ImageBlock } from "@django-stack/utils";
+import Image from "../Image.astro";
+
+const { block } = Astro.props as { block: ImageBlock };
+---
+
+<figure class="block-image">
+  <Image media={block.value.image} size="content" sizes="(min-width: 48rem) 44rem, 100vw" />
+  {block.value.caption && <figcaption class="muted">{block.value.caption}</figcaption>}
+</figure>
+
+<style>
+  figure {
+    margin: 2rem 0;
+  }
+  figure :global(img) {
+    border-radius: 0.5rem;
+  }
+  figcaption {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+</style>
