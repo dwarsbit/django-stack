@@ -5,6 +5,7 @@
 #
 #   pnpm build && scripts/e2e.sh [directory]
 #
+# With LOCAL_S3=1 the project stores media in the local S3 service.
 # Needs Docker, uv and pnpm. Leaves the project running with KEEP=1.
 set -euo pipefail
 
@@ -22,7 +23,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-node "$cli" init "$project" --yes --no-git --link "$repo"
+node "$cli" init "$project" --yes --no-git --link "$repo" ${LOCAL_S3:+--local-s3}
 cd "$project"
 
 docker compose build

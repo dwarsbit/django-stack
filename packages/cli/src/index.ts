@@ -1,5 +1,6 @@
 export { type Check, runDoctor } from "./doctor";
 export { parseEnv, setEnvValues } from "./env";
+export { type ProductionEnv, type ProductionOptions, productionEnv, validateDomain } from "./production";
 export {
   FRONTENDS,
   type Frontend,

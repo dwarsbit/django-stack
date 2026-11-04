@@ -21,7 +21,9 @@ frontend/                Astro site (server output, Node adapter)
   src/lib/api.ts         getContent(): content helpers with the read-only key, drafts in preview
   src/lib/headless.ts    generated API types; do not edit, run `npm run generate:types`
   src/middleware.ts      page cache, editor-managed redirects, security headers
-compose.yaml             every service; `docker compose up` for development
+compose.yaml             every service; COMPOSE_PROFILES in .env picks dev or prod
+Caddyfile                the prod profile's reverse proxy and HTTPS
+.github/workflows/deploy.yml  optional deploy to a server over SSH
 .env                     secrets and settings; never commit, never print
 ```
 
@@ -38,6 +40,12 @@ Run them at the project root. They need Docker; Node is only needed for the `npm
 | Run the tests | `npm test` |
 | Lint and type-check | `npm run lint` |
 | Logs | `docker compose logs --follow backend` |
+| Production settings for a server | `npx @django-stack/cli production --domain example.com` |
+
+In production (`COMPOSE_PROFILES=prod,db`) the services are `backend-prod`,
+`worker-prod`, `frontend-prod`, `proxy` and `backup`; their containers are
+read-only, so a change goes through the code and a new image, never an edit
+in a running container.
 
 ## How to add a content model
 

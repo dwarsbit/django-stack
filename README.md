@@ -10,22 +10,23 @@ development and production.
 npx @django-stack/cli init my-site
 ```
 
-DjangoStack is in early development. Version 0.1 creates projects with the
-Astro frontend for development with Docker Compose; production deployment
-and the Next.js frontend follow. Read the
-[getting started guide](website/docs/getting-started.md).
+DjangoStack is in early development. It creates projects with the Astro
+frontend that run in development and in production on your own server,
+behind Caddy with HTTPS and daily backups; the Next.js frontend follows.
+Read the [getting started guide](website/docs/getting-started.md) and
+[Deploy to a server](website/docs/production/server.md).
 
 ## This repository
 
 | Path | Contents |
 |------|----------|
-| `packages/cli` | `@django-stack/cli`: `init`, `doctor` and later `add` and `upgrade` |
+| `packages/cli` | `@django-stack/cli`: `init`, `production`, `doctor` and later `add` and `upgrade` |
 | `packages/utils` | `@django-stack/utils`: the API client, content helpers, SEO, images and webhook signatures |
 | `packages/react` | `@django-stack/react`: React components |
 | `packages/next` | `@django-stack/next`: Next.js glue |
-| `python/django-stack` | `django-stack` on PyPI: settings, API defaults, health checks, system checks |
+| `python/django-stack` | `django-stack` on PyPI: settings, API defaults, health checks, system checks, backups |
 | `templates/` | The files `init` copies into a new project |
-| `scripts/e2e.sh` | The end-to-end test: creates a project with the CLI and runs it with Docker Compose |
+| `scripts/e2e.sh`, `scripts/e2e-prod.sh` | The end-to-end tests: create a project with the CLI and run it with Docker Compose, in development and in production |
 | `website/` | The documentation site (Docusaurus) |
 
 ## Development

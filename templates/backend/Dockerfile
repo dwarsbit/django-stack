@@ -10,6 +10,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_PROJECT_ENVIRONMENT=/venv \
     PATH="/venv/bin:$PATH"
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/uv
+# The Postgres client, for the backups (pg_dump and pg_restore).
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system app && useradd --system --gid app --home-dir /app app
 WORKDIR /app
 
@@ -29,12 +33,13 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 FROM base AS prod
 COPY --from=deps /venv /venv
-COPY --chown=app:app . .
+# The code is owned by root: the app user can read it, not change it.
+COPY . .
 RUN DJANGO_SECRET_KEY=collectstatic-only python manage.py collectstatic --noinput \
-    && mkdir -p /app/media && chown -R app:app /app/media /app/staticfiles
+    && mkdir -p /app/media /app/backups && chown -R app:app /app/media /app/backups
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz', timeout=4)"
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["gunicorn", "config.asgi:application", "--worker-class", "uvicorn_worker.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "3", "--access-logfile", "-"]
+CMD ["gunicorn", "config.asgi:application", "--worker-class", "uvicorn_worker.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "3", "--access-logfile", "-", "--no-control-socket"]

@@ -1,0 +1,61 @@
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
+import { parseEnv, productionEnv, scaffold, validateDomain } from "../src";
+
+const root = mkdtempSync(join(tmpdir(), "django-stack-prod-"));
+afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+function devEnv(options: { localS3?: boolean; databaseUrl?: string } = {}) {
+  const directory = join(root, `p${Math.random().toString(36).slice(2)}`);
+  scaffold({ directory, name: "site", frontend: "astro", demoContent: true, ...options });
+  return readFileSync(join(directory, ".env"), "utf8");
+}
+
+describe("productionEnv", () => {
+  it("switches to the prod profile with new secrets", () => {
+    const text = devEnv();
+    const dev = parseEnv(text);
+    const result = productionEnv(text, { domain: "Example.com" });
+    const prod = parseEnv(result.text);
+    expect(prod.COMPOSE_PROFILES).toBe("prod,db");
+    expect(prod.SITE_URL).toBe("https://example.com");
+    expect(prod.BACKEND_URL).toBe("https://example.com");
+    expect(prod.DJANGO_DEBUG).toBe("0");
+    for (const key of [
+      "DJANGO_SECRET_KEY",
+      "API_SECRET_KEY",
+      "API_READ_KEY",
+      "PREVIEW_SECRET",
+      "POSTGRES_PASSWORD",
+    ]) {
+      expect(prod[key], key).not.toBe(dev[key]);
+      expect(prod[key]?.length, key).toBeGreaterThan(20);
+    }
+    expect(prod.DATABASE_URL).toBe(`postgres://app:${prod.POSTGRES_PASSWORD}@db:5432/app`);
+    expect(prod.ADMIN_PASSWORD).toBe(result.adminPassword);
+    expect(prod.DEFAULT_FROM_EMAIL).toBe("site <noreply@example.com>");
+    expect(result.todo.join(" ")).toContain("EMAIL_URL");
+  });
+
+  it("keeps an external database and drops the local S3 service", () => {
+    const text = devEnv({ databaseUrl: "postgres://u:p@db.example.com/app", localS3: true });
+    const result = productionEnv(text, {
+      domain: "example.com",
+      emailUrl: "smtp+tls://u:p@mail.example.com:587",
+    });
+    const prod = parseEnv(result.text);
+    expect(prod.COMPOSE_PROFILES).toBe("prod");
+    expect(prod.DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require");
+    expect(prod.S3_ENDPOINT_URL).toBe("");
+    expect(prod.EMAIL_URL).toBe("smtp+tls://u:p@mail.example.com:587");
+    expect(result.todo.join(" ")).toContain("S3_");
+  });
+
+  it("validates the domain", () => {
+    expect(validateDomain("example.com")).toBeUndefined();
+    expect(validateDomain("https://example.com")).toBeDefined();
+    expect(() => productionEnv("", { domain: "localhost" })).toThrow();
+  });
+});

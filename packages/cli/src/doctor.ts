@@ -87,44 +87,64 @@ export async function runDoctor(directory: string): Promise<Check[]> {
     });
   }
 
+  const profiles = (env.COMPOSE_PROFILES ?? "").split(",").map((profile) => profile.trim());
+  const prod = profiles.includes("prod");
+  if (prod) {
+    checks.push({
+      name: "SITE_URL is https",
+      ok: (env.SITE_URL ?? "").startsWith("https://"),
+      detail: "In production SITE_URL is https://your-domain; Caddy gets the certificate for it.",
+    });
+    checks.push({
+      name: "Mail goes to an SMTP server",
+      ok:
+        Boolean(env.EMAIL_URL) &&
+        !env.EMAIL_URL?.includes("mailpit") &&
+        !env.EMAIL_URL?.includes("example.com"),
+      detail: "Set EMAIL_URL to your SMTP server; Mailpit only runs in development.",
+    });
+  }
+
   const running = command("docker", ["compose", "ps", "--services", "--filter", "status=running"], directory);
   const services = running ? running.split("\n").filter(Boolean) : [];
+  const backendService = prod ? "backend-prod" : "backend";
+  const frontendService = prod ? "frontend-prod" : "frontend";
   checks.push({
     name: "Services are running",
-    ok: services.includes("backend") && services.includes("frontend"),
+    ok: services.includes(backendService) && services.includes(frontendService),
     warning: services.length === 0,
     detail: services.length
       ? services.join(", ")
-      : "Nothing is running. Start the project with `docker compose up`.",
+      : `Nothing is running. Start the project with \`docker compose up${prod ? " -d" : ""}\`.`,
   });
   if (services.length === 0) return checks;
 
-  const backend = await fetchStatus("http://localhost:8000/readyz");
+  const health = command("docker", ["compose", "ps", backendService, "--format", "{{.Health}}"], directory);
   checks.push({
-    name: "The backend is ready",
-    ok: backend === 200,
-    detail: backend
-      ? `/readyz answered ${backend}`
-      : "No answer on http://localhost:8000. See `docker compose logs backend`.",
+    name: "The backend is healthy",
+    ok: health === "healthy",
+    detail: health
+      ? `The ${backendService} container is ${health}`
+      : `See \`docker compose logs ${backendService}\`.`,
   });
-  const site = env.SITE_URL ?? "http://localhost:3000";
+  const site = (env.SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
   const frontend = await fetchStatus(site);
   checks.push({
-    name: "The frontend answers",
+    name: "The site answers",
     ok: frontend !== undefined && frontend < 500,
     detail: frontend
       ? `${site} answered ${frontend}`
-      : `No answer on ${site}. See \`docker compose logs frontend\`.`,
+      : `No answer on ${site}. See \`docker compose logs ${prod ? "proxy" : frontendService}\`.`,
   });
-  const api = await fetchStatus("http://localhost:8000/api/content.sitesettings", {
+  const api = await fetchStatus(`${site}/api/content.sitesettings`, {
     "X-Secret-Key": env.API_READ_KEY ?? "",
   });
   checks.push({
     name: "The read-only key reads the API",
     ok: api === 200,
-    detail: api ? `The API answered ${api}` : "No answer from the API.",
+    detail: api ? `${site}/api answered ${api}` : "No answer from the API.",
   });
-  const closed = await fetchStatus("http://localhost:8000/api/content.sitesettings");
+  const closed = await fetchStatus(`${site}/api/content.sitesettings`);
   checks.push({
     name: "The API is closed without a key",
     ok: closed === 401 || closed === 403,

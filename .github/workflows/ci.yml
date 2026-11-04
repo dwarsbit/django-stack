@@ -67,20 +67,36 @@ jobs:
       - run: pnpm docs:build
 
   e2e:
-    name: End-to-end
+    name: End-to-end (${{ matrix.profile }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Development with the local S3 service.
+          - profile: dev
+            script: scripts/e2e.sh
+            project: e2e-site
+          # Production images behind Caddy, media on disk, backups.
+          - profile: prod
+            script: scripts/e2e-prod.sh
+            project: prod-site
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - uses: astral-sh/setup-uv@v7
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: scripts/e2e.sh "$RUNNER_TEMP"
+      - name: Resolve site.localhost
+        run: echo "127.0.0.1 site.localhost" | sudo tee -a /etc/hosts
+      - run: ${{ matrix.script }} "$RUNNER_TEMP"
+        env:
+          LOCAL_S3: ${{ matrix.profile == 'dev' && '1' || '' }}
       - name: Logs
         if: failure()
-        run: docker compose --project-directory "$RUNNER_TEMP/e2e-site" logs --tail 200
+        run: docker compose --project-directory "$RUNNER_TEMP/${{ matrix.project }}" logs --tail 200

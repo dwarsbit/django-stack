@@ -11,6 +11,21 @@ const SECURITY_HEADERS: Record<string, string> = {
 
 const CACHEABLE = /^(text\/html|application\/xml|application\/rss\+xml|text\/plain)/;
 
+// Where media files come from when they are not on this site: S3 or a CDN.
+const MEDIA_ORIGINS = (process.env.MEDIA_ORIGINS ?? "")
+  .split(",")
+  .map((value) => {
+    try {
+      return new URL(value.trim()).origin;
+    } catch {
+      return "";
+    }
+  })
+  .filter(Boolean)
+  .map((origin) => ` ${origin}`)
+  .join("");
+const MEDIA_DIRECTIVES = `img-src 'self' data:${MEDIA_ORIGINS}; media-src 'self'${MEDIA_ORIGINS}`;
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, url, cookies } = context;
   const preview = cookies.has(PREVIEW_COOKIE);
@@ -37,6 +52,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     if (!response.headers.has(name)) response.headers.set(name, value);
+  }
+  // Images and video may come from the media origins. Astro builds the
+  // policy while it renders, so the directives are added to its header.
+  const csp = response.headers.get("Content-Security-Policy");
+  if (csp && !csp.includes("img-src")) {
+    response.headers.set("Content-Security-Policy", `${csp.trim().replace(/;$/, "")}; ${MEDIA_DIRECTIVES};`);
   }
   if (preview) response.headers.set("Cache-Control", "private, no-store");
 

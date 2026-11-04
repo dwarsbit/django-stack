@@ -29,6 +29,8 @@ export interface ScaffoldOptions {
   demoContent: boolean;
   /** An external Postgres URL; the bundled Postgres when not set. */
   databaseUrl?: string;
+  /** Store uploads in the local S3 service in development, like S3 in production. */
+  localS3?: boolean;
   /** A DjangoStack monorepo to take the packages from instead of the registries (for development). */
   link?: string;
   /** Where the templates are; the ones in the package by default. */
@@ -41,6 +43,17 @@ export interface ScaffoldResult {
   adminPassword: string;
   files: number;
 }
+
+/** The local S3 service of the `s3` profile. It accepts any credentials. */
+export const LOCAL_S3: Record<string, string> = {
+  S3_BUCKET: "media",
+  S3_ENDPOINT_URL: "http://s3:8333",
+  S3_REGION: "us-east-1",
+  S3_ACCESS_KEY_ID: "local",
+  S3_SECRET_ACCESS_KEY: "local",
+  S3_PUBLIC_URL: "http://localhost:8333/media",
+  S3_CREATE_BUCKET: "1",
+};
 
 const TEXT_EXTENSIONS =
   /\.(py|ts|mjs|js|json|astro|css|md|yaml|yml|toml|txt|html|sh|svg)$|Dockerfile$|gitignore$|\.dockerignore$|env\.example$/;
@@ -123,12 +136,17 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   const secrets = generateProjectSecrets();
   let env = template.replace(/\{\{secret:([a-z_]+)\}\}/g, (match, key: string) => secrets[key] ?? match);
   const envExample = template.replace(/\{\{secret:[a-z_]+\}\}/g, "");
+  const profiles = ["dev"];
   if (options.databaseUrl) {
-    env = setEnvValues(env, {
-      DATABASE_URL: normalizeDatabaseUrl(options.databaseUrl),
-      COMPOSE_PROFILES: "",
-    });
+    env = setEnvValues(env, { DATABASE_URL: normalizeDatabaseUrl(options.databaseUrl) });
+  } else {
+    profiles.push("db");
   }
+  if (options.localS3) {
+    profiles.push("s3");
+    env = setEnvValues(env, LOCAL_S3);
+  }
+  env = setEnvValues(env, { COMPOSE_PROFILES: profiles.join(",") });
   if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });
   writeFileSync(join(target, ".env"), env, { mode: 0o600 });
   writeFileSync(join(target, ".env.example"), envExample);

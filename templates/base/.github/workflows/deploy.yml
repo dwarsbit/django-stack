@@ -1,0 +1,70 @@
+# Builds the production images, pushes them to the GitHub Container Registry
+# and deploys them to your server over SSH. Optional: without it, build on
+# the server with `docker compose up -d --build`.
+#
+# Set up once (see the deployment docs):
+# 1. The server has Docker, the project directory (DEPLOY_PATH) and its .env.
+# 2. Repository secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (a private
+#    key the server accepts), DEPLOY_PATH and DEPLOY_KNOWN_HOSTS (the output
+#    of `ssh-keyscan your-server`).
+#
+# It runs when you start it from the Actions tab. To deploy every push to
+# main, add `push: { branches: [main] }` under `on`.
+
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+concurrency: deploy
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  BACKEND_IMAGE: ghcr.io/${{ github.repository }}-backend:${{ github.sha }}
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}-frontend:${{ github.sha }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to the container registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Build and push the images
+        run: |
+          docker build --target prod --tag "${BACKEND_IMAGE,,}" backend
+          docker build --target prod --tag "${FRONTEND_IMAGE,,}" frontend
+          docker push "${BACKEND_IMAGE,,}"
+          docker push "${FRONTEND_IMAGE,,}"
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh_cmd="ssh -i $HOME/.ssh/id_deploy"
+          # The Compose file and the Caddyfile come from the repository; the
+          # server keeps its own .env.
+          scp -i ~/.ssh/id_deploy compose.yaml Caddyfile "$TARGET:$DEPLOY_PATH/"
+          $ssh_cmd "$TARGET" "
+            set -e
+            cd '$DEPLOY_PATH'
+            echo '$REGISTRY_TOKEN' | docker login ghcr.io --username '${{ github.actor }}' --password-stdin
+            export BACKEND_IMAGE='${BACKEND_IMAGE,,}' FRONTEND_IMAGE='${FRONTEND_IMAGE,,}'
+            docker compose pull --quiet --ignore-buildable
+            docker compose up -d --no-build --remove-orphans
+            docker logout ghcr.io
+          "

@@ -51,6 +51,7 @@ def test_production_settings():
     assert s["HUEY"]["connection"] == {"url": "redis://cache:6379/0"}
     assert s["TASKS"]["default"]["BACKEND"] == "huey.contrib.djhuey.tasks_backend.HueyBackend"
     assert s["REST_FRAMEWORK"]["NUM_PROXIES"] == 1
+    assert s["HUEY_STATS"] == {"database": "psycopg3://app:pw@db/app"}
 
 
 def test_s3_storage():
@@ -73,3 +74,34 @@ def test_dictionaries_are_merged_over_the_defaults():
     assert s["HEADLESS"]["PAGE_SIZE"] == 50
     assert s["HEADLESS"]["AUTH_READ_ONLY_SECRET_KEY"] == "r"
     assert s["DJANGO_STACK"]["CONTENT_APPS"] == ["blog"]
+
+
+def test_s3_public_url():
+    s = run(
+        {
+            "S3_BUCKET": "media",
+            "S3_ENDPOINT_URL": "http://s3:8333",
+            "S3_PUBLIC_URL": "http://localhost:8333/media/",
+        }
+    )
+    options = s["STORAGES"]["default"]["OPTIONS"]
+    assert options["custom_domain"] == "localhost:8333/media"
+    assert options["url_protocol"] == "http:"
+    assert s["MEDIA_URL"] == "http://localhost:8333/media/"
+
+
+def test_deploy_checks_that_do_not_apply_are_silenced():
+    s = run({"SITE_URL": "https://example.com", "NUM_PROXIES": "1"})
+    assert {"security.W005", "security.W008", "security.W021"} <= set(s["SILENCED_SYSTEM_CHECKS"])
+    s = run({"SITE_URL": "https://example.com"})
+    assert "security.W008" not in s["SILENCED_SYSTEM_CHECKS"]
+    assert run({"SITE_URL": "http://localhost:3000"})["SILENCED_SYSTEM_CHECKS"] == []
+
+
+def test_backup_settings():
+    s = run({"BACKUP_S3_BUCKET": "backups", "S3_ACCESS_KEY_ID": "key", "BACKUP_KEEP": "7"})
+    stack = s["DJANGO_STACK"]
+    assert stack["BACKUP_S3_BUCKET"] == "backups"
+    assert stack["BACKUP_KEEP"] == 7
+    assert stack["BACKUP_S3"]["access_key"] == "key"
+    assert stack["BACKUP_DIR"] == "/srv/app/backups"
