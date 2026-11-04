@@ -56,7 +56,7 @@ importers:
   packages/utils: {}
 
   website:
-    dependencies:
+    devDependencies:
       '@docusaurus/core':
         specifier: 3.10.2
         version: 3.10.2(@mdx-js/react@3.1.1(@types/react@19.3.0)(react@19.3.1))(postcss@8.5.32)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@5.9.3)
