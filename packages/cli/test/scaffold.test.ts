@@ -148,4 +148,19 @@ describe("scaffold", () => {
       /not valid/,
     );
   });
+
+  it("sets the time zone of the backend", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true, timeZone: "Europe/Amsterdam" });
+    const settings = readFileSync(join(directory, "backend", "config", "settings.py"), "utf8");
+    expect(settings).toContain('TIME_ZONE = "Europe/Amsterdam"');
+  });
+
+  it("refuses an unknown time zone", () => {
+    const directory = join(tempDir(), "site");
+    expect(() =>
+      scaffold({ directory, name: "site", frontend: "astro", demoContent: true, timeZone: "Mars/Base" }),
+    ).toThrow(/not a time zone/);
+    expect(existsSync(directory)).toBe(false);
+  });
 });

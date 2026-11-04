@@ -33,6 +33,8 @@ export interface ScaffoldOptions {
   localS3?: boolean;
   /** A DjangoStack monorepo to take the packages from instead of the registries (for development). */
   link?: string;
+  /** The time zone of the backend, such as Europe/Amsterdam. UTC by default. */
+  timeZone?: string;
   /** Where the templates are; the ones in the package by default. */
   templatesDir?: string;
 }
@@ -105,6 +107,16 @@ function render(text: string, values: Record<string, string>): string {
   return text.replace(/\{\{([a-z_]+)\}\}/g, (match, key: string) => values[key] ?? match);
 }
 
+/** The IANA time zones Node knows, with UTC first. */
+export function timeZones(): string[] {
+  return ["UTC", ...Intl.supportedValuesOf("timeZone").filter((zone) => zone !== "UTC")];
+}
+
+export function validateTimeZone(value: string): string | undefined {
+  if (timeZones().includes(value)) return undefined;
+  return `${JSON.stringify(value)} is not a time zone. Use a name such as Europe/Amsterdam or UTC.`;
+}
+
 export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   const templates = options.templatesDir ?? defaultTemplatesDir();
   const target = options.directory;
@@ -115,6 +127,11 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   const nameError = validateProjectName(options.name);
   if (nameError)
     throw new Error(`The project name ${JSON.stringify(options.name)} is not valid. ${nameError}`);
+
+  if (options.timeZone) {
+    const zoneError = validateTimeZone(options.timeZone);
+    if (zoneError) throw new Error(zoneError);
+  }
 
   mkdirSync(target, { recursive: true });
   cpSync(join(templates, "base"), target, { recursive: true });
@@ -129,6 +146,15 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     const text = readFileSync(file, "utf8");
     const rendered = render(text, values);
     if (rendered !== text) writeFileSync(file, rendered);
+  }
+
+  if (options.timeZone && options.timeZone !== "UTC") {
+    const settings = join(target, "backend", "config", "settings.py");
+    const text = readFileSync(settings, "utf8");
+    writeFileSync(
+      settings,
+      text.replace('TIME_ZONE = "UTC"', `TIME_ZONE = ${JSON.stringify(options.timeZone)}`),
+    );
   }
 
   // .env with fresh secrets; .env.example with the names only.
