@@ -1,0 +1,54 @@
+[project]
+name = "django-stack"
+version = "0.0.1"
+description = "The backend glue of DjangoStack: settings from environment variables, API defaults, health checks and system checks."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Leon van der Grient", email = "leon@dwarsbit.nl" }]
+requires-python = ">=3.12"
+keywords = ["django", "headless", "cms", "jamstack", "django-headless", "django-content-studio"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Framework :: Django",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
+    "Framework :: Django :: 6.1",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = ["Django>=5.2,<7"]
+
+[project.urls]
+Homepage = "https://github.com/dwarsbit/django-stack"
+Source = "https://github.com/dwarsbit/django-stack/tree/main/python/django-stack"
+Issues = "https://github.com/dwarsbit/django-stack/issues"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-django>=4.11", "ruff>=0.15"]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/django_stack"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ", "S", "SIM"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]

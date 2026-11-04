@@ -1,0 +1,30 @@
+{
+  "name": "django-stack-monorepo",
+  "private": true,
+  "description": "DjangoStack: a ready-to-run Django + frontend stack, bootstrapped with one command.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm --filter \"./packages/*\" -r build",
+    "test": "pnpm --filter \"./packages/*\" -r test",
+    "typecheck": "pnpm --filter \"./packages/*\" -r typecheck",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "docs:build": "pnpm --filter django-stack-docs build",
+    "docs:start": "pnpm --filter django-stack-docs start",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@changesets/cli": "^3.0.3",
+    "@types/node": "^22.20.5",
+    "tsdown": "^0.23.5",
+    "typescript": "~5.9.3",
+    "vitest": "^5.1.0"
+  }
+}

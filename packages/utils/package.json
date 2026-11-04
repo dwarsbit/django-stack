@@ -1,0 +1,38 @@
+{
+  "name": "@django-stack/utils",
+  "version": "0.0.1",
+  "description": "Framework-agnostic helpers for DjangoStack frontends: the API client, content helpers, SEO, images and webhooks.",
+  "license": "MIT",
+  "author": "Leon van der Grient",
+  "homepage": "https://github.com/dwarsbit/django-stack/tree/main/packages/utils#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dwarsbit/django-stack.git",
+    "directory": "packages/utils"
+  },
+  "bugs": "https://github.com/dwarsbit/django-stack/issues",
+  "keywords": ["django", "django-stack", "headless-cms", "jamstack"],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

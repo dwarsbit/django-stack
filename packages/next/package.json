@@ -1,0 +1,46 @@
+{
+  "name": "@django-stack/next",
+  "version": "0.0.1",
+  "description": "Next.js glue for DjangoStack: revalidation and preview route handlers and a config helper.",
+  "license": "MIT",
+  "author": "Leon van der Grient",
+  "homepage": "https://github.com/dwarsbit/django-stack/tree/main/packages/next#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dwarsbit/django-stack.git",
+    "directory": "packages/next"
+  },
+  "bugs": "https://github.com/dwarsbit/django-stack/issues",
+  "keywords": ["django", "django-stack", "headless-cms", "jamstack"],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "next": ">=16",
+    "react": ">=19"
+  },
+  "dependencies": {
+    "@django-stack/react": "workspace:*",
+    "@django-stack/utils": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
