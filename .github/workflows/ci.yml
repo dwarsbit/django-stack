@@ -49,6 +49,9 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pytest
       - run: uv build
+      - name: Lint the backend template
+        working-directory: templates/backend
+        run: uv run --project ../../python/django-stack ruff check . && uv run --project ../../python/django-stack ruff format --check .
 
   docs:
     name: Docs
@@ -62,3 +65,22 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm docs:build
+
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: astral-sh/setup-uv@v7
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: scripts/e2e.sh "$RUNNER_TEMP"
+      - name: Logs
+        if: failure()
+        run: docker compose --project-directory "$RUNNER_TEMP/e2e-site" logs --tail 200

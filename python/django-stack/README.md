@@ -1,11 +1,27 @@
 # django-stack
 
-The backend glue of [DjangoStack](https://github.com/dwarsbit/django-stack):
-settings from environment variables, API defaults for Django Headless,
-health checks and system checks. Projects created with
-`npx @django-stack/cli init` depend on it.
+The backend glue of [DjangoStack](https://github.com/dwarsbit/django-stack).
+Projects created with `npx @django-stack/cli init` depend on it.
 
-This is an early release that reserves the package name.
+- `django_stack.settings.configure()` sets Django's settings from environment
+  variables: database, cache, task queue, mail, storage, security, and safe
+  defaults for Django Headless and Django Content Studio.
+- `PublishableModel`: draft and published content, with preview access.
+- API defaults: a closed API with a full-access and a read-only key, and
+  rate-limited public forms.
+- Preview tokens and signed revalidation requests to the frontend.
+- `/healthz` and `/readyz`, system checks, and the management commands
+  `create_admin`, `seed_content`, `export_content`, `import_content` and
+  `wait_for_db`.
+
+```python
+# config/settings.py
+from pathlib import Path
+
+from django_stack.settings import configure
+
+configure(globals(), base_dir=Path(__file__).resolve().parent.parent)
+```
 
 ## License
 

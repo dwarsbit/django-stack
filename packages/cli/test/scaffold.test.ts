@@ -1,0 +1,142 @@
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  normalizeDatabaseUrl,
+  parseEnv,
+  scaffold,
+  setEnvValues,
+  toProjectName,
+  validateProjectName,
+} from "../src";
+
+const dirs: string[] = [];
+function tempDir() {
+  const dir = mkdtempSync(join(tmpdir(), "django-stack-"));
+  dirs.push(dir);
+  return dir;
+}
+afterEach(() => {
+  for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
+
+describe("project names", () => {
+  it("derives a name from a directory", () => {
+    expect(toProjectName("My Site!")).toBe("my-site");
+    expect(toProjectName("--a__b--")).toBe("a-b");
+  });
+
+  it("validates names", () => {
+    expect(validateProjectName("my-site")).toBeUndefined();
+    expect(validateProjectName("1site")).toBeDefined();
+    expect(validateProjectName("My Site")).toBeDefined();
+  });
+});
+
+describe("normalizeDatabaseUrl", () => {
+  it("requires TLS for remote hosts", () => {
+    expect(normalizeDatabaseUrl("postgres://u:p@db.example.com:5432/app")).toBe(
+      "postgres://u:p@db.example.com:5432/app?sslmode=require",
+    );
+  });
+
+  it("keeps local hosts and an explicit sslmode", () => {
+    expect(normalizeDatabaseUrl("postgres://u:p@localhost/app")).toBe("postgres://u:p@localhost/app");
+    expect(normalizeDatabaseUrl("postgres://u:p@h/app?sslmode=verify-full")).toContain("sslmode=verify-full");
+  });
+
+  it("rejects other URLs", () => {
+    expect(() => normalizeDatabaseUrl("mysql://h/app")).toThrow();
+    expect(() => normalizeDatabaseUrl("nope")).toThrow();
+  });
+});
+
+describe("env files", () => {
+  it("parses and updates values", () => {
+    const text = "# comment\nA=1\nB='two words'\n";
+    expect(parseEnv(text)).toEqual({ A: "1", B: "two words" });
+    expect(setEnvValues(text, { A: "$1&", C: "3" })).toBe("# comment\nA=$1&\nB='two words'\nC=3\n");
+  });
+});
+
+describe("scaffold", () => {
+  it("creates a project with fresh secrets", () => {
+    const directory = join(tempDir(), "my-site");
+    const result = scaffold({ directory, name: "my-site", frontend: "astro", demoContent: true });
+
+    for (const file of [
+      "compose.yaml",
+      ".gitignore",
+      ".env",
+      ".env.example",
+      "backend/manage.py",
+      "backend/content/models.py",
+      "frontend/astro.config.mjs",
+      "frontend/src/pages/index.astro",
+    ]) {
+      expect(existsSync(join(directory, file)), file).toBe(true);
+    }
+    expect(existsSync(join(directory, "env.example"))).toBe(false);
+    expect(existsSync(join(directory, "gitignore"))).toBe(false);
+
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.PROJECT_NAME).toBe("my-site");
+    expect(env.DJANGO_SECRET_KEY?.length).toBeGreaterThan(50);
+    expect(env.API_SECRET_KEY).not.toBe(env.API_READ_KEY);
+    expect(env.DATABASE_URL).toBe(`postgres://app:${env.POSTGRES_PASSWORD}@db:5432/app`);
+    expect(env.ADMIN_PASSWORD).toBe(result.adminPassword);
+    expect(env.SEED_DEMO_CONTENT).toBe("1");
+    expect(env.COMPOSE_PROFILES).toBe("db");
+
+    const example = parseEnv(readFileSync(join(directory, ".env.example"), "utf8"));
+    expect(example.DJANGO_SECRET_KEY).toBe("");
+    expect(example.SITE_URL).toBe("http://localhost:3000");
+
+    const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
+    expect(compose).toContain("name: my-site");
+    expect(compose).not.toMatch(/\{\{[a-z_]+\}\}/);
+    expect(readFileSync(join(directory, "backend/pyproject.toml"), "utf8")).toContain(
+      'name = "my-site-backend"',
+    );
+  });
+
+  it("generates different secrets for each project", () => {
+    const root = tempDir();
+    scaffold({ directory: join(root, "a"), name: "a", frontend: "astro", demoContent: true });
+    scaffold({ directory: join(root, "b"), name: "b", frontend: "astro", demoContent: true });
+    const a = parseEnv(readFileSync(join(root, "a/.env"), "utf8"));
+    const b = parseEnv(readFileSync(join(root, "b/.env"), "utf8"));
+    expect(a.DJANGO_SECRET_KEY).not.toBe(b.DJANGO_SECRET_KEY);
+  });
+
+  it("uses an external database and no demo content", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({
+      directory,
+      name: "site",
+      frontend: "astro",
+      demoContent: false,
+      databaseUrl: "postgres://u:p@db.example.com/app",
+    });
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require");
+    expect(env.COMPOSE_PROFILES).toBe("");
+    expect(env.SEED_DEMO_CONTENT).toBe("0");
+  });
+
+  it("refuses a directory that is not empty", () => {
+    const directory = tempDir();
+    writeFileSync(join(directory, "file.txt"), "");
+    expect(() => scaffold({ directory, name: "site", frontend: "astro", demoContent: true })).toThrow(
+      /not empty/,
+    );
+  });
+
+  it("refuses an invalid name", () => {
+    const directory = join(tempDir(), "x");
+    expect(() => scaffold({ directory, name: "Bad Name", frontend: "astro", demoContent: true })).toThrow(
+      /not valid/,
+    );
+  });
+});

@@ -1,0 +1,20 @@
+{
+  "name": "{{project_name}}",
+  "private": true,
+  "description": "{{project_name}}: Django, Django Headless, Content Studio and Astro, created with DjangoStack.",
+  "scripts": {
+    "dev": "docker compose up --build",
+    "start": "docker compose up --build --detach",
+    "stop": "docker compose down",
+    "logs": "docker compose logs --follow",
+    "backend": "docker compose exec backend python manage.py",
+    "test": "docker compose exec backend pytest && docker compose exec frontend npm test",
+    "lint": "docker compose exec backend ruff check . && docker compose exec frontend npm run check",
+    "generate:types": "docker compose exec backend python manage.py generateschema --generator_class headless.rest.schema.SchemaGenerator --format openapi-json --file openapi.json && docker compose run --rm --no-deps -v ./backend/openapi.json:/schema.json:ro frontend npx headless generate --file /schema.json --out src/lib/headless.ts",
+    "doctor": "npx @django-stack/cli@{{cli_version}} doctor"
+  },
+  "django-stack": {
+    "version": "{{cli_version}}",
+    "frontend": "{{frontend}}"
+  }
+}

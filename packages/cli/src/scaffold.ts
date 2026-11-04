@@ -1,0 +1,198 @@
+import { execFileSync } from "node:child_process";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+import { setEnvValues } from "./env";
+import { generateProjectSecrets } from "./secrets";
+import { CLI_VERSION } from "./version";
+
+export const FRONTENDS = ["astro"] as const;
+export type Frontend = (typeof FRONTENDS)[number];
+
+export interface ScaffoldOptions {
+  /** The directory to create the project in. */
+  directory: string;
+  /** The project name: lowercase letters, digits and dashes. */
+  name: string;
+  frontend: Frontend;
+  /** Demo pages and posts on the first start. */
+  demoContent: boolean;
+  /** An external Postgres URL; the bundled Postgres when not set. */
+  databaseUrl?: string;
+  /** A DjangoStack monorepo to take the packages from instead of the registries (for development). */
+  link?: string;
+  /** Where the templates are; the ones in the package by default. */
+  templatesDir?: string;
+}
+
+export interface ScaffoldResult {
+  directory: string;
+  adminUsername: string;
+  adminPassword: string;
+  files: number;
+}
+
+const TEXT_EXTENSIONS =
+  /\.(py|ts|mjs|js|json|astro|css|md|yaml|yml|toml|txt|html|sh|svg)$|Dockerfile$|gitignore$|\.dockerignore$|env\.example$/;
+
+export function defaultTemplatesDir(): string {
+  return fileURLToPath(new URL("../templates", import.meta.url));
+}
+
+/** A valid project name from a directory name: `My Site` becomes `my-site`. */
+export function toProjectName(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 50);
+}
+
+export function validateProjectName(value: string): string | undefined {
+  if (!/^[a-z][a-z0-9-]{0,49}$/.test(value)) {
+    return "Use lowercase letters, digits and dashes, starting with a letter.";
+  }
+  return undefined;
+}
+
+/** Postgres URLs for hosts other than this machine must use TLS. */
+export function normalizeDatabaseUrl(url: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`The database URL is not a URL: ${url}`);
+  }
+  if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
+    throw new Error("The database URL must start with postgres:// or postgresql://.");
+  }
+  const local = ["localhost", "127.0.0.1", "host.docker.internal", "db"].includes(parsed.hostname);
+  if (!local && !parsed.searchParams.has("sslmode")) parsed.searchParams.set("sslmode", "require");
+  return parsed.toString();
+}
+
+function walk(directory: string): string[] {
+  return readdirSync(directory).flatMap((entry) => {
+    const path = join(directory, entry);
+    return statSync(path).isDirectory() ? walk(path) : [path];
+  });
+}
+
+function render(text: string, values: Record<string, string>): string {
+  return text.replace(/\{\{([a-z_]+)\}\}/g, (match, key: string) => values[key] ?? match);
+}
+
+export function scaffold(options: ScaffoldOptions): ScaffoldResult {
+  const templates = options.templatesDir ?? defaultTemplatesDir();
+  const target = options.directory;
+
+  if (existsSync(target) && readdirSync(target).length > 0) {
+    throw new Error(`${target} exists and is not empty. Choose another directory.`);
+  }
+  const nameError = validateProjectName(options.name);
+  if (nameError)
+    throw new Error(`The project name ${JSON.stringify(options.name)} is not valid. ${nameError}`);
+
+  mkdirSync(target, { recursive: true });
+  cpSync(join(templates, "base"), target, { recursive: true });
+  cpSync(join(templates, "backend"), join(target, "backend"), { recursive: true });
+  cpSync(join(templates, `frontend-${options.frontend}`), join(target, "frontend"), { recursive: true });
+  renameSync(join(target, "gitignore"), join(target, ".gitignore"));
+
+  const values = { project_name: options.name, frontend: options.frontend, cli_version: CLI_VERSION };
+  const files = walk(target);
+  for (const file of files) {
+    if (!TEXT_EXTENSIONS.test(file)) continue;
+    const text = readFileSync(file, "utf8");
+    const rendered = render(text, values);
+    if (rendered !== text) writeFileSync(file, rendered);
+  }
+
+  // .env with fresh secrets; .env.example with the names only.
+  const template = readFileSync(join(target, "env.example"), "utf8");
+  const secrets = generateProjectSecrets();
+  let env = template.replace(/\{\{secret:([a-z_]+)\}\}/g, (match, key: string) => secrets[key] ?? match);
+  const envExample = template.replace(/\{\{secret:[a-z_]+\}\}/g, "");
+  if (options.databaseUrl) {
+    env = setEnvValues(env, {
+      DATABASE_URL: normalizeDatabaseUrl(options.databaseUrl),
+      COMPOSE_PROFILES: "",
+    });
+  }
+  if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });
+  writeFileSync(join(target, ".env"), env, { mode: 0o600 });
+  writeFileSync(join(target, ".env.example"), envExample);
+  rmSync(join(target, "env.example"));
+
+  if (options.link) linkPackages(target, options.link);
+
+  return {
+    directory: target,
+    adminUsername: "admin",
+    adminPassword: secrets.admin ?? "",
+    files: walk(target).length,
+  };
+}
+
+/**
+ * Development only: build django-stack and @django-stack/utils from a
+ * monorepo checkout into the project's vendor/ directories and point the
+ * dependencies at them, so a project can run before a release.
+ */
+export function linkPackages(target: string, monorepo: string) {
+  const backendVendor = join(target, "backend", "vendor");
+  const frontendVendor = join(target, "frontend", "vendor");
+  mkdirSync(backendVendor, { recursive: true });
+  mkdirSync(frontendVendor, { recursive: true });
+
+  execFileSync("uv", ["build", "--wheel", "--out-dir", backendVendor], {
+    cwd: join(monorepo, "python", "django-stack"),
+    stdio: "ignore",
+  });
+  // uv writes a .gitignore that ignores everything in the output directory.
+  rmSync(join(backendVendor, ".gitignore"), { force: true });
+  const wheel = readdirSync(backendVendor).find((file) => file.endsWith(".whl"));
+  if (!wheel) throw new Error("Building the django-stack wheel failed.");
+  const pyproject = join(target, "backend", "pyproject.toml");
+  writeFileSync(
+    pyproject,
+    `${readFileSync(pyproject, "utf8").trimEnd()}\n\n[tool.uv.sources]\ndjango-stack = { path = "vendor/${wheel}" }\n`,
+  );
+
+  execFileSync("pnpm", ["--filter", "@django-stack/utils", "build"], { cwd: monorepo, stdio: "ignore" });
+  execFileSync("pnpm", ["pack", "--pack-destination", frontendVendor], {
+    cwd: join(monorepo, "packages", "utils"),
+    stdio: "ignore",
+  });
+  const tarball = readdirSync(frontendVendor).find((file) => file.endsWith(".tgz"));
+  if (!tarball) throw new Error("Packing @django-stack/utils failed.");
+  const packageJson = join(target, "frontend", "package.json");
+  const manifest = JSON.parse(readFileSync(packageJson, "utf8"));
+  manifest.dependencies["@django-stack/utils"] = `file:vendor/${tarball}`;
+  writeFileSync(packageJson, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+/** Locks the backend's dependencies with uv, when uv is installed. */
+export function lockBackend(target: string): boolean {
+  try {
+    execFileSync("uv", ["lock", "--quiet"], { cwd: join(target, "backend"), stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function relativeDirectory(directory: string): string {
+  const path = relative(process.cwd(), directory) || ".";
+  return path.startsWith("..") ? directory : path;
+}

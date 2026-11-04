@@ -1,0 +1,28 @@
+---
+import Blocks from "../components/Blocks.astro";
+import PostList from "../components/PostList.astro";
+import Base from "../layouts/Base.astro";
+import { getContent } from "../lib/api";
+
+const content = getContent(Astro.cookies);
+const settings = await content.getSiteSettings();
+const home = await content.getHomePage(settings);
+const posts = home ? null : await content.getPosts({ limit: 9 });
+---
+
+<Base page={home}>
+  {
+    home ? (
+      <article class="narrow">
+        <h1>{home.title}</h1>
+        <Blocks blocks={home.body} />
+      </article>
+    ) : (
+      <section class="container">
+        <h1>{settings?.site_name ?? "Latest posts"}</h1>
+        {settings?.tagline && <p class="muted">{settings.tagline}</p>}
+        {posts && <PostList result={posts} base="/" />}
+      </section>
+    )
+  }
+</Base>

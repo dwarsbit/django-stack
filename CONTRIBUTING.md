@@ -34,7 +34,10 @@ the first `0.0.1` of each npm package is published by hand:
    ```bash
    pnpm install --frozen-lockfile
    pnpm build
-   pnpm -r --filter "./packages/*" publish --access public --no-provenance
+   # Provenance only works in CI, and publishConfig would force it.
+   pnpm -r --filter "./packages/*" exec npm pkg delete publishConfig.provenance
+   pnpm -r --filter "./packages/*" publish --access public --no-git-checks
+   git checkout -- packages/*/package.json
    ```
 
 3. On npmjs.com, add `dwarsbit/django-stack` with the workflow

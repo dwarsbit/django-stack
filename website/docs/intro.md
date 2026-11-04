@@ -20,8 +20,11 @@ Django Headless and Django Content Studio.
 
 ## Status
 
-DjangoStack is in early development. The packages are published as `0.0.x`
-to reserve their names; the `init` command is not released yet.
+DjangoStack is in early development. Version 0.1 creates projects with the
+Astro frontend and runs them with Docker Compose. Production deployment,
+the Next.js frontend and the optional services follow in later releases.
+
+Start with [Getting started](./getting-started.md).
 
 ## Packages
 

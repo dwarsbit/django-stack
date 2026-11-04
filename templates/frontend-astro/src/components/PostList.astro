@@ -1,0 +1,39 @@
+---
+import type { Paginated, Post } from "@django-stack/utils";
+import PostCard from "./PostCard.astro";
+
+interface Props {
+  result: Paginated<Post>;
+  /** The URL of the list, without the page parameter. */
+  base: string;
+}
+
+const { result, base } = Astro.props;
+const { current, pages } = result.pagination;
+const pageUrl = (page: number) => (page === 1 ? base : `${base}?page=${page}`);
+---
+
+{result.data.length === 0 && <p class="muted">No posts yet.</p>}
+<div class="grid">
+  {result.data.map((post) => <PostCard post={post} />)}
+</div>
+{
+  pages > 1 && (
+    <nav class="pagination" aria-label="Pages">
+      {current > 1 && <a href={pageUrl(current - 1)}>← Newer</a>}
+      <span class="muted">
+        Page {current} of {pages}
+      </span>
+      {current < pages && <a href={pageUrl(current + 1)}>Older →</a>}
+    </nav>
+  )
+}
+
+<style>
+  .pagination {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin: 3rem 0;
+  }
+</style>

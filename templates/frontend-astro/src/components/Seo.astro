@@ -1,0 +1,20 @@
+---
+import { seo, type SeoInput } from "@django-stack/utils";
+import type { SiteSettings } from "@django-stack/utils";
+import { SITE_URL } from "../lib/api";
+
+interface Props {
+  page?: SeoInput | null;
+  settings: SiteSettings | null;
+  type?: "website" | "article";
+}
+
+const { page, settings, type } = Astro.props;
+const meta = seo({ page, settings, siteUrl: SITE_URL, path: Astro.url.pathname, type });
+---
+
+<title>{meta.title}</title>
+{meta.description && <meta name="description" content={meta.description} />}
+<link rel="canonical" href={meta.canonical} />
+{Object.entries(meta.openGraph).map(([property, content]) => <meta property={property} content={content} />)}
+{Object.entries(meta.twitter).map(([name, content]) => <meta name={name} content={content} />)}

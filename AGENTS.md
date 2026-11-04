@@ -15,8 +15,10 @@ Postgres and Valkey. It is not a CMS of its own.
 - `templates/`: the files `init` copies into a new project. Placeholders
   are `{{project_name}}` style and rendered by the CLI. Templates must stay
   runnable from the repository.
-- `examples/`: projects generated from the templates for the end-to-end
-  tests. Regenerate them with the CLI; do not edit them by hand.
+- `scripts/e2e.sh`: the end-to-end test. It creates a project with the CLI
+  from this checkout (`init --link`, which builds the local packages into
+  the project's `vendor/` directories), starts it with Docker Compose, runs
+  the template tests in the containers and smoke-tests the site.
 - `website/`: the Docusaurus docs.
 
 ## Commands
@@ -33,6 +35,8 @@ cd python/django-stack
 uv sync
 uv run pytest
 uv run ruff check . && uv run ruff format --check .
+
+scripts/e2e.sh   # after pnpm build; needs Docker and uv
 ```
 
 ## Rules

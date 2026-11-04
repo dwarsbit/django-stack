@@ -10,8 +10,10 @@ development and production.
 npx @django-stack/cli init my-site
 ```
 
-DjangoStack is in early development: the packages are published as `0.0.x`
-to reserve their names, and the `init` command is not released yet.
+DjangoStack is in early development. Version 0.1 creates projects with the
+Astro frontend for development with Docker Compose; production deployment
+and the Next.js frontend follow. Read the
+[getting started guide](website/docs/getting-started.md).
 
 ## This repository
 
@@ -23,7 +25,7 @@ to reserve their names, and the `init` command is not released yet.
 | `packages/next` | `@django-stack/next`: Next.js glue |
 | `python/django-stack` | `django-stack` on PyPI: settings, API defaults, health checks, system checks |
 | `templates/` | The files `init` copies into a new project |
-| `examples/` | Projects generated from the templates, used by the end-to-end tests |
+| `scripts/e2e.sh` | The end-to-end test: creates a project with the CLI and runs it with Docker Compose |
 | `website/` | The documentation site (Docusaurus) |
 
 ## Development

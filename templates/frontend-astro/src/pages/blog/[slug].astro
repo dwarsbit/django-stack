@@ -1,0 +1,50 @@
+---
+import type { Author, Taxonomy } from "@django-stack/utils";
+import Blocks from "../../components/Blocks.astro";
+import Image from "../../components/Image.astro";
+import Base from "../../layouts/Base.astro";
+import { getContent } from "../../lib/api";
+
+const post = await getContent(Astro.cookies).getPost(Astro.params.slug ?? "");
+
+if (!post) {
+  return Astro.rewrite("/404");
+}
+
+const author = typeof post.author === "object" ? (post.author as Author | null) : null;
+const categories = post.categories.filter((item): item is Taxonomy => typeof item === "object");
+const tags = post.tags.filter((item): item is Taxonomy => typeof item === "object");
+const date = post.published_at ? new Date(post.published_at) : null;
+---
+
+<Base page={post} type="article">
+  <article class="narrow">
+    <p class="muted">
+      {date && <time datetime={date.toISOString()}>{date.toLocaleDateString("en", { dateStyle: "long" })}</time>}
+      {author && <span> · {author.name}</span>}
+      {categories.map((category) => <span> · <a href={`/category/${category.slug}`}>{category.name}</a></span>)}
+    </p>
+    <h1>{post.title}</h1>
+    <Image media={post.cover} size="content" sizes="(min-width: 48rem) 44rem, 100vw" class="cover" eager />
+    <Blocks blocks={post.body} />
+    {
+      tags.length > 0 && (
+        <p class="tags">
+          {tags.map((tag) => <a href={`/tag/${tag.slug}`}>#{tag.name}</a>)}
+        </p>
+      )
+    }
+  </article>
+</Base>
+
+<style>
+  article :global(.cover) {
+    width: 100%;
+    border-radius: 0.75rem;
+  }
+  .tags {
+    display: flex;
+    gap: 1rem;
+    margin-top: 3rem;
+  }
+</style>

@@ -1,0 +1,32 @@
+---
+/**
+ * Renders a Content Studio block field. To add a block type: define it in
+ * backend/content/blocks.py, add a component in ./blocks and map its type
+ * here. Unknown types render nothing.
+ */
+import type { Block } from "@django-stack/utils";
+import CallToAction from "./blocks/CallToAction.astro";
+import Image from "./blocks/Image.astro";
+import Quote from "./blocks/Quote.astro";
+import Text from "./blocks/Text.astro";
+
+const registry: Record<string, (props: { block: Block }) => unknown> = {
+  text: Text,
+  image: Image,
+  quote: Quote,
+  call_to_action: CallToAction,
+};
+
+interface Props {
+  blocks: Block[] | null | undefined;
+}
+
+const { blocks = [] } = Astro.props;
+---
+
+{
+  (blocks ?? []).map((block) => {
+    const Component = registry[block.type];
+    return Component ? <Component block={block} /> : null;
+  })
+}
