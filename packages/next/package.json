@@ -1,6 +1,6 @@
 {
   "name": "@django-stack/next",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Next.js glue for DjangoStack: revalidation and preview route handlers and a config helper.",
   "license": "MIT",
   "author": "Leon van der Grient",
