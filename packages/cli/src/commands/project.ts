@@ -226,7 +226,7 @@ export function checkSteps(project: Project, tests: boolean): Step[] {
       args: ["python", "manage.py", "makemigrations", "--check", "--dry-run"],
     },
     { name: "Ruff", service: "backend", args: ["ruff", "check", "."], devOnly: true },
-    { name: "Astro check", service: "frontend", args: ["npm", "run", "--silent", "check"], devOnly: true },
+    { name: "Frontend check", service: "frontend", args: ["npm", "run", "--silent", "check"], devOnly: true },
   ];
   if (tests) {
     steps.push(

@@ -67,12 +67,15 @@ jobs:
       - run: pnpm docs:build
 
   e2e:
-    name: End-to-end (${{ matrix.profile }})
+    name: End-to-end (${{ matrix.frontend }}, ${{ matrix.profile }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
+        # Every frontend passes the same tests, on every change.
+        frontend: [astro]
+        profile: [dev, prod]
         include:
           # Development with the local S3 service.
           - profile: dev
@@ -96,6 +99,7 @@ jobs:
         run: echo "127.0.0.1 site.localhost" | sudo tee -a /etc/hosts
       - run: ${{ matrix.script }} "$RUNNER_TEMP"
         env:
+          FRONTEND: ${{ matrix.frontend }}
           LOCAL_S3: ${{ matrix.profile == 'dev' && '1' || '' }}
       - name: Logs
         if: failure()

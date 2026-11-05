@@ -14,10 +14,16 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setEnvValues } from "./env";
 import { generateProjectSecrets } from "./secrets";
+import { type Stack, stackOption } from "./stack";
 import { CLI_VERSION } from "./version";
 
-export const FRONTENDS = ["astro"] as const;
-export type Frontend = (typeof FRONTENDS)[number];
+/** A frontend option; its template is `templates/frontend-<name>`. */
+export type Frontend = Stack["frontend"];
+
+/** The frontends this version of the CLI generates. */
+export const FRONTENDS: readonly Frontend[] = stackOption("frontend")
+  .values.filter((value) => value.generated)
+  .map((value) => value.value as Frontend);
 
 export interface ScaffoldOptions {
   /** The directory to create the project in. */
@@ -60,7 +66,7 @@ export const LOCAL_S3: Record<string, string> = {
 };
 
 const TEXT_EXTENSIONS =
-  /\.(py|ts|mjs|js|json|astro|css|md|yaml|yml|toml|txt|html|sh|svg)$|Dockerfile$|gitignore$|\.dockerignore$|env\.example$/;
+  /\.(py|ts|tsx|mjs|js|jsx|json|astro|vue|svelte|css|md|yaml|yml|toml|txt|html|sh|svg)$|Dockerfile$|gitignore$|\.dockerignore$|env\.example$/;
 
 export function defaultTemplatesDir(): string {
   return fileURLToPath(new URL("../templates", import.meta.url));
@@ -135,10 +141,15 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     if (zoneError) throw new Error(zoneError);
   }
 
+  const frontendTemplate = join(templates, `frontend-${options.frontend}`);
+  if (!existsSync(frontendTemplate)) {
+    throw new Error(`This version of the CLI has no ${options.frontend} frontend.`);
+  }
+
   mkdirSync(target, { recursive: true });
   cpSync(join(templates, "base"), target, { recursive: true });
   cpSync(join(templates, "backend"), join(target, "backend"), { recursive: true });
-  cpSync(join(templates, `frontend-${options.frontend}`), join(target, "frontend"), { recursive: true });
+  cpSync(frontendTemplate, join(target, "frontend"), { recursive: true });
   renameSync(join(target, "gitignore"), join(target, ".gitignore"));
 
   const values = {
@@ -196,7 +207,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
 }
 
 /**
- * Development only: build django-stack and @django-stack/utils from a
+ * Development only: build django-stack and the @django-stack packages from a
  * monorepo checkout into the project's vendor/ directories and point the
  * dependencies at them, so a project can run before a release.
  */
@@ -220,16 +231,21 @@ export function linkPackages(target: string, monorepo: string) {
     `${readFileSync(pyproject, "utf8").trimEnd()}\n\n[tool.uv.sources]\ndjango-stack = { path = "vendor/${wheel}" }\n`,
   );
 
-  execFileSync("pnpm", ["--filter", "@django-stack/utils", "build"], { cwd: monorepo, stdio: "ignore" });
-  execFileSync("pnpm", ["pack", "--pack-destination", frontendVendor], {
-    cwd: join(monorepo, "packages", "utils"),
-    stdio: "ignore",
-  });
-  const tarball = readdirSync(frontendVendor).find((file) => file.endsWith(".tgz"));
-  if (!tarball) throw new Error("Packing @django-stack/utils failed.");
+  // Every @django-stack package the frontend depends on, such as utils and svelte.
   const packageJson = join(target, "frontend", "package.json");
   const manifest = JSON.parse(readFileSync(packageJson, "utf8"));
-  manifest.dependencies["@django-stack/utils"] = `file:vendor/${tarball}`;
+  const packages = Object.keys(manifest.dependencies ?? {}).filter((name) =>
+    name.startsWith("@django-stack/"),
+  );
+  for (const name of packages) {
+    const directory = join(monorepo, "packages", name.slice("@django-stack/".length));
+    execFileSync("pnpm", ["--filter", name, "build"], { cwd: monorepo, stdio: "ignore" });
+    const before = new Set(readdirSync(frontendVendor));
+    execFileSync("pnpm", ["pack", "--pack-destination", frontendVendor], { cwd: directory, stdio: "ignore" });
+    const tarball = readdirSync(frontendVendor).find((file) => file.endsWith(".tgz") && !before.has(file));
+    if (!tarball) throw new Error(`Packing ${name} failed.`);
+    manifest.dependencies[name] = `file:vendor/${tarball}`;
+  }
   writeFileSync(packageJson, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 

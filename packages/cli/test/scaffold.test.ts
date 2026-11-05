@@ -142,6 +142,15 @@ describe("scaffold", () => {
     );
   });
 
+  it("refuses a frontend without a template", () => {
+    const directory = join(tempDir(), "site");
+    const templatesDir = tempDir();
+    expect(() =>
+      scaffold({ directory, name: "site", frontend: "astro", demoContent: true, templatesDir }),
+    ).toThrow(/has no astro frontend/);
+    expect(existsSync(directory)).toBe(false);
+  });
+
   it("refuses an invalid name", () => {
     const directory = join(tempDir(), "x");
     expect(() => scaffold({ directory, name: "Bad Name", frontend: "astro", demoContent: true })).toThrow(

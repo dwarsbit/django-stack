@@ -78,7 +78,7 @@ the defaults it does not generate yet when it is done.
 
 | Option | Values |
 |--------|--------|
-| `--frontend` | `astro`, `next` (later), `headless` (later, just the API and the admin), `templates` (later, Django templates) |
+| `--frontend` | `astro`, `next` (later), `headless` (later, just the API and the admin), `templates` (later, Django templates), `nuxt` (later), `sveltekit` (later) |
 | `--postgres` | `stable` (Postgres 17), `latest` (Postgres 18, later). Ignored with `--database-url`. |
 | `--analytics` | `umami` (later, built in), `off` |
 | `--tasks` | `huey`, `off` (later) |
@@ -172,7 +172,7 @@ Runs the doctor's checks (see [`doctor`](#doctor)), then in the containers:
 - Django's system checks, or the deploy checks with `--fail-level WARNING`
   in the prod profile.
 - That the migrations are up to date (`makemigrations --check`).
-- Ruff on the backend and `astro check` on the frontend, in development.
+- Ruff on the backend and the frontend's type checks (`npm run check`), in development.
 - With `--tests`, the backend's and the frontend's tests, in development.
 
 It prints the output of each check that fails and exits with status 1.

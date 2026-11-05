@@ -6,6 +6,8 @@
 #   pnpm build && scripts/e2e.sh [directory]
 #
 # With LOCAL_S3=1 the project stores media in the local S3 service.
+# FRONTEND picks the frontend (astro by default); every frontend must pass
+# the same tests.
 # Needs Docker, uv and pnpm. Leaves the project running with KEEP=1.
 set -euo pipefail
 
@@ -23,7 +25,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-node "$cli" init "$project" --yes --no-git --link "$repo" ${LOCAL_S3:+--storage s3}
+node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND:-astro}" ${LOCAL_S3:+--storage s3}
 cd "$project"
 
 docker compose build
@@ -85,7 +87,7 @@ echo "Running the template tests"
 docker compose exec -T backend python manage.py check --fail-level WARNING
 docker compose exec -T backend python manage.py makemigrations --check --dry-run
 docker compose exec -T backend pytest -q
-docker compose exec -T frontend npx astro check
+docker compose exec -T frontend npm run check
 docker compose exec -T frontend npm test
 
 node "$cli" doctor .

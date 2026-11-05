@@ -10,7 +10,7 @@
 
 ## Releases
 
-The four npm packages and `django-stack` on PyPI share one version. The
+The npm packages and `django-stack` on PyPI share one version. The
 next one is the `## X.Y.Z (unreleased)` heading in `CHANGELOG.md`.
 
 To release it, run the **Release** workflow from `main` (Actions, Release,
@@ -30,6 +30,32 @@ DjangoStack is glue. A feature of the content API belongs in
 [Django Headless](https://github.com/dwarsbit/django-headless), and a
 feature of the admin in
 [Django Content Studio](https://github.com/dwarsbit/django-content-studio).
+
+## Frontends
+
+`init --frontend <name>` copies `templates/frontend-<name>` to the
+project's `frontend/` directory. Every frontend template builds the same
+site on the same contract, so `compose.yaml`, the Caddyfile, the backend
+and the docs work with any of them:
+
+| Area | What the template does |
+|------|------------------------|
+| Pages | The home page, the blog with posts, categories and tags, pages by path from Django Headless, redirects and a 404 page, with blocks, rich text, images and SEO tags. |
+| Forms | The contact form, posted to `/api/content.formsubmission`. |
+| Preview | `/preview` checks the signed token and stores it in the HTTP-only `stack_preview` cookie; `/preview/exit` removes it. |
+| Revalidation | `POST /revalidate` verifies the signed webhook and empties the page cache (`CACHE_TTL`). |
+| Feeds | `/robots.txt`, `/sitemap.xml` and `/rss.xml`. |
+| Security | `API_READ_KEY` is used on the server only and never reaches the browser. Every page has a Content-Security-Policy that allows the media origins in `MEDIA_ORIGINS`. |
+| Development | The dev server listens on port 3000, allows the host `frontend` and proxies `/admin`, `/api`, `/media` and `/static` to `BACKEND_INTERNAL_URL`. |
+| Production | The Dockerfile has `dev` and `prod` targets. `prod` runs a Node server on port 3000 as the `node` user in a read-only container, with a healthcheck on `/robots.txt`. |
+| Scripts | `dev`, `build`, `start`, `check` (type checks, run by `dstack check`), `test` and `generate:types` (run by `dstack types`). |
+
+Shared logic goes in `@django-stack/utils`, which has no framework
+dependency. `scripts/e2e.sh` and `scripts/e2e-prod.sh` test a frontend
+with `FRONTEND=<name>`, and CI runs them for every frontend in the `e2e`
+job's `frontend` list. A new frontend is a value appended to the frontend
+option in `packages/cli/src/stack.ts`, marked `generated: true` once its
+template passes these tests.
 
 ## Deploy providers
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applies,
   DEFAULT_STACK,
   decodePreset,
   encodePreset,
@@ -42,6 +43,8 @@ describe("presets", () => {
     expect(encodePreset({ ...DEFAULT_STACK, frontend: "next" })).toBe("a1");
     expect(encodePreset({ ...DEFAULT_STACK, cache: "valkey", packageManager: "bun" })).toBe("a000010002");
     expect(decodePreset("a2010")).toMatchObject({ frontend: "headless", analytics: "off" });
+    expect(encodePreset({ ...DEFAULT_STACK, frontend: "nuxt" })).toBe("a4");
+    expect(encodePreset({ ...DEFAULT_STACK, frontend: "sveltekit" })).toBe("a5");
   });
 
   it("reads missing characters as defaults", () => {
@@ -77,5 +80,10 @@ describe("pendingChoices", () => {
   it("skips the package manager without a Node frontend", () => {
     const pending = pendingChoices({ ...DEFAULT_STACK, frontend: "headless" });
     expect(pending.map((item) => item.key)).not.toContain("packageManager");
+  });
+
+  it("asks for the package manager with every Node frontend", () => {
+    for (const frontend of ["astro", "next", "nuxt", "sveltekit"] as const)
+      expect(applies("packageManager", { frontend })).toBe(true);
   });
 });

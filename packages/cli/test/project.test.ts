@@ -146,7 +146,7 @@ describe("applyStack", () => {
 describe("checkSteps", () => {
   it("runs the linters in development and the deploy checks in production", () => {
     const dev = checkSteps(readProject(project()), false).map((step) => step.name);
-    expect(dev).toEqual(["Django system checks", "Migrations are up to date", "Ruff", "Astro check"]);
+    expect(dev).toEqual(["Django system checks", "Migrations are up to date", "Ruff", "Frontend check"]);
     expect(checkSteps(readProject(project()), true)).toHaveLength(6);
     const prod = checkSteps(readProject(project("COMPOSE_PROFILES=prod,db\n")), true);
     expect(prod.map((step) => step.name)).toEqual(["Django deploy checks", "Migrations are up to date"]);
