@@ -227,9 +227,15 @@ only by you. See [Deploy to a server](./production/server.md).
 
 ## `deploy`
 
-Puts the project on a hosting platform, deploys it and shows its status.
-Coolify is the supported platform. The platform builds the project on its
-server from the git repository, so push your commits before you deploy.
+Puts the project on a hosting platform or a server, deploys it and shows
+its status. There are two providers:
+
+- **Coolify** (`--provider coolify`, the default) builds the project on its
+  server from the git repository, so push your commits before you deploy.
+  See [Coolify and Dokploy](./production/platforms.md).
+- **A server over SSH** (`--provider ssh`) gets your last commit uploaded
+  and runs `docker compose up` there, so commit before you deploy. See
+  [Deploy to a server](./production/server.md#deploy-with-the-cli).
 
 ```bash
 dstack production --domain example.com
@@ -243,38 +249,45 @@ dstack deploy
 | `dstack deploy` | Starts a deploy and follows it until it ends; on a failure it prints the end of the build log. `--force` rebuilds without the cache, `--no-wait` returns once the deploy started. `dstack deploy start` is the same command. |
 | `dstack deploy status` | Shows whether the site runs, its domain, and the last deploys. `--watch` follows a running deploy, `-n <count>` lists more deploys. |
 | `dstack deploy logs [deployment]` | Prints the build log of a deploy, the latest by default. |
+| `dstack deploy rollback [deployment]` | Starts an earlier release again: the one before the running one, or the deploy you name. Servers over SSH only. `--no-wait` returns once it started. |
 | `dstack deploy env push` | Replaces the platform's variables with `.env.production`. |
-| `dstack deploy login` | Checks an API key and saves it. `setup` asks for one when there is none. |
+| `dstack deploy login` | Checks an API key and saves it. `setup` asks for one when there is none. Not used for servers over SSH. |
 | `dstack deploy logout` | Removes a saved API key. |
 
-`dstack deploy` refuses when your last commit is not on the branch the
-platform deploys, since the deploy would not include it. Push it, or pass
-`--no-push-check`.
+`dstack deploy` refuses when the deploy would not include your work: for
+Coolify, when your last commit is not on the branch it deploys (push it);
+for a server over SSH, when you have uncommitted changes (commit them).
+`--no-push-check` deploys anyway.
 
 ### `deploy setup`
 
 | Option | Description |
 |--------|-------------|
-| `--url <url>` | The platform's address, such as `https://coolify.example.com`. |
+| `--provider <provider>` | `coolify` or `ssh`. Asked for when it is not given; with `--yes`, `coolify`. |
+| `--url <url>` | The platform's address, such as `https://coolify.example.com`, or the server, such as `deploy@example.com` or `deploy@example.com:2222`. |
 | `--repository <url>` | The git repository the platform builds. Default: the `origin` remote, as an `https` URL. |
 | `--branch <branch>` | The branch to deploy. Default: the current branch. |
 | `--server <server>` | The Coolify server, by name or uuid. Asked for when there are several. |
 | `--project <project>` | The Coolify project, by name or uuid. Default: a new project named after the project. |
 | `--environment <name>` | The Coolify environment. Default: `production`, created when it does not exist. |
 | `--github-app <app>` | The Coolify GitHub App that reads a private repository, or `public`. Asked for when Coolify has GitHub Apps. |
+| `--path <path>` | The project directory on a server over SSH. Default: `/srv/<project>`. |
 | `--deploy`, `--no-deploy` | Deploy when done, or don't ask. |
 | `--force` | Set up again, replacing `.dstack/deploy.json`. |
 | `-y`, `--yes` | Don't ask; use the flags and the defaults. |
 
 It reads the variables and the domain from `.env.production`, so run
-[`production`](#production) first. It adds the variables that put Caddy
-behind the platform's proxy (see
+[`production`](#production) first. For Coolify, it adds the variables that
+put Caddy behind the platform's proxy (see
 [Coolify and Dokploy](./production/platforms.md)), creates the application
 with the Docker Compose build pack and `/compose.yaml`, and gives the
-`proxy` service the domain.
+`proxy` service the domain. For a server over SSH, it checks Docker and
+the Compose plugin, creates the project directory and uploads the
+variables as `shared/.env`.
 
 It then writes `.dstack/deploy.json`: the platform's address and the ids of
-the project, environment and application. The file holds no secrets; commit
+the project, environment and application, or the server, its directory
+and the Compose project name. The file holds no secrets; commit
 it, so everyone who works on the project deploys to the same place. After
 setup, the platform keeps the variables: change them there, or change
 `.env.production` and run `dstack deploy env push`.

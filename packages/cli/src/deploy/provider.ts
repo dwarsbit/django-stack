@@ -85,12 +85,17 @@ export interface ProviderClient {
   /** Creates the application on the platform and gives it the variables. */
   setup(context: SetupContext): Promise<Omit<DeployLink, "provider" | "url">>;
   pushEnv(link: DeployLink, env: Record<string, string>): Promise<void>;
-  /** Starts a deploy; returns its id. */
-  deploy(link: DeployLink, options: { force: boolean }): Promise<string>;
+  /** Starts a deploy of the project in `directory`; returns its id. */
+  deploy(link: DeployLink, options: { force: boolean; directory: string }): Promise<string>;
   deployment(link: DeployLink, id: string): Promise<Deployment>;
   /** The newest deployments first. */
   deployments(link: DeployLink, limit: number): Promise<Deployment[]>;
   status(link: DeployLink): Promise<AppStatus>;
+  /**
+   * Runs an earlier deploy again (`to`, or the one before the running one);
+   * returns the new deploy's id. Only providers that keep releases have it.
+   */
+  rollback?(link: DeployLink, to?: string): Promise<string>;
 }
 
 export interface ProviderFlag {

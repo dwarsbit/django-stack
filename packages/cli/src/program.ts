@@ -8,6 +8,7 @@ import {
   deployLogin,
   deployLogout,
   deployLogs,
+  deployRollback,
   deploySetup,
   deployStatus,
 } from "./commands/deploy";
@@ -202,7 +203,7 @@ export function createProgram(): Command {
 
   const deployCommand = program
     .command("deploy")
-    .description("Deploy to a platform such as Coolify, and show the status");
+    .description("Deploy to Coolify or to a server over SSH, and show the status");
 
   deployCommand
     .command("start", { isDefault: true })
@@ -219,7 +220,10 @@ export function createProgram(): Command {
     .description("Create the project on the platform and link it to this directory")
     .addOption(dirOption())
     .addOption(providerOption())
-    .option("--url <url>", "The platform's address, such as https://coolify.example.com")
+    .option(
+      "--url <url>",
+      "The platform's address, such as https://coolify.example.com, or the server, such as deploy@example.com",
+    )
     .option("--repository <url>", "The git repository the platform builds (default: the origin remote)")
     .option("--branch <branch>", "The branch to deploy (default: the current one)")
     .option("--deploy", "Deploy when done")
@@ -249,6 +253,18 @@ export function createProgram(): Command {
     .argument("[deployment]", "A deploy id from `dstack deploy status` (default: the latest)")
     .addOption(dirOption())
     .action(deployLogs);
+
+  deployCommand
+    .command("rollback")
+    .description("Run an earlier release again (servers over SSH)")
+    .argument(
+      "[deployment]",
+      "A deploy id from `dstack deploy status` (default: the one before the running one)",
+    )
+    .addOption(dirOption())
+    .option("--no-wait", "Don't follow the rollback; return once it started")
+    .option("-y, --yes", "Don't ask")
+    .action(deployRollback);
 
   deployCommand
     .command("env")

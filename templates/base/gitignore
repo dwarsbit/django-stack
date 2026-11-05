@@ -1,4 +1,5 @@
 .env
+.env.production
 .env.run
 node_modules/
 backend/.venv/
