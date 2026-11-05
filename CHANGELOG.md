@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 PyPI. Add your change under the unreleased version; the release workflow
 releases it.
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-11-05)
 
 - **Media backups.** When uploads are on the server's disk, the daily
   backup also archives the `media` volume (`<name>.media.tar.gz`, next to
