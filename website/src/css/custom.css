@@ -239,3 +239,123 @@ html {
 .theme-doc-markdown code {
   border-radius: 4px;
 }
+
+/* Logo banners: what a project is built with, its frontends and where it
+   deploys. Each group is a card; the row wraps on narrow screens. */
+.logos-dst {
+  padding: 2.5rem 0 0;
+}
+
+.logos-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 996px) {
+  .logos-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.logos-group {
+  border: 1px solid var(--dst-line);
+  border-radius: 8px;
+  background: var(--dst-card);
+  padding: 1rem 1.4rem 1.3rem;
+}
+
+.logos-title {
+  margin: 0 0 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ifm-color-primary);
+}
+
+.logos-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 32px;
+  gap: 1rem 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--dst-muted);
+}
+
+.logo-mark {
+  display: block;
+  flex: none;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+.logo-name {
+  font-family: var(--ifm-heading-font-family);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Admin screenshot */
+.admin-dst {
+  padding: 3.5rem 0 0;
+}
+
+.section-intro {
+  margin: 0.5rem 0 1.5rem;
+  color: var(--dst-muted);
+}
+
+.screenshot {
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Hero: the frontend row cycles through the frontend options. */
+.hero-rotate {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.hero-rotate-item {
+  display: inline-block;
+  animation: hero-rotate-in 0.4s ease-out;
+}
+
+@keyframes hero-rotate-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rotate-item {
+    animation: none;
+  }
+}

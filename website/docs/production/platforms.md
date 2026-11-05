@@ -21,7 +21,7 @@ platforms themselves.
 Create the settings with the CLI, as for a server:
 
 ```bash
-npx @django-stack/cli production --domain example.com \
+dstack production --domain example.com \
   --email-url smtp+tls://user:password@smtp.example.com:587
 ```
 

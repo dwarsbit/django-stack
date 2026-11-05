@@ -49,8 +49,8 @@ Before the site goes live:
 
 - [ ] `.env` on the server came from `dstack production`, and is not
       in git. `chmod 600 .env`.
-- [ ] `docker compose exec backend-prod python manage.py check --deploy`
-      shows no issues.
+- [ ] `dstack check` shows no issues. In production it runs Django's
+      deploy checks.
 - [ ] The admin password is changed from the generated one, or kept in a
       password manager, and `ADMIN_EMAIL` is a real address for password
       resets.
@@ -68,10 +68,10 @@ Before the site goes live:
 Over time:
 
 - [ ] Update the images: `git pull` brings new versions of the project's
-      dependencies when you upgrade them, and `docker compose pull` gets new
+      dependencies when you upgrade them, and `dstack update` gets new
       Postgres, Valkey and Caddy images of the same major version.
-- [ ] Rotate a secret that may have leaked: `npx @django-stack/cli secret`
-      prints a new one. Change it in `.env` and run `docker compose up -d`.
+- [ ] Rotate a secret that may have leaked: `dstack secret`
+      prints a new one. Change it in `.env` and run `dstack run`.
 - [ ] Check the advisories of Django and the frontend's dependencies:
       `uv lock --upgrade` in `backend/` and `npm update` in `frontend/`, then deploy.
 
