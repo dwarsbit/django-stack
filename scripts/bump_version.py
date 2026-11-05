@@ -2,8 +2,8 @@
 
 Usage: python scripts/bump_version.py X.Y.Z[-(alpha|beta|rc).N]
 
-Every package shares one version: the four npm packages under packages/
-and the django-stack PyPI package. Updates their package.json,
+Every package shares one version: the npm packages under packages/ and
+the django-stack PyPI package. Updates their package.json,
 pyproject.toml, __init__.py and uv.lock, the minimum versions the
 templates install, and dates the "## X.Y.Z (unreleased)" heading in
 CHANGELOG.md (which must exist).
@@ -16,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(-(alpha|beta|rc)\.\d+)?$")
-NPM_PACKAGES = ["cli", "utils", "react", "next"]
+NPM_PACKAGES = sorted(p.parent.name for p in (ROOT / "packages").glob("*/package.json"))
 PEP440_PRE = {"alpha": "a", "beta": "b", "rc": "rc"}
 
 
@@ -73,11 +73,13 @@ def main(version):
         r'"django-stack\[([a-z0-9,]+)\]>=[^"]*"',
         rf'"django-stack[\g<1>]>={py_version}"',
     )
-    replace(
-        "templates/frontend-astro/package.json",
-        r'"@django-stack/utils": "[^"]*"',
-        f'"@django-stack/utils": "^{version}"',
-    )
+    for template in sorted((ROOT / "templates").glob("frontend-*/package.json")):
+        replace(
+            str(template.relative_to(ROOT)),
+            r'"(@django-stack/[a-z]+)": "[^"]*"',
+            rf'"\g<1>": "^{version}"',
+            count=len(re.findall(r'"@django-stack/[a-z]+": ', template.read_text())),
+        )
     print(f"Version set to {version}")
 
 

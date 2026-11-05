@@ -215,7 +215,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
     result = scaffold({
       directory: target,
       name,
-      frontend: "astro",
+      frontend: stack.frontend,
       demoContent,
       databaseUrl,
       localS3: stack.storage === "s3",

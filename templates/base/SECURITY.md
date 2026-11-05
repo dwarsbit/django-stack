@@ -9,4 +9,4 @@ Problems in the packages it is built on go to their projects:
 - Django Headless: https://github.com/dwarsbit/django-headless/security
 - Django Content Studio: https://github.com/dwarsbit/django-content-studio/security
 - Django: https://www.djangoproject.com/security/
-- Astro: https://github.com/withastro/astro/security
+- {{frontend_label}}: {{frontend_security}}

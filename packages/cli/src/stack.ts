@@ -40,6 +40,8 @@ export const STACK_OPTIONS = [
         hint: "no Node, Django renders the site",
         generated: false,
       },
+      { value: "nuxt", label: "Nuxt", hint: "Vue, server-rendered", generated: false },
+      { value: "sveltekit", label: "SvelteKit", hint: "Svelte, server-rendered", generated: false },
     ],
   },
   {
@@ -149,10 +151,13 @@ export const DEFAULT_STACK = Object.fromEntries(
   STACK_OPTIONS.map((option) => [option.key, option.values[0].value]),
 ) as Stack;
 
+/** The frontends that run on Node, with a `frontend/` directory and a package manager. */
+export const NODE_FRONTENDS: readonly string[] = ["astro", "next", "nuxt", "sveltekit"];
+
 /** Whether an option applies to a stack: the package manager only with a Node frontend. */
 export function applies(key: StackKey, stack: Partial<Stack>): boolean {
   if (key === "packageManager")
-    return stack.frontend === undefined || ["astro", "next"].includes(stack.frontend);
+    return stack.frontend === undefined || NODE_FRONTENDS.includes(stack.frontend);
   return true;
 }
 
