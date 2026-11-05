@@ -118,8 +118,8 @@ project. They need Docker Compose v2.
 | `dstack config` | Changes the stack options. See [`config`](#config). |
 | `dstack manage <command>` | Runs a Django management command in the backend, such as `dstack manage createsuperuser`. |
 | `dstack shell` | Opens Django's shell in the backend. |
-| `dstack backup` | Backs up the database now. `--list` lists the backups. |
-| `dstack restore <backup>` | Restores a backup from `dstack backup --list` over the database. It asks first; `--yes` doesn't. |
+| `dstack backup` | Backs up the database and, when uploads are on disk, the media now. `--list` lists the backups, `--no-media` skips the media. |
+| `dstack restore <backup>` | Restores a backup from `dstack backup --list` over the database. `--media` also restores its media; a `.media.tar.gz` name restores only the media. It asks first; `--yes` doesn't. See [Backups](./production/backups.md). |
 | `dstack types` | Generates the frontend's API types in `frontend/src/lib/headless.ts` from the backend's schema. |
 
 `manage`, `shell`, `logs` and `check` use the running containers, and start

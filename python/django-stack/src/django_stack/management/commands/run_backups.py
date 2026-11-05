@@ -21,7 +21,10 @@ def next_run(at: str, now: datetime) -> datetime:
 
 
 class Command(BaseCommand):
-    help = "Back up the database every day at BACKUP_TIME (UTC). The backup service runs this."
+    help = (
+        "Back up the database, and the media when it is on disk, every day at BACKUP_TIME (UTC). "
+        "The backup service runs this."
+    )
 
     def handle(self, *args, **options):
         at = conf.get("BACKUP_TIME")
@@ -37,6 +40,11 @@ class Command(BaseCommand):
                     result.path,
                     " and the bucket" if result.uploaded else "",
                 )
+                if backup.media_backups_enabled():
+                    media = backup.create_media_backup(result.name)
+                    logger.info(
+                        "Backed up the media to %s%s", media.path, " and the bucket" if media.uploaded else ""
+                    )
             except subprocess.CalledProcessError as error:
                 logger.error("pg_dump failed: %s", error.stderr.decode(errors="replace").strip())
             except Exception:

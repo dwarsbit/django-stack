@@ -99,8 +99,13 @@ echo "ok read-only containers"
 
 echo "Backing up and restoring"
 docker compose exec -T backup python manage.py backup_database
-backup="$(docker compose exec -T backup python manage.py backup_database --list | awk '/^local/ {print $2}' | tail -1)"
+backup="$(docker compose exec -T backup python manage.py backup_database --list | awk '/^local/ && /\.dump$/ {print $2}' | tail -1)"
 [ -n "$backup" ] || fail "backup_database --list shows no backup"
+docker compose exec -T backup python manage.py backup_database --list | grep -q "${backup%.dump}.media.tar.gz" \
+  || fail "backup_database made no media archive"
+upload="$(docker compose exec -T backup find /app/media -type f | head -1)"
+[ -n "$upload" ] || fail "the media volume is empty"
+docker compose exec -T backup rm "$upload"
 
 token="$(c -X POST -H "Content-Type: application/json" \
   -d "{\"username\":\"admin\",\"password\":\"$password\"}" \
@@ -115,8 +120,9 @@ before="$(title)"
 expect 200 -X PATCH -H "Authorization: Bearer $token" -H "Content-Type: application/json" \
   -d '{"title":"Changed after the backup"}' "$site/admin/api/content/content.page/$page_id"
 [ "$(title)" = "Changed after the backup" ] || fail "the edit was not saved"
-docker compose exec -T backup python manage.py restore_database "$backup" --yes
+docker compose exec -T backup python manage.py restore_database "$backup" --media --yes
 [ "$(title)" = "$before" ] || fail "the restore did not bring back \"$before\""
+docker compose exec -T backup test -f "$upload" || fail "the restore did not bring back $upload"
 echo "ok restore"
 
 if getent hosts site.localhost >/dev/null; then

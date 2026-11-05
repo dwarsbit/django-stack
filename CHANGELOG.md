@@ -5,6 +5,16 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 PyPI. Add your change under the unreleased version; the release workflow
 releases it.
 
+## 0.2.0 (unreleased)
+
+- **Media backups.** When uploads are on the server's disk, the daily
+  backup also archives the `media` volume (`<name>.media.tar.gz`, next to
+  the database dump, in the volume and in `BACKUP_S3_BUCKET`, with the same
+  retention). `restore_database --media` and `dstack restore --media`
+  restore it with the database, `restore_media` on its own, and
+  `dstack backup --no-media` or `BACKUP_MEDIA=0` skip it. Media in S3 is
+  not archived; storing uploads in S3 is still the recommended setup.
+
 ## 0.1.0 (2026-11-05)
 
 - **First release.** `init` creates a Docker Compose project with a Django

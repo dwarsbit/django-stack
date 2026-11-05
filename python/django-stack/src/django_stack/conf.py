@@ -21,6 +21,7 @@ DEFAULTS = {
     "BACKUP_S3_BUCKET": None,
     "BACKUP_S3_PREFIX": "backups/",
     "BACKUP_S3": {},
+    "BACKUP_MEDIA": True,
 }
 
 

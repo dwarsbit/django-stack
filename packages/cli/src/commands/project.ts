@@ -143,17 +143,26 @@ function backupProject(options: DirectoryOptions): Project {
   return project;
 }
 
-/** `dstack backup`: back up the database now, or list the backups. */
-export async function backup(options: DirectoryOptions & { list?: boolean }) {
+/** `dstack backup`: back up the database and the media now, or list the backups. */
+export async function backup(options: DirectoryOptions & { list?: boolean; media: boolean }) {
   const project = backupProject(options);
-  const args = ["python", "manage.py", "backup_database", ...(options.list ? ["--list"] : [])];
+  const args = ["python", "manage.py", "backup_database"];
+  if (options.list) args.push("--list");
+  else if (!options.media) args.push("--no-media");
   exitWith(compose(project, ["exec", "-T", "backup", ...args]));
 }
 
-/** `dstack restore <backup>`: restore a backup over the database. */
-export async function restore(name: string, options: DirectoryOptions & { yes?: boolean }) {
+/** The management command and its options for `dstack restore`. */
+export function restoreArgs(name: string, options: { yes?: boolean; media?: boolean }): string[] {
+  const yes = options.yes ? ["--yes"] : [];
+  if (name.endsWith(".media.tar.gz")) return ["python", "manage.py", "restore_media", name, ...yes];
+  return ["python", "manage.py", "restore_database", name, ...(options.media ? ["--media"] : []), ...yes];
+}
+
+/** `dstack restore <backup>`: restore a database dump, with --media its media too, or a media archive. */
+export async function restore(name: string, options: DirectoryOptions & { yes?: boolean; media?: boolean }) {
   const project = backupProject(options);
-  const args = ["python", "manage.py", "restore_database", name, ...(options.yes ? ["--yes"] : [])];
+  const args = restoreArgs(name, options);
   if (!options.yes && !tty()) fail("Pass --yes to restore without a terminal.");
   exitWith(compose(project, ["exec", ...(options.yes ? ["-T"] : []), "backup", ...args]));
 }

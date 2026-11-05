@@ -224,8 +224,9 @@ services:
           memory: 256M
     restart: unless-stopped
 
-  # Backs up the database every day at BACKUP_TIME (UTC) into the backups
-  # volume, and into BACKUP_S3_BUCKET when it is set. See README.md.
+  # Backs up the database, and the media volume when uploads are not in S3,
+  # every day at BACKUP_TIME (UTC) into the backups volume, and into
+  # BACKUP_S3_BUCKET when it is set. See README.md.
   backup:
     profiles: [prod]
     image: ${BACKEND_IMAGE:-{{project_name}}-backend}
@@ -240,6 +241,7 @@ services:
       BACKUP_DIR: /app/backups
     volumes:
       - backups:/app/backups
+      - media:/app/media
     depends_on:
       backend-prod:
         condition: service_healthy

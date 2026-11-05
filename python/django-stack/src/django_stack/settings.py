@@ -27,7 +27,8 @@ to ``SITE_URL``), ``ALLOWED_HOSTS`` (extra hosts, comma separated),
 ``API_SECRET_KEY`` (full access), ``API_READ_KEY`` (read-only),
 ``PREVIEW_SECRET``, ``REVALIDATE_URL``, ``REVALIDATE_SECRET``,
 ``NUM_PROXIES``, ``PROJECT_NAME``, and the backup variables ``BACKUP_DIR``,
-``BACKUP_KEEP``, ``BACKUP_TIME``, ``BACKUP_S3_BUCKET`` and ``BACKUP_S3_PREFIX``.
+``BACKUP_KEEP``, ``BACKUP_TIME``, ``BACKUP_MEDIA``, ``BACKUP_S3_BUCKET`` and
+``BACKUP_S3_PREFIX``.
 """
 
 from __future__ import annotations
@@ -299,6 +300,7 @@ def configure(
             # A private bucket: never the public media bucket.
             "BACKUP_S3_BUCKET": e.str("BACKUP_S3_BUCKET"),
             "BACKUP_S3_PREFIX": e.str("BACKUP_S3_PREFIX", "backups/"),
+            "BACKUP_MEDIA": e.bool("BACKUP_MEDIA", True),
             "BACKUP_S3": {
                 "endpoint_url": e.str("BACKUP_S3_ENDPOINT_URL", e.str("S3_ENDPOINT_URL")),
                 "region_name": e.str("BACKUP_S3_REGION", e.str("S3_REGION")),

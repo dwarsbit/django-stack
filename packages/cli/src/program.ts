@@ -164,16 +164,18 @@ export function createProgram(): Command {
 
   program
     .command("backup")
-    .description("Back up the database now (prod profile)")
+    .description("Back up the database and the media now (prod profile)")
     .addOption(dirOption())
     .option("--list", "List the backups instead")
+    .option("--no-media", "Back up only the database")
     .action(backup);
 
   program
     .command("restore")
-    .description("Restore a backup over the database (prod profile)")
+    .description("Restore a backup over the database or the media (prod profile)")
     .argument("<backup>", "A file name from `dstack backup --list`")
     .addOption(dirOption())
+    .option("--media", "Also restore the media backed up with this database dump")
     .option("-y, --yes", "Don't ask for confirmation")
     .action(restore);
 
