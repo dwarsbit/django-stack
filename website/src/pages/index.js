@@ -2,14 +2,42 @@ import Link from "@docusaurus/Link";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import CodeBlock from "@theme/CodeBlock";
+import IconCopy from "@theme/Icon/Copy";
+import IconSuccess from "@theme/Icon/Success";
 import Layout from "@theme/Layout";
 import ThemedImage from "@theme/ThemedImage";
 import { useEffect, useState } from "react";
 
-const heroCode = `npm i -g @django-stack/cli
+const installCommand = "npm i -g @django-stack/cli";
+
+const heroCode = `${installCommand}
 dstack init my-site
 cd my-site
 dstack dev`;
+
+// The hero's copy button copies the install command only; the lines after it
+// run once the CLI is installed.
+function CopyInstallCommand() {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return undefined;
+    const timer = setTimeout(() => setCopied(false), 1000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  return (
+    <button
+      type="button"
+      className="clean-btn hero-copy"
+      title="Copy"
+      aria-label={copied ? "Copied" : `Copy ${installCommand}`}
+      onClick={() => navigator.clipboard.writeText(installCommand).then(() => setCopied(true))}
+    >
+      {copied ? <IconSuccess /> : <IconCopy />}
+    </button>
+  );
+}
 
 const frontends = ["Astro", "Next.js", "Django templates", "None (headless, API only)"];
 
@@ -64,7 +92,12 @@ const logoGroups = [
   },
   {
     title: "Deploy to",
-    logos: [{ name: "Coolify", file: "coolify.svg", width: 26, height: 26 }],
+    logos: [
+      { name: "Coolify", file: "coolify.svg", width: 26, height: 26 },
+      { name: "Dokploy", file: "dokploy.svg", width: 29, height: 26 },
+      // A generic terminal icon: SSH has no logo of its own.
+      { name: "SSH", file: "ssh.svg", width: 26, height: 26 },
+    ],
   },
 ];
 
@@ -143,7 +176,10 @@ export default function Home() {
             </div>
           </div>
           <div className="hero-visual">
-            <CodeBlock language="bash">{heroCode}</CodeBlock>
+            <div className="hero-code">
+              <CodeBlock language="bash">{heroCode}</CodeBlock>
+              <CopyInstallCommand />
+            </div>
             <div className="hero-services">
               {services.map((service) => (
                 <div className="hero-service" key={service.name}>
