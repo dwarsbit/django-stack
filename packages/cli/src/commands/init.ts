@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { basename, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
+import { offerGlobalInstall } from "../global-install";
 import {
   lockBackend,
   relativeDirectory,
@@ -264,6 +265,8 @@ export async function init(directoryArgument: string | undefined, options: InitO
   p.log.message(`Create the same stack with ${command(`--preset ${encodePreset(stack)}`)}`);
 
   if (options.start) {
+    // Ask before `docker compose up` takes over the terminal.
+    if (options.installPrompt !== false && !options.yes) await offerGlobalInstall();
     p.outro(`Starting the project with ${command("docker compose up")}`);
     execFileSync("docker", ["compose", "up"], { cwd: target, stdio: "inherit" });
   } else {

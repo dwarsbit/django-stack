@@ -17,7 +17,12 @@ docker compose up
 | `secret [bytes]` | Print a random secret |
 | `completion <shell>` | Print a Tab completion script for zsh, bash, fish or PowerShell |
 
-Run `django-stack help <command>` for the options of a command. Each command
+The command is `dstack`. The first time you run the CLI with `npx`, it
+offers to install `dstack` globally; or run
+`npm install --global @django-stack/cli` yourself. Turn the offer off with
+`--no-install-prompt` or `DJANGO_STACK_NO_INSTALL_PROMPT=1`.
+
+Run `dstack help <command>` for the options of a command. Each command
 checks for a newer version once a day; turn that off with
 `--no-update-check` or `DJANGO_STACK_NO_UPDATE_CHECK=1`.
 

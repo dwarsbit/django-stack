@@ -35,7 +35,7 @@
     "node": ">=22"
   },
   "bin": {
-    "django-stack": "./dist/bin.js"
+    "dstack": "./dist/bin.js"
   },
   "scripts": {
     "build": "node scripts/copy-templates.mjs && tsdown",

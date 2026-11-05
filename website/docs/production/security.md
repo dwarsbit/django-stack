@@ -47,7 +47,7 @@ limit apply to the client, not to the proxy.
 
 Before the site goes live:
 
-- [ ] `.env` on the server came from `django-stack production`, and is not
+- [ ] `.env` on the server came from `dstack production`, and is not
       in git. `chmod 600 .env`.
 - [ ] `docker compose exec backend-prod python manage.py check --deploy`
       shows no issues.

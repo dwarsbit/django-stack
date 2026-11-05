@@ -29,7 +29,9 @@ Every prompt has a flag, so the command also runs in scripts:
 npx @django-stack/cli init my-site --yes --no-demo-content
 ```
 
-See the [CLI reference](./cli.md) for every option.
+When it is done, the command offers to install `dstack` globally, so that
+next time you can run `dstack init` and `dstack doctor`. See the
+[CLI reference](./cli.md) for every option.
 
 ## Start it
 

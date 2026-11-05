@@ -1,5 +1,6 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
+import { selfCommand } from "../global-install";
 import { applies, encodePreset, NAMED_PRESETS, resolvePreset, STACK_OPTIONS, type StackKey } from "../stack";
 import { command, fail, intro, isInteractive } from "../ui";
 import { chooseStack } from "./init";
@@ -26,11 +27,11 @@ export async function preset(code: string | undefined, options: PresetOptions) {
     });
     p.note(lines.join("\n"), command(`--preset ${encodePreset(stack)}`));
     p.outro(
-      `Use it with ${command(`django-stack init --preset ${code in NAMED_PRESETS ? code : encodePreset(stack)}`)}`,
+      `Use it with ${command(`${selfCommand()} init --preset ${code in NAMED_PRESETS ? code : encodePreset(stack)}`)}`,
     );
     return;
   }
   const { stack } = await chooseStack(options, isInteractive(options.yes));
   const encoded = encodePreset(stack);
-  p.outro(`Create this stack with ${command(`django-stack init --preset ${encoded}`)}`);
+  p.outro(`Create this stack with ${command(`${selfCommand()} init --preset ${encoded}`)}`);
 }

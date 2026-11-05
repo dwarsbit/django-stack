@@ -6,6 +6,7 @@ import { doctor } from "./commands/doctor";
 import { init } from "./commands/init";
 import { preset } from "./commands/preset";
 import { production } from "./commands/production";
+import { BIN, offerGlobalInstall } from "./global-install";
 import { generateSecret } from "./secrets";
 import { NAMED_PRESETS, STACK_OPTIONS } from "./stack";
 import { checkForUpdate, updateCheckEnabled, updateCommand } from "./update-check";
@@ -32,12 +33,13 @@ function positiveInteger(value: string): number {
 }
 
 export function createProgram(): Command {
-  const program = new Command("django-stack")
+  const program = new Command(BIN)
     .description("Create and manage DjangoStack projects.")
     .version(CLI_VERSION, "-v, --version", "Print the version")
     .helpOption("-h, --help", "Show help for a command")
     .helpCommand("help [command]", "Show help for a command")
     .option("--no-update-check", "Don't check npm for a newer version")
+    .option("--no-install-prompt", `Don't offer to install ${BIN} globally`)
     .showSuggestionAfterError()
     .configureHelp({
       sortSubcommands: false,
@@ -71,6 +73,7 @@ export function createProgram(): Command {
     .action((directory: string | undefined, options, cmd: Command) =>
       init(directory, {
         ...options,
+        installPrompt: program.opts().installPrompt,
         fromCli: (option) => cmd.getOptionValueSource(option) === "cli",
       }),
     );
@@ -114,16 +117,20 @@ export function createProgram(): Command {
     ?.description("Print a shell completion script (zsh, bash, fish or powershell)")
     .addHelpText(
       "after",
-      `\nAdd it to your shell, for example in ~/.zshrc:\n  ${pc.cyan("source <(django-stack completion zsh)")}`,
+      `\nAdd it to your shell, for example in ~/.zshrc:\n  ${pc.cyan("source <(dstack completion zsh)")}`,
     );
 
   let update: Promise<string | undefined> | undefined;
+  let offerInstall = false;
   program.hook("preAction", (_root, action) => {
-    if (QUIET_COMMANDS.has(action.name()) || program.opts().updateCheck === false) return;
-    if (!updateCheckEnabled()) return;
+    if (QUIET_COMMANDS.has(action.name())) return;
+    offerInstall = program.opts().installPrompt !== false && !action.opts().yes;
+    if (program.opts().updateCheck === false || !updateCheckEnabled()) return;
     update = checkForUpdate({ current: CLI_VERSION });
   });
   program.hook("postAction", async () => {
+    // A fresh global install is the latest version, so no update notice after it.
+    if (offerInstall && (await offerGlobalInstall())) return;
     // The check started with the command; it times out on its own.
     const latest = await update;
     if (!latest) return;
