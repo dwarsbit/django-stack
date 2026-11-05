@@ -23,7 +23,7 @@ browser ─ 443 ──▶ │ proxy (Caddy) ─┬─ /admin /api /static ─▶
 ## What you need
 
 - A server with Docker Engine and the Compose plugin, Node.js 22 or later
-  with `dstack` installed (`npm install --global @django-stack/cli`), at
+  with `dstack` installed (`npm i -g @django-stack/cli`), at
   least 2 GB of memory, and ports 80 and 443 open. Any provider works; one with 2 vCPUs
   and 4 GB is comfortable for a site with a database on the same server.
 - A domain with a DNS `A` (and `AAAA`) record pointing at the server. Caddy

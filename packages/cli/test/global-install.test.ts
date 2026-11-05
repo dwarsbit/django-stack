@@ -62,7 +62,7 @@ describe("selfCommand", () => {
 
 describe("installCommand", () => {
   it("uses the package manager that ran the CLI", () => {
-    expect(installCommand("npm").join(" ")).toBe("npm install --global @django-stack/cli@latest");
+    expect(installCommand("npm").join(" ")).toBe("npm i -g @django-stack/cli@latest");
     expect(installCommand("pnpm").join(" ")).toBe("pnpm add --global @django-stack/cli@latest");
     expect(installCommand("bun").join(" ")).toBe("bun add --global @django-stack/cli@latest");
   });
@@ -103,6 +103,6 @@ describe("explainFailure", () => {
     expect(
       explainFailure("pnpm", "ERR_PNPM_NO_GLOBAL_BIN_DIR Unable to find the global bin directory"),
     ).toMatch(/pnpm setup/);
-    expect(explainFailure("npm", "npm error 404 Not Found")).toMatch(/404 Not Found .*npm install --global/);
+    expect(explainFailure("npm", "npm error 404 Not Found")).toMatch(/404 Not Found .*npm i -g/);
   });
 });

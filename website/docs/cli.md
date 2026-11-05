@@ -21,7 +21,7 @@ package manager you ran it with. After that, `dstack init` does the same as
 `npx @django-stack/cli init`. You can also install it yourself:
 
 ```bash
-npm install --global @django-stack/cli
+npm i -g @django-stack/cli
 ```
 
 The CLI asks only once and remembers the answer in

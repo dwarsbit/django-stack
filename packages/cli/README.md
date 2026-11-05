@@ -19,7 +19,7 @@ docker compose up
 
 The command is `dstack`. The first time you run the CLI with `npx`, it
 offers to install `dstack` globally; or run
-`npm install --global @django-stack/cli` yourself. Turn the offer off with
+`npm i -g @django-stack/cli` yourself. Turn the offer off with
 `--no-install-prompt` or `DJANGO_STACK_NO_INSTALL_PROMPT=1`.
 
 Run `dstack help <command>` for the options of a command. Each command

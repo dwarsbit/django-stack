@@ -46,7 +46,7 @@ export function isOnPath(env: NodeJS.ProcessEnv = process.env, platform = proces
 export function installCommand(runner: Runner = "npm"): string[] {
   if (runner === "pnpm") return ["pnpm", "add", "--global", `${PACKAGE_NAME}@latest`];
   if (runner === "bun") return ["bun", "add", "--global", `${PACKAGE_NAME}@latest`];
-  return ["npm", "install", "--global", `${PACKAGE_NAME}@latest`];
+  return ["npm", "i", "-g", `${PACKAGE_NAME}@latest`];
 }
 
 /** How to run the CLI from a shell: `dstack` when it is installed, otherwise through the runner. */

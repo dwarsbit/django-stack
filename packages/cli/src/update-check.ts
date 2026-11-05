@@ -115,5 +115,5 @@ export function updateCommand(
   if (path.includes("/pnpm/global/")) return `pnpm add -g ${PACKAGE_NAME}@latest`;
   if (path.includes("/.bun/install/global/")) return `bun add -g ${PACKAGE_NAME}@latest`;
   if (env.npm_config_user_agent?.startsWith("pnpm")) return `pnpm add -g ${PACKAGE_NAME}@latest`;
-  return `npm install -g ${PACKAGE_NAME}@latest`;
+  return `npm i -g ${PACKAGE_NAME}@latest`;
 }
