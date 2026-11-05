@@ -8,7 +8,8 @@ to deploy.
 
 - **Repository**: https://github.com/dwarsbit/django-stack
 - **Packages**: `@django-stack/cli`, `@django-stack/utils`,
-  `@django-stack/react`, `@django-stack/next` and `@django-stack/vue` on
+  `@django-stack/react`, `@django-stack/next`, `@django-stack/svelte` and
+  `@django-stack/vue` on
   npm, `django-stack` on
   PyPI
 - **Docs**: https://dwarsbit.github.io/django-stack/

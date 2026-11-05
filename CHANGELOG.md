@@ -1,12 +1,18 @@
 # Changelog
 
 All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
-`@django-stack/react`, `@django-stack/next`, `@django-stack/vue` on npm and
-`django-stack` on PyPI. Add your change under the unreleased version; the release workflow
-releases it.
+`@django-stack/react`, `@django-stack/next`, `@django-stack/svelte`,
+`@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
+the unreleased version; the release workflow releases it.
 
 ## 0.3.0 (unreleased)
 
+- **SvelteKit frontend.** `npx @django-stack/cli init --frontend
+  sveltekit` (preset `a5`) creates the site with SvelteKit and the Node adapter instead of
+  Astro: the same pages, preview, revalidation, feeds and
+  Content-Security-Policy. Content loads in server load functions only, so
+  the API key stays on the server. The new `@django-stack/svelte` package
+  has the components for blocks, rich text, images and SEO tags.
 - **Nuxt frontend.** `npx @django-stack/cli init --frontend nuxt` (preset
   `a4`) creates the site with Nuxt and Nitro's Node server instead of
   Astro: the same pages, preview, revalidation, feeds and

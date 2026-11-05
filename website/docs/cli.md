@@ -78,7 +78,7 @@ the defaults it does not generate yet when it is done.
 
 | Option | Values |
 |--------|--------|
-| `--frontend` | `astro`, `next` (later), `headless` (later, just the API and the admin), `templates` (later, Django templates), `nuxt`, `sveltekit` (later) |
+| `--frontend` | `astro`, `next` (later), `headless` (later, just the API and the admin), `templates` (later, Django templates), `nuxt`, `sveltekit` |
 | `--postgres` | `stable` (Postgres 17), `latest` (Postgres 18, later). Ignored with `--database-url`. |
 | `--analytics` | `umami` (later, built in), `off` |
 | `--tasks` | `huey`, `off` (later) |
