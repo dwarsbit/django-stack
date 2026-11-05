@@ -1,0 +1,46 @@
+{
+  "name": "@django-stack/vue",
+  "version": "0.2.0",
+  "description": "Vue components for DjangoStack frontends: blocks, rich text and images.",
+  "license": "MIT",
+  "author": "Leon van der Grient",
+  "homepage": "https://github.com/dwarsbit/django-stack/tree/main/packages/vue#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dwarsbit/django-stack.git",
+    "directory": "packages/vue"
+  },
+  "bugs": "https://github.com/dwarsbit/django-stack/issues",
+  "keywords": ["django", "django-stack", "headless-cms", "vue", "nuxt"],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "@django-stack/utils": "workspace:^",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@django-stack/utils": "workspace:*",
+    "vue": "^3.5.40"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
