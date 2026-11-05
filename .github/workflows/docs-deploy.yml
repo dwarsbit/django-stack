@@ -9,6 +9,8 @@ on:
     paths:
       - "website/**"
       - "pnpm-lock.yaml"
+      # The site shows the CLI's version.
+      - "packages/cli/package.json"
       - ".github/workflows/docs-deploy.yml"
   workflow_dispatch:
 
