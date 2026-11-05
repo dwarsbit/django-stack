@@ -25,8 +25,8 @@ content, and creates `my-site` with:
 
 - a Django backend in `backend/`, with a starter content model of pages,
   posts, menus and site settings;
-- the frontend in `frontend/`: Astro by default, or SvelteKit with
-  `--frontend sveltekit` or Nuxt with `--frontend nuxt`;
+- the frontend in `frontend/`: Astro by default, or Next.js, SvelteKit or
+  Nuxt with `--frontend next`, `sveltekit` or `nuxt`;
 - `compose.yaml`, which runs both with Postgres, Valkey and Mailpit;
 - `.env` with fresh secrets for this project, and `.env.example` with the
   same names and no values.
