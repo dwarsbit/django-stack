@@ -1,15 +1,9 @@
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseEnv } from "./env";
+import { type Check, checkTools, run as command } from "./tools";
 
-export interface Check {
-  name: string;
-  ok: boolean;
-  /** Not a failure: the check could not run or only warns. */
-  warning?: boolean;
-  detail?: string;
-}
+export type { Check } from "./tools";
 
 const REQUIRED_KEYS = [
   "DJANGO_SECRET_KEY",
@@ -20,14 +14,6 @@ const REQUIRED_KEYS = [
   "REVALIDATE_SECRET",
   "SITE_URL",
 ];
-
-function command(cmd: string, args: string[], cwd?: string): string | undefined {
-  try {
-    return execFileSync(cmd, args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-  } catch {
-    return undefined;
-  }
-}
 
 async function fetchStatus(url: string, headers: Record<string, string> = {}): Promise<number | undefined> {
   try {
@@ -42,20 +28,7 @@ async function fetchStatus(url: string, headers: Record<string, string> = {}): P
 export async function runDoctor(directory: string): Promise<Check[]> {
   const checks: Check[] = [];
 
-  const docker = command("docker", ["version", "--format", "{{.Server.Version}}"]);
-  checks.push({
-    name: "Docker is running",
-    ok: Boolean(docker),
-    detail: docker ? `Docker ${docker}` : "Install Docker and start it: https://docs.docker.com/get-docker/",
-  });
-  const compose = command("docker", ["compose", "version", "--short"]);
-  checks.push({
-    name: "Docker Compose v2",
-    ok: Boolean(compose),
-    detail: compose
-      ? `Compose ${compose}`
-      : "Docker Compose v2 is part of Docker Desktop and the docker-compose-plugin package.",
-  });
+  checks.push(...checkTools());
 
   const envPath = join(directory, ".env");
   if (!existsSync(envPath)) {

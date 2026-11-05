@@ -20,7 +20,7 @@ import {
   runningServices,
 } from "../project";
 import { encodePreset, STACK_OPTIONS, type Stack, type StackKey, type StackValue } from "../stack";
-import { command, fail, has, intro, isInteractive, secret, unwrap, url } from "../ui";
+import { command, fail, has, intro, isInteractive, logCheck, secret, unwrap, url } from "../ui";
 
 export interface DirectoryOptions {
   dir?: string;
@@ -233,13 +233,8 @@ export async function check(options: DirectoryOptions & { tests?: boolean }) {
     const doctorChecks = await runDoctor(project.directory);
     spinner.clear();
     for (const item of doctorChecks) {
-      const line = item.detail ? `${item.name} ${pc.dim(`- ${item.detail}`)}` : item.name;
-      if (item.ok) p.log.success(line);
-      else if (item.warning) p.log.warn(pc.yellow(line));
-      else {
-        p.log.error(pc.red(line));
-        failed++;
-      }
+      logCheck(item);
+      if (!item.ok && !item.warning) failed++;
     }
   }
   const running = runningServices(project);
