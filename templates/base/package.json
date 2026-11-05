@@ -15,6 +15,7 @@
   },
   "django-stack": {
     "version": "{{cli_version}}",
-    "frontend": "{{frontend}}"
+    "frontend": "{{frontend}}",
+    "preset": "{{preset}}"
   }
 }

@@ -38,6 +38,20 @@ releases it.
   remembers the answer, and explains a permission error instead of
   failing. Turn the offer off with `--no-install-prompt` or
   `DJANGO_STACK_NO_INSTALL_PROMPT=1`.
+- **Project commands.** `dstack dev` runs the development servers with hot
+  reload, and `dstack run` the production setup in the background; on a
+  development machine `run` writes `.env.run` and starts the prod profile
+  at https://site.localhost as its own Compose project, with its own data.
+  `dstack stop`, `logs`, `manage`, `shell`, `backup`, `restore` and `types`
+  wrap the matching Compose and Django commands. `dstack check` runs the
+  doctor's checks, Django's checks, the migrations check and the linters
+  (`--tests` adds the tests). `dstack update` upgrades `django-stack` in
+  `uv.lock`, pulls and rebuilds the images and restarts what was running.
+  `dstack config` changes the stack options of a project (this release:
+  `--storage`). Each command finds the project from any directory in it,
+  or takes `-C <directory>`. `init` saves the stack's preset in
+  `package.json`, and `compose.yaml` reads the containers' variables from
+  `${ENV_FILE:-.env}`.
 
 ## 0.0.1 (2026-11-04)
 
