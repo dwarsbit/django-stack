@@ -101,6 +101,92 @@ The command refuses a directory that is not empty. When
 [uv](https://docs.astral.sh/uv/) is installed, it also locks the backend's
 dependencies in `backend/uv.lock`.
 
+## Project commands
+
+These commands run in a project created by `init`, from its directory or
+any directory below it. `-C <directory>` (`--dir`) points them at another
+project. They need Docker Compose v2.
+
+| Command | What it does |
+|---------|--------------|
+| `dstack dev` | Starts the development servers in the foreground, with hot reload. Ctrl+C stops them. |
+| `dstack run` | Starts the production setup in the background and waits until it is healthy. |
+| `dstack stop` | Stops the containers. The database, uploads and backups stay in their volumes. |
+| `dstack logs [service...]` | Follows the logs. `--no-follow` prints them and exits, `-n <lines>` shows only the last lines. |
+| `dstack check` | Checks the project. See [`check`](#check). |
+| `dstack update` | Updates the images and the DjangoStack packages. See [`update`](#update). |
+| `dstack config` | Changes the stack options. See [`config`](#config). |
+| `dstack manage <command>` | Runs a Django management command in the backend, such as `dstack manage createsuperuser`. |
+| `dstack shell` | Opens Django's shell in the backend. |
+| `dstack backup` | Backs up the database now. `--list` lists the backups. |
+| `dstack restore <backup>` | Restores a backup from `dstack backup --list` over the database. It asks first; `--yes` doesn't. |
+| `dstack types` | Generates the frontend's API types in `frontend/src/lib/headless.ts` from the backend's schema. |
+
+`manage`, `shell`, `logs` and `check` use the running containers, and start
+a one-off container when the backend is not running.
+
+### `dev` and `run`
+
+`dstack dev` runs the `dev` profile: Django's development server and the
+frontend's, with the source mounted from `backend/` and `frontend/`. It is
+`docker compose up --build`. `--no-build` skips the build.
+
+`dstack run` runs the `prod` profile: the production images behind Caddy,
+as on a server. On a server, where `.env` has the prod profile, it is
+`docker compose up -d --build --wait`.
+
+On your computer, `dstack run` tries the production setup without touching
+your development data. The first time, it writes `.env.run` from `.env`
+with the prod profile, `SITE_URL=https://site.localhost`, mail to the
+console and new secrets, and prints the admin password. It runs as its own
+Compose project (`<name>-run`), so it has its own database and uploads.
+Open https://site.localhost. Caddy signs it with a local certificate
+authority of its own, so the browser warns once. Ports 80 and 443 must be
+free.
+
+While the local run is up, `logs`, `manage`, `shell`, `check`, `backup` and
+`restore` act on it. `dstack stop` stops both. Delete `.env.run` to start
+over with new secrets;
+`docker compose --env-file .env.run -p <name>-run down --volumes` deletes
+its data too.
+
+### `check`
+
+Runs the doctor's checks (see [`doctor`](#doctor)), then in the containers:
+
+- Django's system checks, or the deploy checks with `--fail-level WARNING`
+  in the prod profile.
+- That the migrations are up to date (`makemigrations --check`).
+- Ruff on the backend and `astro check` on the frontend, in development.
+- With `--tests`, the backend's and the frontend's tests, in development.
+
+It prints the output of each check that fails and exits with status 1.
+
+### `update`
+
+1. With [uv](https://docs.astral.sh/uv/) installed, upgrades `django-stack`
+   in `backend/uv.lock`. `--all` upgrades every backend package.
+2. Pulls the newer images of the services (Postgres, Valkey, Caddy and the
+   others) and rebuilds the backend and frontend images on fresh base
+   images. `--no-cache` rebuilds them from scratch, which also picks up
+   newer npm packages within the ranges in `frontend/package.json`.
+3. In development, empties the frontend's `node_modules` volume, so the
+   next start uses the packages of the new image.
+4. Restarts what was running, unless you pass `--no-restart`.
+
+Commit the changed `backend/uv.lock`. On a server, `git pull` first, then
+`dstack update`.
+
+### `config`
+
+Changes the stack options of a project: it asks for each option it can
+change, or takes the same flags as `init`, such as `--storage s3`. It
+updates `.env` and the preset in `package.json`, then asks you to restart.
+
+This release can switch `--storage` between `local` and `s3` in
+development. The other options can only be set by `init` until code
+generation for them lands; `config` refuses them with the reason.
+
 ## `production`
 
 Writes `.env.production`, the settings for a server, from the project's

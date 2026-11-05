@@ -89,4 +89,5 @@ docker compose exec -T frontend npx astro check
 docker compose exec -T frontend npm test
 
 node "$cli" doctor .
+node "$cli" check --tests
 echo "End-to-end test passed"

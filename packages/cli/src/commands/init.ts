@@ -205,6 +205,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
       demoContent,
       databaseUrl,
       localS3: stack.storage === "s3",
+      preset: encodePreset(stack),
       timeZone,
       link: options.link,
     });

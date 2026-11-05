@@ -18,7 +18,26 @@ function run(args: string[]) {
 describe("program", () => {
   it("lists the commands", () => {
     const help = run(["--help"]);
-    for (const name of ["init", "preset", "production", "doctor", "secret", "completion"])
+    for (const name of [
+      "init",
+      "run",
+      "dev",
+      "stop",
+      "logs",
+      "check",
+      "update",
+      "config",
+      "manage",
+      "shell",
+      "backup",
+      "restore",
+      "types",
+      "preset",
+      "production",
+      "doctor",
+      "secret",
+      "completion",
+    ])
       expect(help).toContain(name);
   });
 
@@ -56,6 +75,11 @@ describe("program", () => {
 
   it("suggests a command for a typo", () => {
     expect(run(["inti"])).toContain("Did you mean init?");
+  });
+
+  it("has the stack flags on config", () => {
+    expect(run(["config", "--help"])).toContain("--storage <storage>");
+    expect(run(["config", "--storage", "ftp"])).toMatch(/Allowed choices are local, s3/);
   });
 
   it("checks the secret length", () => {

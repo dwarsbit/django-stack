@@ -35,6 +35,8 @@ export interface ScaffoldOptions {
   link?: string;
   /** The time zone of the backend, such as Europe/Amsterdam. UTC by default. */
   timeZone?: string;
+  /** The preset code of the stack, saved in package.json for `config`. */
+  preset?: string;
   /** Where the templates are; the ones in the package by default. */
   templatesDir?: string;
 }
@@ -139,7 +141,12 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   cpSync(join(templates, `frontend-${options.frontend}`), join(target, "frontend"), { recursive: true });
   renameSync(join(target, "gitignore"), join(target, ".gitignore"));
 
-  const values = { project_name: options.name, frontend: options.frontend, cli_version: CLI_VERSION };
+  const values = {
+    project_name: options.name,
+    frontend: options.frontend,
+    cli_version: CLI_VERSION,
+    preset: options.preset ?? "a",
+  };
   const files = walk(target);
   for (const file of files) {
     if (!TEXT_EXTENSIONS.test(file)) continue;

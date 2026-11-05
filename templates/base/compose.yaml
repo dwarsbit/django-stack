@@ -57,7 +57,7 @@ services:
     build:
       context: ./backend
       target: dev
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     environment:
       DJANGO_MIGRATE: "1"
     volumes:
@@ -74,7 +74,7 @@ services:
     build:
       context: ./backend
       target: dev
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     command: ["python", "manage.py", "run_huey"]
     volumes:
       - ./backend:/app
@@ -128,7 +128,7 @@ services:
       context: ./backend
       target: prod
     <<: *hardened
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     environment:
       DJANGO_DEBUG: "0"
       DJANGO_MIGRATE: "1"
@@ -154,7 +154,7 @@ services:
       context: ./backend
       target: prod
     <<: *hardened
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     command: ["python", "manage.py", "run_huey"]
     environment:
       DJANGO_DEBUG: "0"
@@ -233,7 +233,7 @@ services:
       context: ./backend
       target: prod
     <<: *hardened
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     command: ["python", "manage.py", "run_backups"]
     environment:
       DJANGO_DEBUG: "0"

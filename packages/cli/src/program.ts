@@ -6,6 +6,20 @@ import { doctor } from "./commands/doctor";
 import { init } from "./commands/init";
 import { preset } from "./commands/preset";
 import { production } from "./commands/production";
+import {
+  backup,
+  check,
+  config,
+  dev,
+  logs,
+  manage,
+  restore,
+  run,
+  shell,
+  stop,
+  types,
+  update as updateProject,
+} from "./commands/project";
 import { BIN, offerGlobalInstall } from "./global-install";
 import { generateSecret } from "./secrets";
 import { NAMED_PRESETS, STACK_OPTIONS } from "./stack";
@@ -78,6 +92,96 @@ export function createProgram(): Command {
       }),
     );
   for (const flag of stackFlags()) initCommand.addOption(flag);
+
+  const dirOption = () =>
+    new Option("-C, --dir <directory>", "The project directory (default: this one or a parent)");
+
+  program
+    .command("run")
+    .description("Run the production setup in the background (locally at https://site.localhost)")
+    .addOption(dirOption())
+    .option("--no-build", "Don't build the images first")
+    .action(run);
+
+  program
+    .command("dev")
+    .description("Run the development servers with hot reload")
+    .addOption(dirOption())
+    .option("--no-build", "Don't build the images first")
+    .action(dev);
+
+  program.command("stop").description("Stop the project; the data stays").addOption(dirOption()).action(stop);
+
+  program
+    .command("logs")
+    .description("Show the logs of the services")
+    .argument("[services...]", "Only these services, such as backend")
+    .addOption(dirOption())
+    .option("--no-follow", "Print the logs and exit")
+    .option("-n, --tail <lines>", "Only the last lines of each service")
+    .action(logs);
+
+  program
+    .command("check")
+    .description("Check the project: setup, Django checks, migrations and linters")
+    .addOption(dirOption())
+    .option("--tests", "Run the backend and frontend tests too")
+    .action(check);
+
+  program
+    .command("update")
+    .description("Pull and rebuild the images and update the DjangoStack packages")
+    .addOption(dirOption())
+    .option("--all", "Update every backend package in uv.lock, not only django-stack")
+    .option("--no-cache", "Rebuild the images from scratch")
+    .option("--no-restart", "Don't restart what was running")
+    .action(updateProject);
+
+  const configCommand = program
+    .command("config")
+    .description("Change the stack options of a project")
+    .addOption(dirOption())
+    .option("-y, --yes", "Don't ask; change only what the flags set")
+    .action((options, cmd: Command) =>
+      config({ ...options, fromCli: (option) => cmd.getOptionValueSource(option) === "cli" }),
+    );
+  for (const flag of stackFlags()) configCommand.addOption(flag);
+
+  program
+    .command("manage")
+    .description("Run a Django management command in the backend")
+    .argument("<args...>", "The command and its options, such as createsuperuser")
+    .addOption(dirOption())
+    .allowUnknownOption()
+    .helpOption(false)
+    .action((args: string[], options) => manage(args, options));
+
+  program
+    .command("shell")
+    .description("Open Django's shell in the backend")
+    .addOption(dirOption())
+    .action(shell);
+
+  program
+    .command("backup")
+    .description("Back up the database now (prod profile)")
+    .addOption(dirOption())
+    .option("--list", "List the backups instead")
+    .action(backup);
+
+  program
+    .command("restore")
+    .description("Restore a backup over the database (prod profile)")
+    .argument("<backup>", "A file name from `dstack backup --list`")
+    .addOption(dirOption())
+    .option("-y, --yes", "Don't ask for confirmation")
+    .action(restore);
+
+  program
+    .command("types")
+    .description("Generate the frontend's API types from the backend's schema")
+    .addOption(dirOption())
+    .action(types);
 
   const presetCommand = program
     .command("preset")

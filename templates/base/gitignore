@@ -1,4 +1,5 @@
 .env
+.env.run
 node_modules/
 backend/.venv/
 backend/media/
