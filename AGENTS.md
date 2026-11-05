@@ -21,7 +21,9 @@ Postgres and Valkey. It is not a CMS of its own.
   the template tests in the containers and smoke-tests the site.
   `scripts/e2e-prod.sh` does the same with the prod profile behind Caddy
   at https://site.localhost, and tests a backup and a restore.
-- `website/`: the Docusaurus docs.
+- `website/`: the Docusaurus docs, published to GitHub Pages at
+  https://dwarsbit.github.io/django-stack/. `website/STYLE.md` is the
+  writing style guide.
 
 ## Commands
 
@@ -56,5 +58,6 @@ scripts/e2e-prod.sh   # the same in production; needs ports 80 and 443
 - Every CLI prompt has a flag, and every command exits non-zero with a
   one-line reason on failure.
 - Add a changeset (`pnpm changeset`) for every change to an npm package.
-- Commit messages and docs are in English. Docs follow the voice of the
-  sibling projects: "you", plain and precise, sentence-case headings.
+- Commit messages and docs are in English. Read `website/STYLE.md` before
+  writing or editing documentation, the docs website or the README: it is
+  the voice and terminology of the sibling projects, adapted to DjangoStack.
