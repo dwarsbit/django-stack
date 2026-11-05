@@ -5,7 +5,14 @@ sidebar_position: 2
 # 🚀 Getting started
 
 You need [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2,
-and Node.js 22 or later for the command that creates the project.
+and Node.js 22 or later for the command that creates the project. To work on
+the frontend and the backend outside the containers, for example to run the
+tests in your editor, you also need Python 3.12 or later.
+
+`init` checks these tools before it asks anything. A missing or old tool is a
+warning with the command that installs it on your operating system, such as
+`brew install --cask docker` on macOS or `winget install astral-sh.uv` on
+Windows. The project is created anyway.
 
 ## Create a project
 

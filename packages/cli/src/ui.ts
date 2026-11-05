@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
+import type { Check } from "./tools";
 import { CLI_VERSION } from "./version";
 
 /** The DjangoStack badge with the version and an optional title. */
@@ -35,4 +36,14 @@ export const secret = (value: string) => pc.bold(pc.yellow(value));
 /** Prompts only when stdin is a terminal and `--yes` was not passed. */
 export function isInteractive(yes: boolean | undefined): boolean {
   return !yes && Boolean(process.stdin.isTTY);
+}
+
+/** Logs a check, with its help lines when it did not pass. */
+export function logCheck(check: Check) {
+  const head = check.detail ? `${check.name} ${pc.dim(`- ${check.detail}`)}` : check.name;
+  const help = !check.ok && check.help ? check.help.map((line) => pc.dim(line)) : [];
+  const text = [check.ok ? head : check.warning ? pc.yellow(head) : pc.red(head), ...help].join("\n");
+  if (check.ok) p.log.success(text);
+  else if (check.warning) p.log.warn(text);
+  else p.log.error(text);
 }

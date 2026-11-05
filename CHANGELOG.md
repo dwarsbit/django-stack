@@ -16,6 +16,12 @@ releases it.
   the variables again. The Coolify API key is saved in the system keychain
   (`dstack deploy login`), or read from `DSTACK_COOLIFY_TOKEN` in CI.
   Platforms are providers behind one interface, so others can follow.
+- **Tool checks.** `init` first checks that Docker is installed and running
+  with Docker Compose v2, and that Node.js 22 or later and Python 3.12 or
+  later are installed. A missing or old tool is a warning with the install
+  command for your operating system; the project is created anyway, and
+  `--start` does not start it when Docker is not ready. `doctor` and
+  `check` show the same checks; Node.js and Python only warn.
 
 ## 0.1.0 (2026-11-05)
 

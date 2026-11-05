@@ -55,6 +55,20 @@ npx @django-stack/cli init [directory] [options]
 | `--start` | Run `docker compose up` when the project is created. |
 | `-y`, `--yes` | Don't ask; use the defaults for every option that is not given. |
 
+`init` starts by checking this computer:
+
+- Docker is installed and running, with Docker Compose v2;
+- Node.js 22 or later;
+- Python 3.12 or later.
+
+A failed check is a warning with the install command for your operating
+system: Homebrew on macOS, winget on Windows, and the install scripts on
+Linux. Node.js is installed with [fnm](https://github.com/Schniz/fnm) and
+Python with [uv](https://docs.astral.sh/uv/). The project is created anyway,
+because the project runs in Docker and Node.js and Python are only for
+development outside the containers. With `--start`, `init` does not start the
+project when Docker is not ready.
+
 ### Stack options
 
 Each stack option is asked for, unless a flag or `--preset` sets it. The
@@ -286,7 +300,8 @@ Checks a project and its running services.
 npx @django-stack/cli doctor [directory]
 ```
 
-It checks that Docker and Docker Compose v2 are available, that `.env` has
+It checks that Docker and Docker Compose v2 are available, that Node.js and
+Python are recent enough (a warning only, as in [`init`](#init)), that `.env` has
 every required value and two different API keys, and, when the project is
 running, that the backend is healthy, the site at `SITE_URL` answers, the
 read-only key reads the API and the API is closed without a key. With the
