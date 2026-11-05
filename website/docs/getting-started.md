@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Getting started
+# 🚀 Getting started
 
 You need [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2,
 and Node.js 22 or later for the command that creates the project.
@@ -29,7 +29,9 @@ Every prompt has a flag, so the command also runs in scripts:
 npx @django-stack/cli init my-site --yes --no-demo-content
 ```
 
-See the [CLI reference](./cli.md) for every option.
+When it is done, the command offers to install `dstack` globally, so that
+next time you can run `dstack init` and `dstack doctor`. See the
+[CLI reference](./cli.md) for every option.
 
 ## Start it
 
@@ -47,8 +49,8 @@ the demo content. Then open:
 | http://localhost:3000/admin/ | The admin, Django Content Studio |
 | http://localhost:8025 | Mailpit, which catches the mail the site sends |
 
-Sign in to the admin as `admin` with the password that `init` printed. It is
-also in `.env` as `ADMIN_PASSWORD`. Change it after you sign in.
+Log in to the admin as `admin` with the password that `init` printed. It is
+also in `.env` as `ADMIN_PASSWORD`. Change it after you log in.
 
 ## Edit content
 

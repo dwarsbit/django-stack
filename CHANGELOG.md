@@ -32,6 +32,12 @@ releases it.
   one list, and `completion <shell>` prints a Tab completion script. Each
   command checks npm once a day for a newer version and shows a notice;
   turn it off with `--no-update-check` or `DJANGO_STACK_NO_UPDATE_CHECK=1`.
+- **`dstack` command.** The CLI's command is now `dstack` (it was
+  `django-stack`). When you run it with `npx`, `pnpm dlx` or `bunx`, it
+  offers once to install `dstack` globally with the same package manager,
+  remembers the answer, and explains a permission error instead of
+  failing. Turn the offer off with `--no-install-prompt` or
+  `DJANGO_STACK_NO_INSTALL_PROMPT=1`.
 
 ## 0.0.1 (2026-11-04)
 

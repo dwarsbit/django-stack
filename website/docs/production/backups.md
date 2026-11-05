@@ -2,9 +2,9 @@
 sidebar_position: 4
 ---
 
-# Backups
+# 💾 Backups
 
-The `backup` service of the prod profile backs up the database every day
+The `backup` service of the `prod` profile backs up the database every day
 with `pg_dump`. It keeps the newest backups in the `backups` volume and,
 when you give it a bucket, a copy off the server.
 

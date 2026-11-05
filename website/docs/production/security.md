@@ -2,7 +2,7 @@
 sidebar_position: 5
 ---
 
-# Security
+# 🛡️ Security
 
 What a project does for you in production, and the checklist for what is
 left to you.
@@ -39,7 +39,7 @@ starts and stops on an error, such as debug on for an `https` site or the
 two API keys being the same. Warnings appear in its log. DjangoStack's own
 checks are in [Configuration](../configuration.md#system-checks).
 
-**Throttling.** The public form endpoints are limited to 10 requests a
+**Throttling.** The public form routes are limited to 10 requests a
 minute per client (`PUBLIC_WRITE_THROTTLE_RATE`). `NUM_PROXIES` makes the
 limit apply to the client, not to the proxy.
 
@@ -47,7 +47,7 @@ limit apply to the client, not to the proxy.
 
 Before the site goes live:
 
-- [ ] `.env` on the server came from `django-stack production`, and is not
+- [ ] `.env` on the server came from `dstack production`, and is not
       in git. `chmod 600 .env`.
 - [ ] `docker compose exec backend-prod python manage.py check --deploy`
       shows no issues.

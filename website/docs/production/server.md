@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Deploy to a server
+# 🖥️ Deploy to a server
 
 A project runs in production with the same `compose.yaml` as in
 development. The `prod` profile starts production images of the backend and
@@ -82,7 +82,7 @@ docker compose logs proxy  # "certificate obtained successfully"
 With Node.js on the server, `npx @django-stack/cli doctor` checks the
 settings and the running site too.
 
-Open `https://example.com/admin/` and sign in as `admin` with the password
+Open `https://example.com/admin/` and log in as `admin` with the password
 from step 1.
 
 ## Updates

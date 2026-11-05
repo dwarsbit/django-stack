@@ -2,7 +2,7 @@
 sidebar_position: 5
 ---
 
-# Preview and revalidation
+# 👀 Preview and revalidation
 
 ## Preview
 

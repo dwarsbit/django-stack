@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Media and database
+# 🗄️ Media and database
 
 By default a project keeps uploads in the `media` volume and the database in
 the bundled Postgres, both on the server. Both can move off the server: the

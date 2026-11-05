@@ -97,6 +97,12 @@ describe("updateCommand", () => {
     expect(updateCommand("file:///home/me/.local/share/pnpm/global/5/node_modules/x.js", {})).toBe(
       "pnpm add -g @django-stack/cli@latest",
     );
+    expect(
+      updateCommand("file:///tmp/bunx-1000-@django-stack/cli@latest/node_modules/@django-stack/cli/x.js", {}),
+    ).toBe("bunx @django-stack/cli@latest");
+    expect(updateCommand("file:///home/me/.bun/install/global/node_modules/@django-stack/cli/x.js", {})).toBe(
+      "bun add -g @django-stack/cli@latest",
+    );
     expect(updateCommand("file:///usr/local/lib/node_modules/@django-stack/cli/dist/bin.js", {})).toBe(
       "npm install -g @django-stack/cli@latest",
     );

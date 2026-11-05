@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Content and the API
+# 📝 Content and the API
 
 The content models are in `backend/content/models.py`. They are ordinary
 Django models: Django Headless serves them as a REST API under `/api/`, and
