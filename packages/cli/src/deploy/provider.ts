@@ -1,0 +1,127 @@
+/**
+ * Deploy providers: hosting platforms `dstack deploy` talks to. The commands
+ * only use this interface, so a new platform is a new provider and an entry
+ * in PROVIDERS, without changes to the commands.
+ */
+
+export type DeploymentStatus = "queued" | "building" | "finished" | "failed" | "cancelled";
+
+export interface LogLine {
+  text: string;
+  stderr: boolean;
+}
+
+export interface Deployment {
+  id: string;
+  status: DeploymentStatus;
+  commit?: string;
+  message?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  /** A link to the deployment in the platform's UI. */
+  url?: string;
+  log: LogLine[];
+}
+
+export type AppState = "running" | "degraded" | "stopped" | "unknown";
+
+export interface AppStatus {
+  state: AppState;
+  /** The platform's own words for the state, such as running:healthy. */
+  detail: string;
+  domains: string[];
+  /** The git branch the platform deploys. */
+  branch?: string;
+  /** A link to the application in the platform's UI. */
+  url?: string;
+}
+
+/** Where a project deploys: saved in `.dstack/deploy.json`, without secrets. */
+export interface DeployLink {
+  provider: string;
+  /** The platform instance, such as https://coolify.example.com. */
+  url: string;
+  /** Provider-specific ids, such as the project, environment and application. */
+  project: string;
+  environment: string;
+  application: string;
+}
+
+export interface Choice<T> {
+  value: T;
+  label: string;
+  hint?: string;
+}
+
+/** Asks the user, or fails with a one-line reason when the CLI may not ask. */
+export interface Ask {
+  interactive: boolean;
+  select<T>(message: string, choices: Choice<T>[], initial?: T): Promise<T>;
+  text(message: string, options?: { placeholder?: string; initial?: string }): Promise<string>;
+  confirm(message: string, initial?: boolean): Promise<boolean>;
+  /** Reports progress, such as "Created the project". */
+  step(message: string): void;
+}
+
+export interface SetupContext {
+  ask: Ask;
+  /** The project name, from compose.yaml. */
+  name: string;
+  /** The https URL of the git repository. */
+  repository: string;
+  branch: string;
+  /** The site's domain, from SITE_URL in .env.production. */
+  domain: string;
+  /** The variables to give the application. */
+  env: Record<string, string>;
+  /** Provider flags from the command line, such as server or project. */
+  options: Record<string, string | undefined>;
+}
+
+/** A provider connected to one instance with one API key. */
+export interface ProviderClient {
+  /** Checks the key; returns the platform's version. */
+  verify(): Promise<string>;
+  /** Creates the application on the platform and gives it the variables. */
+  setup(context: SetupContext): Promise<Omit<DeployLink, "provider" | "url">>;
+  pushEnv(link: DeployLink, env: Record<string, string>): Promise<void>;
+  /** Starts a deploy; returns its id. */
+  deploy(link: DeployLink, options: { force: boolean }): Promise<string>;
+  deployment(link: DeployLink, id: string): Promise<Deployment>;
+  /** The newest deployments first. */
+  deployments(link: DeployLink, limit: number): Promise<Deployment[]>;
+  status(link: DeployLink): Promise<AppStatus>;
+}
+
+export interface ProviderFlag {
+  /** The option key, such as server for --server. */
+  name: string;
+  description: string;
+}
+
+export interface DeployProvider {
+  id: string;
+  name: string;
+  /** The environment variable that overrides the saved API key. */
+  tokenEnv: string;
+  /** Where to create an API key, and which permissions it needs. */
+  tokenHelp(url: string): string;
+  /** Variables the platform needs on top of .env.production. */
+  platformEnv: Record<string, string>;
+  /** The flags of `deploy setup` this provider reads. */
+  setupFlags: ProviderFlag[];
+  connect(url: string, token: string): ProviderClient;
+}
+
+/** Normalizes an instance URL: https by default, no trailing slash or path. */
+export function normalizeUrl(value: string): string {
+  const trimmed = value.trim();
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  let parsed: URL;
+  try {
+    parsed = new URL(withScheme);
+  } catch {
+    throw new Error(`${value} is not a URL. Enter one such as https://coolify.example.com.`);
+  }
+  return `${parsed.protocol}//${parsed.host}`;
+}

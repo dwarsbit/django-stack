@@ -49,6 +49,7 @@
   "dependencies": {
     "@bomb.sh/tab": "^0.0.22",
     "@clack/prompts": "^1.8.1",
+    "@napi-rs/keyring": "^2.1.2",
     "commander": "^15.0.0",
     "picocolors": "^1.1.1"
   }

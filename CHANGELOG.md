@@ -7,6 +7,15 @@ releases it.
 
 ## 0.2.0 (unreleased)
 
+- **Deploy to Coolify.** `dstack deploy setup` creates the project and the
+  application in Coolify from the git repository (Docker Compose build
+  pack, built on the server), sets the domain and uploads
+  `.env.production`. `dstack deploy` starts a deploy and follows it,
+  `dstack deploy status` shows the site's state and the last deploys, and
+  `dstack deploy logs` prints a build log. `dstack deploy env push` uploads
+  the variables again. The Coolify API key is saved in the system keychain
+  (`dstack deploy login`), or read from `DSTACK_COOLIFY_TOKEN` in CI.
+  Platforms are providers behind one interface, so others can follow.
 - **Tool checks.** `init` first checks that Docker is installed and running
   with Docker Compose v2, and that Node.js 22 or later and Python 3.12 or
   later are installed. A missing or old tool is a warning with the install

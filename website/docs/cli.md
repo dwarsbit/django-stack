@@ -135,6 +135,7 @@ project. They need Docker Compose v2.
 | `dstack backup` | Backs up the database now. `--list` lists the backups. |
 | `dstack restore <backup>` | Restores a backup from `dstack backup --list` over the database. It asks first; `--yes` doesn't. |
 | `dstack types` | Generates the frontend's API types in `frontend/src/lib/headless.ts` from the backend's schema. |
+| `dstack deploy` | Deploys to a hosting platform and shows the status. See [`deploy`](#deploy). |
 
 `manage`, `shell`, `logs` and `check` use the running containers, and start
 a one-off container when the backend is not running.
@@ -223,6 +224,73 @@ secrets for everything, including the admin password and the bundled
 database's password. The local S3 service's values are cleared. It then
 prints what is left to fill in and the admin password. The file is readable
 only by you. See [Deploy to a server](./production/server.md).
+
+## `deploy`
+
+Puts the project on a hosting platform, deploys it and shows its status.
+Coolify is the supported platform. The platform builds the project on its
+server from the git repository, so push your commits before you deploy.
+
+```bash
+dstack production --domain example.com
+dstack deploy setup --url https://coolify.example.com
+dstack deploy
+```
+
+| Command | What it does |
+|---------|--------------|
+| `dstack deploy setup` | Creates the project and the application on the platform, sets the domain and uploads the variables. See [`deploy setup`](#deploy-setup). |
+| `dstack deploy` | Starts a deploy and follows it until it ends; on a failure it prints the end of the build log. `--force` rebuilds without the cache, `--no-wait` returns once the deploy started. `dstack deploy start` is the same command. |
+| `dstack deploy status` | Shows whether the site runs, its domain, and the last deploys. `--watch` follows a running deploy, `-n <count>` lists more deploys. |
+| `dstack deploy logs [deployment]` | Prints the build log of a deploy, the latest by default. |
+| `dstack deploy env push` | Replaces the platform's variables with `.env.production`. |
+| `dstack deploy login` | Checks an API key and saves it. `setup` asks for one when there is none. |
+| `dstack deploy logout` | Removes a saved API key. |
+
+`dstack deploy` refuses when your last commit is not on the branch the
+platform deploys, since the deploy would not include it. Push it, or pass
+`--no-push-check`.
+
+### `deploy setup`
+
+| Option | Description |
+|--------|-------------|
+| `--url <url>` | The platform's address, such as `https://coolify.example.com`. |
+| `--repository <url>` | The git repository the platform builds. Default: the `origin` remote, as an `https` URL. |
+| `--branch <branch>` | The branch to deploy. Default: the current branch. |
+| `--server <server>` | The Coolify server, by name or uuid. Asked for when there are several. |
+| `--project <project>` | The Coolify project, by name or uuid. Default: a new project named after the project. |
+| `--environment <name>` | The Coolify environment. Default: `production`, created when it does not exist. |
+| `--github-app <app>` | The Coolify GitHub App that reads a private repository, or `public`. Asked for when Coolify has GitHub Apps. |
+| `--deploy`, `--no-deploy` | Deploy when done, or don't ask. |
+| `--force` | Set up again, replacing `.dstack/deploy.json`. |
+| `-y`, `--yes` | Don't ask; use the flags and the defaults. |
+
+It reads the variables and the domain from `.env.production`, so run
+[`production`](#production) first. It adds the variables that put Caddy
+behind the platform's proxy (see
+[Coolify and Dokploy](./production/platforms.md)), creates the application
+with the Docker Compose build pack and `/compose.yaml`, and gives the
+`proxy` service the domain.
+
+It then writes `.dstack/deploy.json`: the platform's address and the ids of
+the project, environment and application. The file holds no secrets; commit
+it, so everyone who works on the project deploys to the same place. After
+setup, the platform keeps the variables: change them there, or change
+`.env.production` and run `dstack deploy env push`.
+
+### API keys
+
+The CLI saves an API key in the system keychain (Keychain on macOS,
+Credential Manager on Windows, the Secret Service on Linux), per platform
+address, and never in the project. Where there is no keychain, such as on a
+server without a desktop, it saves the key in
+`~/.config/dstack/credentials.json`, readable only by you, and says so.
+
+In CI, set `DSTACK_COOLIFY_TOKEN`: it overrides a saved key and nothing is
+written. Create the key in Coolify under **Keys & Tokens** with the `read`,
+`write` and `deploy` permissions; the API must be on under
+**Settings** › **Advanced**.
 
 ## `doctor`
 
