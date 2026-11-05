@@ -2,6 +2,15 @@ import tab from "@bomb.sh/tab/commander";
 import * as p from "@clack/prompts";
 import { Command, InvalidArgumentError, Option } from "commander";
 import pc from "picocolors";
+import {
+  deploy,
+  deployEnvPush,
+  deployLogin,
+  deployLogout,
+  deployLogs,
+  deploySetup,
+  deployStatus,
+} from "./commands/deploy";
 import { doctor } from "./commands/doctor";
 import { init } from "./commands/init";
 import { preset } from "./commands/preset";
@@ -20,6 +29,7 @@ import {
   types,
   update as updateProject,
 } from "./commands/project";
+import { DEFAULT_PROVIDER, PROVIDERS } from "./deploy";
 import { BIN, offerGlobalInstall } from "./global-install";
 import { generateSecret } from "./secrets";
 import { NAMED_PRESETS, STACK_OPTIONS } from "./stack";
@@ -184,6 +194,91 @@ export function createProgram(): Command {
     .description("Generate the frontend's API types from the backend's schema")
     .addOption(dirOption())
     .action(types);
+
+  const providerOption = () =>
+    new Option("--provider <provider>", `The platform (default: ${DEFAULT_PROVIDER.id})`).choices(
+      PROVIDERS.map((provider) => provider.id),
+    );
+
+  const deployCommand = program
+    .command("deploy")
+    .description("Deploy to a platform such as Coolify, and show the status");
+
+  deployCommand
+    .command("start", { isDefault: true })
+    .description("Start a deploy and follow it; the same as `dstack deploy`")
+    .addOption(dirOption())
+    .option("--force", "Rebuild the images without cache")
+    .option("--no-wait", "Don't follow the deploy; return once it started")
+    .option("--no-push-check", "Deploy even when the last commit is not pushed")
+    .option("-y, --yes", "Don't ask; fail when no API key is saved")
+    .action(deploy);
+
+  const setupCommand = deployCommand
+    .command("setup")
+    .description("Create the project on the platform and link it to this directory")
+    .addOption(dirOption())
+    .addOption(providerOption())
+    .option("--url <url>", "The platform's address, such as https://coolify.example.com")
+    .option("--repository <url>", "The git repository the platform builds (default: the origin remote)")
+    .option("--branch <branch>", "The branch to deploy (default: the current one)")
+    .option("--deploy", "Deploy when done")
+    .option("--no-deploy", "Don't offer to deploy when done")
+    .option("--force", `Set up again, replacing the link in .dstack/deploy.json`)
+    .option("-y, --yes", "Don't ask; use the flags and the defaults")
+    .action(deploySetup);
+  const seen = new Set<string>();
+  for (const flag of PROVIDERS.flatMap((provider) => provider.setupFlags)) {
+    if (seen.has(flag.name)) continue;
+    seen.add(flag.name);
+    const kebab = flag.name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+    setupCommand.option(`--${kebab} <value>`, flag.description);
+  }
+
+  deployCommand
+    .command("status")
+    .description("Show the state of the site and the last deploys")
+    .addOption(dirOption())
+    .option("-n, --limit <count>", "How many deploys to list", "5")
+    .option("--watch", "Follow a running deploy until it ends")
+    .action(deployStatus);
+
+  deployCommand
+    .command("logs")
+    .description("Print the build log of a deploy")
+    .argument("[deployment]", "A deploy id from `dstack deploy status` (default: the latest)")
+    .addOption(dirOption())
+    .action(deployLogs);
+
+  deployCommand
+    .command("env")
+    .description("Manage the platform's environment variables")
+    .command("push")
+    .description("Replace the platform's variables with .env.production")
+    .addOption(dirOption())
+    .option("-y, --yes", "Don't ask for confirmation")
+    .action(deployEnvPush);
+
+  deployCommand
+    .command("login")
+    .description("Check and save an API key in the system keychain")
+    .addOption(dirOption())
+    .addOption(providerOption())
+    .option("--url <url>", "The platform's address (default: the one in .dstack/deploy.json)")
+    .option(
+      "--token <token>",
+      "The API key (default: ask, or the provider's environment variable with --yes)",
+    )
+    .option("-y, --yes", "Don't ask")
+    .action(deployLogin);
+
+  deployCommand
+    .command("logout")
+    .description("Remove a saved API key")
+    .addOption(dirOption())
+    .addOption(providerOption())
+    .option("--url <url>", "The platform's address (default: the one in .dstack/deploy.json)")
+    .action(deployLogout);
 
   const presetCommand = program
     .command("preset")

@@ -57,6 +57,40 @@ Dokploy adds its network to the `proxy` service when you add the domain.
 
 ## Coolify
 
+The CLI sets up the project in Coolify and deploys it, with a Coolify API
+key. Push the project to a git repository first: Coolify builds it on its
+server from there.
+
+1. In Coolify, create an API key under **Keys & Tokens** with the `read`,
+   `write` and `deploy` permissions, and turn the API on under
+   **Settings** › **Advanced**.
+2. Write the settings for the domain:
+
+   ```bash
+   dstack production --domain example.com \
+     --email-url smtp+tls://user:password@smtp.example.com:587
+   ```
+
+3. Set up the project in Coolify. It asks for the API key, creates the
+   project and the application, gives the `proxy` service the domain and
+   uploads `.env.production` with the variables above:
+
+   ```bash
+   dstack deploy setup --url https://coolify.example.com
+   ```
+
+4. Point the domain's DNS at the Coolify server, then deploy:
+
+   ```bash
+   dstack deploy
+   ```
+
+`dstack deploy status` shows whether the site runs and the last deploys.
+For a private repository, connect a GitHub App in Coolify first and pick it
+during setup. See the [CLI reference](../cli.md#deploy) for every option.
+
+To set up the resource by hand instead:
+
 1. Add a resource from your repository with the **Docker Compose** build
    pack and `/compose.yaml` as the file.
 2. Under **Environment Variables**, add the variables from above.
