@@ -74,7 +74,7 @@ jobs:
       fail-fast: false
       matrix:
         # Every frontend passes the same tests, on every change.
-        frontend: [astro]
+        frontend: [astro, sveltekit]
         profile: [dev, prod]
         include:
           # Development with the local S3 service.
