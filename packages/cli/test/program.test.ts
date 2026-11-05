@@ -32,6 +32,7 @@ describe("program", () => {
       "backup",
       "restore",
       "types",
+      "deploy",
       "preset",
       "production",
       "doctor",
@@ -45,6 +46,12 @@ describe("program", () => {
     const help = run(["--help"]);
     expect(help).toContain("Usage: dstack");
     expect(help).toContain("--no-install-prompt");
+  });
+
+  it("groups the deploy commands", () => {
+    const help = run(["deploy", "--help"]);
+    for (const name of ["start", "setup", "status", "logs", "env", "login", "logout"])
+      expect(help).toContain(name);
   });
 
   it("rejects an unknown frontend in one line", () => {

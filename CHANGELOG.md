@@ -5,6 +5,18 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 PyPI. Add your change under the unreleased version; the release workflow
 releases it.
 
+## 0.2.0 (unreleased)
+
+- **Deploy to Coolify.** `dstack deploy setup` creates the project and the
+  application in Coolify from the git repository (Docker Compose build
+  pack, built on the server), sets the domain and uploads
+  `.env.production`. `dstack deploy` starts a deploy and follows it,
+  `dstack deploy status` shows the site's state and the last deploys, and
+  `dstack deploy logs` prints a build log. `dstack deploy env push` uploads
+  the variables again. The Coolify API key is saved in the system keychain
+  (`dstack deploy login`), or read from `DSTACK_COOLIFY_TOKEN` in CI.
+  Platforms are providers behind one interface, so others can follow.
+
 ## 0.1.0 (2026-11-05)
 
 - **First release.** `init` creates a Docker Compose project with a Django
