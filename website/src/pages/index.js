@@ -4,14 +4,37 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import CodeBlock from "@theme/CodeBlock";
 import Layout from "@theme/Layout";
 import ThemedImage from "@theme/ThemedImage";
+import { useEffect, useState } from "react";
 
 const heroCode = `npm install --global @django-stack/cli
 dstack init my-site
 cd my-site
 dstack dev`;
 
+const frontends = ["Astro", "Next.js"];
+
+// The frontend row of the hero shows each frontend option in turn. It stays
+// on the first one for visitors who ask for reduced motion.
+function RotatingFrontend() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const timer = setInterval(() => setIndex((current) => (current + 1) % frontends.length), 2500);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <span className="hero-rotate" aria-live="off">
+      <span className="hero-rotate-item" key={frontends[index]}>
+        {frontends[index]}
+      </span>
+    </span>
+  );
+}
+
 const services = [
-  { name: "frontend", text: "Astro", note: "localhost:3000" },
+  { name: "frontend", text: <RotatingFrontend />, note: "localhost:3000" },
   { name: "admin", text: "Django Content Studio", note: "/admin/" },
   { name: "api", text: "Django Headless", note: "/api/" },
   { name: "db", text: "Postgres", note: "" },
