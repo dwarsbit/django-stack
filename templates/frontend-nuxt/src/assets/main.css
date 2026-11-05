@@ -1,0 +1,126 @@
+/* A small, plain stylesheet: replace it with your own design. */
+:root {
+  --color-bg: #ffffff;
+  --color-text: #1d2420;
+  --color-muted: #5b6862;
+  --color-line: #e3e8e4;
+  --color-accent: #0c4b33;
+  --color-accent-soft: #e8f3ee;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --width: 72rem;
+  --width-text: 44rem;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #111614;
+    --color-text: #e6ebe8;
+    --color-muted: #a1aba6;
+    --color-line: #2a322e;
+    --color-accent: #6fcf9f;
+    --color-accent-soft: #1b2a23;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.container {
+  width: min(100% - 2rem, var(--width));
+  margin-inline: auto;
+}
+
+.narrow {
+  width: min(100% - 2rem, var(--width-text));
+  margin-inline: auto;
+}
+
+.muted {
+  color: var(--color-muted);
+}
+
+.prose h2,
+.prose h3 {
+  line-height: 1.25;
+  margin-top: 2em;
+}
+
+.prose blockquote {
+  margin: 2rem 0;
+  padding-left: 1.25rem;
+  border-left: 4px solid var(--color-accent);
+}
+
+.button {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-weight: 600;
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+}
+
+.preview-banner {
+  background: #fde68a;
+  color: #422006;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Blocks, from @django-stack/vue. */
+.block-image {
+  margin: 2rem 0;
+}
+
+.block-image img {
+  border-radius: 0.5rem;
+}
+
+.block-image figcaption {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.cta {
+  margin: 2.5rem 0;
+  padding: 2rem;
+  border-radius: 0.75rem;
+  background: var(--color-accent-soft);
+}
+
+.cta h2 {
+  margin-top: 0;
+}

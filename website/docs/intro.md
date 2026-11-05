@@ -10,7 +10,7 @@ open-source project you can read, change or remove.
 
 - **Django Headless** serves your content models as a REST API.
 - **Django Content Studio** is the admin where editors write and publish.
-- **Astro** renders the site by default; SvelteKit is the alternative.
+- **Astro** renders the site by default; SvelteKit and Nuxt are the alternatives.
 - **Postgres** stores the content, and **Valkey** is the shared cache and
   task queue.
 
@@ -35,4 +35,5 @@ Start with [Getting started](./getting-started.md).
 | `@django-stack/react` | npm | React components for blocks, rich text, images and SEO |
 | `@django-stack/next` | npm | Next.js route handlers and configuration |
 | `@django-stack/svelte` | npm | Svelte components for blocks, rich text, images and SEO |
+| `@django-stack/vue` | npm | Vue components for blocks, rich text and images |
 | `django-stack` | PyPI | Settings from environment variables, API defaults, health checks and system checks |
