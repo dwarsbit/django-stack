@@ -6,7 +6,7 @@ import Layout from "@theme/Layout";
 import ThemedImage from "@theme/ThemedImage";
 import { useEffect, useState } from "react";
 
-const heroCode = `npm install --global @django-stack/cli
+const heroCode = `npm i -g @django-stack/cli
 dstack init my-site
 cd my-site
 dstack dev`;

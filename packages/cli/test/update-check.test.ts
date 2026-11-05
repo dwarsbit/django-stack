@@ -104,7 +104,7 @@ describe("updateCommand", () => {
       "bun add -g @django-stack/cli@latest",
     );
     expect(updateCommand("file:///usr/local/lib/node_modules/@django-stack/cli/dist/bin.js", {})).toBe(
-      "npm install -g @django-stack/cli@latest",
+      "npm i -g @django-stack/cli@latest",
     );
   });
 });

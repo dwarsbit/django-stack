@@ -17,6 +17,8 @@ releases it.
 - **`dstack deploy rollback`** starts the release before the running one
   again, or the deploy you name (servers over SSH).
 - New projects keep `.env.production` out of git.
+- The CLI and the docs show the shorter install command
+  `npm i -g @django-stack/cli`.
 
 ## 0.2.0 (2026-11-05)
 
