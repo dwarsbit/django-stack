@@ -8,7 +8,9 @@ Postgres and Valkey. It is not a CMS of its own.
 ## Layout
 
 - `packages/*`: the npm packages (`@django-stack/cli`, `utils`, `react`,
-  `next`), TypeScript, built with tsdown, tested with Vitest.
+  `next`), TypeScript, built with tsdown, tested with Vitest. The
+  platforms of `dstack deploy` are providers in `packages/cli/src/deploy/`;
+  `CONTRIBUTING.md` describes the interface.
 - `python/django-stack`: the `django-stack` PyPI package, Hatch build
   backend, managed with uv, tested with pytest, linted with Ruff.
 - `templates/`: the files `init` copies into a new project. Placeholders
