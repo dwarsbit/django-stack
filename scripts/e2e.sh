@@ -23,7 +23,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-node "$cli" init "$project" --yes --no-git --link "$repo" ${LOCAL_S3:+--local-s3}
+node "$cli" init "$project" --yes --no-git --link "$repo" ${LOCAL_S3:+--storage s3}
 cd "$project"
 
 docker compose build

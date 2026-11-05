@@ -23,14 +23,55 @@ npx @django-stack/cli init [directory] [options]
 | Option | Description |
 |--------|-------------|
 | `--name <name>` | The project name: lowercase letters, digits and dashes. The default comes from the directory name. |
-| `--frontend <frontend>` | The frontend. `astro` is the only one in this release. |
+| `--preset <preset>` | Set the stack options below from a preset code or name. See [Presets](#presets). |
 | `--database-url <url>` | Use your own Postgres instead of the bundled one. URLs to other hosts get `sslmode=require` unless they set an `sslmode`. |
 | `--time-zone <zone>` | The time zone of the backend, an IANA name such as `Europe/Amsterdam`. The prompt suggests this computer's zone and filters as you type. The default with `--yes` is `UTC`. |
-| `--local-s3` | Store uploads in a local S3 service in development, the same code path as S3 in production. See [Media and database](./production/media-and-database.md#s3-in-development). |
 | `--no-demo-content` | Start with an empty site. |
 | `--no-git` | Don't create a git repository with a first commit. |
 | `--start` | Run `docker compose up` when the project is created. |
 | `-y`, `--yes` | Don't ask; use the defaults for every option that is not given. |
+
+### Stack options
+
+Each stack option is asked for, unless a flag or `--preset` sets it. The
+first value is the default. Values marked *later* are in the list already,
+but this release does not generate them yet: `init` refuses them, and lists
+the defaults it does not generate yet when it is done.
+
+| Option | Values |
+|--------|--------|
+| `--frontend` | `astro`, `next` (later), `headless` (later, just the API and the admin), `templates` (later, Django templates) |
+| `--postgres` | `stable` (Postgres 17), `latest` (Postgres 18, later). Ignored with `--database-url`. |
+| `--analytics` | `umami` (later, built in), `off` |
+| `--tasks` | `huey`, `off` (later) |
+| `--cache` | `database` (later), `valkey` (later), `off` (later) |
+| `--notifications` | `on` (later, in the admin and by email), `off` |
+| `--captcha` | `on` (later, the built-in captcha), `off` |
+| `--storage` | `local`, `s3` (a local S3 service in development, the same code path as S3 in production; see [Media and database](./production/media-and-database.md#s3-in-development)) |
+| `--package-manager` | `pnpm` (later), `npm`, `bun` (later). Only for a Node frontend. |
+
+### Presets
+
+A preset sets every stack option at once, so you can share a stack or
+create the same one again. When `init` is done, it prints the preset of the
+project:
+
+```bash
+npx @django-stack/cli init my-site --preset a201
+```
+
+Flags win over the preset, so `--preset a201 --storage s3` changes only the
+storage. There are named presets too:
+
+| Name | Stack |
+|------|-------|
+| `blog` | Astro with everything on: the defaults. |
+| `api` | Headless, without analytics. |
+| `minimal` | Astro with analytics, tasks, cache, notifications and captcha off. |
+
+`django-stack preset` asks for the stack options and prints the code, and
+`django-stack preset <code>` shows the stack of a code. A code from a newer
+CLI fails with a request to update.
 
 The command refuses a directory that is not empty. When
 [uv](https://docs.astral.sh/uv/) is installed, it also locks the backend's

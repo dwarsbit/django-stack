@@ -10,8 +10,9 @@ docker compose up
 
 | Command | Description |
 |---------|-------------|
-| `init [directory]` | Create a project. Flags: `--name`, `--frontend`, `--database-url`, `--time-zone`, `--local-s3`, `--no-demo-content`, `--no-git`, `--start`, `--yes` |
+| `init [directory]` | Create a project. Flags: `--name`, `--preset`, `--frontend`, `--postgres`, `--analytics`, `--tasks`, `--cache`, `--notifications`, `--captcha`, `--storage`, `--package-manager`, `--database-url`, `--time-zone`, `--no-demo-content`, `--no-git`, `--start`, `--yes` |
 | `production [directory]` | Write `.env.production` for a server. Flags: `--domain`, `--email-url`, `--force`, `--yes` |
+| `preset [preset]` | Print the preset code of a stack, or the stack of a code |
 | `doctor [directory]` | Check a project and its running services |
 | `secret [bytes]` | Print a random secret |
 | `completion <shell>` | Print a Tab completion script for zsh, bash, fish or PowerShell |

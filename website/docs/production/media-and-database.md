@@ -50,7 +50,7 @@ copy them to the bucket with any S3 tool, such as
 
 ### S3 in development
 
-`init --local-s3` adds a local S3 service ([SeaweedFS](https://github.com/seaweedfs/seaweedfs))
+`init --storage s3` adds a local S3 service ([SeaweedFS](https://github.com/seaweedfs/seaweedfs))
 to development, so uploads take the same code path as in production. Its
 files are public at `http://localhost:8333/media/`. To add it to an existing
 project, add `s3` to `COMPOSE_PROFILES` and set the values in the comment
