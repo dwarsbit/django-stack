@@ -72,8 +72,8 @@ describe("presets", () => {
 
 describe("pendingChoices", () => {
   it("lists what is not generated yet, and which of it are defaults", () => {
-    const pending = pendingChoices({ ...DEFAULT_STACK, frontend: "next" });
-    expect(pending).toContainEqual({ key: "frontend", choice: "--frontend next", isDefault: false });
+    const pending = pendingChoices({ ...DEFAULT_STACK, frontend: "headless" });
+    expect(pending).toContainEqual({ key: "frontend", choice: "--frontend headless", isDefault: false });
     expect(pending).toContainEqual({ key: "cache", choice: "--cache database", isDefault: true });
   });
 
