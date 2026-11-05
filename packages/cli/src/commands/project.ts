@@ -133,23 +133,30 @@ export async function shell(options: DirectoryOptions) {
   return manage(["shell"], options);
 }
 
-/** The project that runs the backups: the prod profile, on a server or the local run. */
-function backupProject(options: DirectoryOptions): Project {
+/**
+ * The project and the service that run the backups: the prod worker, on a
+ * server or the local run, or the `backup` service of projects from 0.1.
+ */
+function backupProject(options: DirectoryOptions): { project: Project; service: string } {
   const project = activeProject(open(options));
   if (!project.prod)
     fail(`Backups run in the prod profile: on the server, or locally after ${command("dstack run")}.`);
-  if (!runningServices(project).includes("backup"))
-    fail(`The backup service is not running. Start the project with ${command("dstack run")}.`);
-  return project;
+  const running = runningServices(project);
+  const service = ["backup", project.services.worker].find((name) => running.includes(name));
+  if (!service)
+    fail(
+      `The ${project.services.worker} service is not running. Start the project with ${command("dstack run")}.`,
+    );
+  return { project, service };
 }
 
 /** `dstack backup`: back up the database and the media now, or list the backups. */
 export async function backup(options: DirectoryOptions & { list?: boolean; media: boolean }) {
-  const project = backupProject(options);
+  const { project, service } = backupProject(options);
   const args = ["python", "manage.py", "backup_database"];
   if (options.list) args.push("--list");
   else if (!options.media) args.push("--no-media");
-  exitWith(compose(project, ["exec", "-T", "backup", ...args]));
+  exitWith(compose(project, ["exec", "-T", service, ...args]));
 }
 
 /** The management command and its options for `dstack restore`. */
@@ -161,10 +168,10 @@ export function restoreArgs(name: string, options: { yes?: boolean; media?: bool
 
 /** `dstack restore <backup>`: restore a database dump, with --media its media too, or a media archive. */
 export async function restore(name: string, options: DirectoryOptions & { yes?: boolean; media?: boolean }) {
-  const project = backupProject(options);
+  const { project, service } = backupProject(options);
   const args = restoreArgs(name, options);
   if (!options.yes && !tty()) fail("Pass --yes to restore without a terminal.");
-  exitWith(compose(project, ["exec", ...(options.yes ? ["-T"] : []), "backup", ...args]));
+  exitWith(compose(project, ["exec", ...(options.yes ? ["-T"] : []), service, ...args]));
 }
 
 /** `dstack types`: the OpenAPI schema from the backend, and the frontend's types from it. */

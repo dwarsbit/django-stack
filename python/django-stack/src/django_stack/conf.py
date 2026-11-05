@@ -22,6 +22,7 @@ DEFAULTS = {
     "BACKUP_S3_PREFIX": "backups/",
     "BACKUP_S3": {},
     "BACKUP_MEDIA": True,
+    "BACKUP_DAILY": False,
 }
 
 

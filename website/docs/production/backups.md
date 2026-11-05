@@ -4,10 +4,18 @@ sidebar_position: 4
 
 # 💾 Backups
 
-The `backup` service of the `prod` profile backs up the database every day
-with `pg_dump` and, when uploads are on the server's disk, the `media`
-volume as an archive. It keeps the newest backups in the `backups` volume
-and, when you give it a bucket, a copy off the server.
+The worker of the `prod` profile (`worker-prod`) backs up the database
+every day with `pg_dump` and, when uploads are on the server's disk, the
+`media` volume as an archive. It keeps the newest backups in the `backups`
+volume and, when you give it a bucket, a copy off the server.
+
+The backup is a Huey periodic task (`django_stack.tasks.daily_backup`). It
+checks every hour, at the minute of `BACKUP_TIME`, and backs up in the hour
+of `BACKUP_TIME`, or whenever the newest backup is more than a day old, and
+it checks once when the worker starts. So a backup missed while the server
+was down is made when it is back. A failed backup is retried three times,
+ten minutes apart; the attempts show on the admin's task page and in
+`dstack logs worker-prod`.
 
 Store media in S3 when you can (see
 [Media and database](./media-and-database.md)): the bucket keeps the files
@@ -43,8 +51,8 @@ dstack backup
 dstack backup --list
 ```
 
-These run `backup_database` in the `backup` service, which you can also run
-yourself: `docker compose exec backup python manage.py backup_database`.
+These run `backup_database` in `worker-prod`, which you can also run
+yourself: `docker compose exec worker-prod python manage.py backup_database`.
 `--list` shows the backups in the volume (`local`) and in the bucket
 (`bucket`). `--no-media` backs up the database only, and `--keep N` (on
 `backup_database`) keeps N backups instead of `BACKUP_KEEP`.
@@ -52,7 +60,7 @@ yourself: `docker compose exec backup python manage.py backup_database`.
 To copy a backup to your machine:
 
 ```bash
-docker compose cp backup:/app/backups/my-site-20261104T030000Z.dump .
+docker compose cp worker-prod:/app/backups/my-site-20261104T030000Z.dump .
 ```
 
 ## Restore
@@ -79,7 +87,7 @@ The backup can be:
 - a name from `--list`: from the volume, or downloaded from the bucket when
   it is only there,
 - a path in the container, such as a file you copied in with
-  `docker compose cp my.dump backup:/app/backups/`.
+  `docker compose cp my.dump worker-prod:/app/backups/`.
 
 After a restore, restart the backend and the frontend, so no cached page
 shows the newer content:
@@ -95,6 +103,15 @@ docker compose restart backend-prod worker-prod frontend-prod
    the same `BACKUP_S3_BUCKET`. Without a bucket, copy the `.dump` and the
    `.media.tar.gz` into the new server's `backups` volume.
 3. Restore there with `dstack restore <name> --media`.
+
+## Projects from 0.1
+
+Projects created with 0.1 have a separate `backup` service that runs
+`run_backups`, a loop that sleeps until `BACKUP_TIME`. It keeps working, and
+`dstack backup` and `dstack restore` use it while it runs. To move to the
+worker, remove the `backup` service from `compose.yaml` and give
+`worker-prod` the environment `BACKUP_DAILY: "1"` and `BACKUP_DIR: /app/backups`
+and the volume `backups:/app/backups`, as in a new project.
 
 ## Without the bundled services
 

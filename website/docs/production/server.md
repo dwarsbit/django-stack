@@ -7,7 +7,8 @@ sidebar_position: 1
 A project runs in production with the same `compose.yaml` as in
 development. The `prod` profile starts production images of the backend and
 the frontend behind [Caddy](https://caddyserver.com/), which gets and renews
-the HTTPS certificate by itself, plus a worker and a backup service. This
+the HTTPS certificate by itself, plus a worker that also makes the daily
+backups. This
 page deploys to one Linux server (a VPS) of your own.
 
 ```text
@@ -15,7 +16,7 @@ page deploys to one Linux server (a VPS) of your own.
 browser ─ 443 ──▶ │ proxy (Caddy) ─┬─ /admin /api /static ─▶ backend-prod │
                   │                ├─ /media ─▶ media volume              │
                   │                └─ everything else ─▶ frontend-prod    │
-                  │ worker-prod  backup  cache  db (or an external one)   │
+                  │ worker-prod  cache  db (or an external one)           │
                   └───────────────────────────────────────────────────────┘
 ```
 

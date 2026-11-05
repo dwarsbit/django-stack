@@ -14,6 +14,13 @@ releases it.
   restore it with the database, `restore_media` on its own, and
   `dstack backup --no-media` or `BACKUP_MEDIA=0` skip it. Media in S3 is
   not archived; storing uploads in S3 is still the recommended setup.
+- **Backups in the worker.** The daily backup is a Huey periodic task in
+  `worker-prod` (`django_stack.tasks.daily_backup`, on with
+  `BACKUP_DAILY=1`), and new projects no longer have a `backup` service. It
+  checks every hour and when the worker starts, so a backup missed while
+  the server was down is made when it is back, and a failed backup is
+  retried three times, ten minutes apart. `run_backups` and the `backup`
+  service of existing projects keep working.
 
 ## 0.1.0 (2026-11-05)
 

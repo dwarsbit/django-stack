@@ -43,7 +43,8 @@ Run them at the project root. They need Docker; Node is only needed for the `npm
 | Production settings for a server | `npx @django-stack/cli production --domain example.com` |
 
 In production (`COMPOSE_PROFILES=prod,db`) the services are `backend-prod`,
-`worker-prod`, `frontend-prod`, `proxy` and `backup`; their containers are
+`worker-prod` (which also runs the daily backup), `frontend-prod` and
+`proxy`; their containers are
 read-only, so a change goes through the code and a new image, never an edit
 in a running container.
 

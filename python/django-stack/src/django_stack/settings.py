@@ -301,6 +301,7 @@ def configure(
             "BACKUP_S3_BUCKET": e.str("BACKUP_S3_BUCKET"),
             "BACKUP_S3_PREFIX": e.str("BACKUP_S3_PREFIX", "backups/"),
             "BACKUP_MEDIA": e.bool("BACKUP_MEDIA", True),
+            "BACKUP_DAILY": e.bool("BACKUP_DAILY", False),
             "BACKUP_S3": {
                 "endpoint_url": e.str("BACKUP_S3_ENDPOINT_URL", e.str("S3_ENDPOINT_URL")),
                 "region_name": e.str("BACKUP_S3_REGION", e.str("S3_REGION")),
