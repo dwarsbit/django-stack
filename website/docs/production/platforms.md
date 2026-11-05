@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Coolify and Dokploy
+# 🧩 Coolify and Dokploy
 
 [Coolify](https://coolify.io/) and [Dokploy](https://dokploy.com/) deploy a
 Docker Compose project from its git repository and put their own proxy in

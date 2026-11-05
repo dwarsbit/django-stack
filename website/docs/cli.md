@@ -2,7 +2,7 @@
 sidebar_position: 7
 ---
 
-# CLI reference
+# ⌨️ CLI reference
 
 ```bash
 npx @django-stack/cli <command>
@@ -112,7 +112,7 @@ It checks that Docker and Docker Compose v2 are available, that `.env` has
 every required value and two different API keys, and, when the project is
 running, that the backend is healthy, the site at `SITE_URL` answers, the
 read-only key reads the API and the API is closed without a key. With the
-prod profile it also checks that `SITE_URL` is `https` and that mail goes to
+`prod` profile it also checks that `SITE_URL` is `https` and that mail goes to
 an SMTP server. It exits with status 1
 when a check fails.
 

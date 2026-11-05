@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Introduction
+# 👋 Introduction
 
 DjangoStack creates a ready-to-run website project: a Django backend, a
 frontend, Postgres and Docker Compose, from one command. Every piece is an
