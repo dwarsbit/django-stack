@@ -11,7 +11,7 @@ dstack init my-site
 cd my-site
 dstack dev`;
 
-const frontends = ["Astro", "Next.js", "Django templates", "None (headless, API only)"];
+const frontends = ["Astro", "Next.js", "Nuxt", "Django templates", "None (headless, API only)"];
 
 // The frontend row of the hero shows each frontend option in turn. It stays
 // on the first one for visitors who ask for reduced motion.
@@ -60,6 +60,7 @@ const logoGroups = [
     logos: [
       { name: "Astro", file: "astro.svg", width: 111, height: 30, wordmark: true },
       { name: "Next.js", file: "next.svg", width: 99, height: 20, wordmark: true },
+      { name: "Nuxt", file: "nuxt.svg", width: 26, height: 26 },
     ],
   },
   {

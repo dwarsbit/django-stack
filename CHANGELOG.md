@@ -1,12 +1,19 @@
 # Changelog
 
 All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
-`@django-stack/react`, `@django-stack/next` on npm and `django-stack` on
-PyPI. Add your change under the unreleased version; the release workflow
+`@django-stack/react`, `@django-stack/next`, `@django-stack/vue` on npm and
+`django-stack` on PyPI. Add your change under the unreleased version; the release workflow
 releases it.
 
 ## 0.3.0 (unreleased)
 
+- **Nuxt frontend.** `npx @django-stack/cli init --frontend nuxt` (preset
+  `a4`) creates the site with Nuxt and Nitro's Node server instead of
+  Astro: the same pages, preview, revalidation, feeds and
+  Content-Security-Policy (through `nuxt-security`). Pages load content
+  from the frontend's own server routes under `/_content/`, so the API key
+  stays on the server. The new `@django-stack/vue` package has the
+  components for blocks, rich text and images.
 - **Deploy to a server over SSH.** `dstack deploy setup --provider ssh
   --url deploy@example.com` checks Docker on the server, creates
   `/srv/<project>` (or `--path`) and uploads `.env.production`.
