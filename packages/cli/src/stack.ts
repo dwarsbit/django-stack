@@ -40,8 +40,8 @@ export const STACK_OPTIONS = [
         hint: "no Node, Django renders the site",
         generated: false,
       },
-      { value: "nuxt", label: "Nuxt", hint: "Vue, server-rendered", generated: false },
-      { value: "sveltekit", label: "SvelteKit", hint: "Svelte, server-rendered", generated: false },
+      { value: "nuxt", label: "Nuxt", hint: "Vue, server-rendered", generated: true },
+      { value: "sveltekit", label: "SvelteKit", hint: "Svelte, server-rendered", generated: true },
     ],
   },
   {

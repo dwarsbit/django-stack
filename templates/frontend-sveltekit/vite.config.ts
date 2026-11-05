@@ -1,0 +1,47 @@
+import adapter from "@sveltejs/adapter-node";
+import { sveltekit } from "@sveltejs/kit/vite";
+import { defineConfig } from "vitest/config";
+
+// The Django backend: the frontend container reaches it on the Compose network.
+const backend = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000";
+
+export default defineConfig({
+  plugins: [
+    sveltekit({
+      // A Node server: pages render on request, so a publish shows within seconds.
+      adapter: adapter(),
+      // A Content-Security-Policy on every page: scripts and styles only from
+      // this site, with hashes for the ones SvelteKit inlines (hashes, not
+      // nonces, so cached pages stay valid). src/hooks.server.ts adds the
+      // origin of the media files.
+      csp: {
+        mode: "hash",
+        directives: {
+          "default-src": ["self"],
+          "script-src": ["self"],
+          "style-src": ["self"],
+          // Inline style attributes, such as the focal point of an image.
+          "style-src-attr": ["unsafe-inline"],
+          "base-uri": ["self"],
+          "form-action": ["self"],
+          "object-src": ["none"],
+        },
+      },
+    }),
+  ],
+  server: {
+    host: true,
+    port: 3000,
+    strictPort: true,
+    // Django calls /revalidate at http://frontend:3000 on the Compose network.
+    allowedHosts: ["frontend"],
+    // In development, serve Django's paths from the same origin as the site,
+    // like the reverse proxy does in production.
+    proxy: Object.fromEntries(
+      ["/admin", "/api", "/media", "/static"].map((path) => [path, { target: backend, changeOrigin: false }]),
+    ),
+  },
+  test: {
+    include: ["test/**/*.test.ts"],
+  },
+});
