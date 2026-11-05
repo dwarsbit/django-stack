@@ -31,6 +31,59 @@ browser ─ 443 ──▶ │ proxy (Caddy) ─┬─ /admin /api /static ─▶
 - An SMTP server for the mail the site sends (password resets, form
   notifications), such as your provider's or a transactional mail service.
 
+## Deploy with the CLI
+
+`dstack deploy` sets up the server and deploys to it over SSH, with your
+own SSH keys and `~/.ssh/config`; it stores no keys. It uploads your last
+commit, so the server needs no access to your git repository.
+
+1. Make sure `ssh deploy@example.com` logs in without a password and that
+   the user may run `docker` (`sudo usermod -aG docker deploy`). Connect
+   once by hand first, so the server's host key is in `known_hosts`.
+2. Write the production settings, as in step 1 below:
+
+   ```bash
+   dstack production --domain example.com \
+     --email-url smtp+tls://user:password@smtp.example.com:587
+   ```
+
+3. Set up the server. It checks Docker and the Compose plugin, creates the
+   project directory and uploads `.env.production` as its `.env`:
+
+   ```bash
+   dstack deploy setup --provider ssh --url deploy@example.com
+   ```
+
+   The directory is `/srv/<project>` by default. When the user cannot
+   create it, setup prints the `sudo` command that does, or pass a
+   directory the user owns with `--path /home/deploy/your-site`.
+
+4. Commit your changes and deploy:
+
+   ```bash
+   dstack deploy
+   ```
+
+Each deploy is a new release on the server, built and started with
+`docker compose up`. The deploy goes on when your connection drops; follow
+it with `dstack deploy status --watch`. The server keeps the last five
+releases, and `dstack deploy rollback` starts the one before the running
+one again. A rollback does not undo database migrations.
+
+```text
+/srv/your-site/
+  shared/.env          .env.production, kept on the server
+  releases/<deploy>/   one per deploy, the last five
+  current              the release that runs
+  deploys/             the status and log of each deploy
+```
+
+After setup the server keeps the variables. To change them, edit
+`.env.production` and run `dstack deploy env push`; they apply on the next
+deploy. The [CLI reference](../cli.md#deploy) lists every command.
+
+The rest of this page sets up the same server by hand.
+
 ## 1. Write the production settings
 
 On your machine, in the project directory:

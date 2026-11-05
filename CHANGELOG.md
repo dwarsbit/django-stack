@@ -5,6 +5,19 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 PyPI. Add your change under the unreleased version; the release workflow
 releases it.
 
+## 0.3.0 (unreleased)
+
+- **Deploy to a server over SSH.** `dstack deploy setup --provider ssh
+  --url deploy@example.com` checks Docker on the server, creates
+  `/srv/<project>` (or `--path`) and uploads `.env.production`.
+  `dstack deploy` uploads the last commit as a new release and runs
+  `docker compose up` there, detached; `status`, `logs` and `env push` work
+  as for Coolify. The CLI uses your `ssh`, keys and `~/.ssh/config`, and
+  stores no keys. The server keeps the last five releases.
+- **`dstack deploy rollback`** starts the release before the running one
+  again, or the deploy you name (servers over SSH).
+- New projects keep `.env.production` out of git.
+
 ## 0.2.0 (2026-11-05)
 
 - **Media backups.** When uploads are on the server's disk, the daily

@@ -280,7 +280,9 @@ export async function deploySetup(options: SetupCommandOptions) {
   p.note(
     [
       `Point the DNS of ${pc.bold(domain)} at the ${provider.auth.kind === "ssh" ? "" : `${provider.name} `}server.`,
-      `Change variables in ${provider.name}, or in ${PRODUCTION_ENV} and run ${command("dstack deploy env push")}.`,
+      provider.auth.kind === "ssh"
+        ? `To change variables, edit ${PRODUCTION_ENV} and run ${command("dstack deploy env push")}.`
+        : `Change variables in ${provider.name}, or in ${PRODUCTION_ENV} and run ${command("dstack deploy env push")}.`,
     ].join("\n"),
     "Next",
   );
@@ -361,10 +363,17 @@ async function startDeploy(
     const reason = await notDeployedReason(directory, provider, link, client);
     if (reason) fail(`${reason} Or pass --no-push-check.`);
   }
-  const id = await attempt(client.deploy(link, { force: options.force }));
-  if (!options.wait) {
+  const id = await attempt(client.deploy(link, { force: options.force, directory }));
+  await finishDeploy(link, client, id, options.wait);
+}
+
+/** Follows a started deploy, or reports where it runs when not waiting. */
+async function finishDeploy(link: DeployLink, client: ProviderClient, id: string, wait: boolean) {
+  if (!wait) {
     const deployment = await attempt(client.deployment(link, id));
-    p.outro(`Started deploy ${pc.bold(id)}: ${url(deployment.url ?? link.url)}`);
+    p.outro(
+      `Started deploy ${pc.bold(id)}${deployment.url ? `: ${url(deployment.url)}` : ""}. Follow it with ${command("dstack deploy status --watch")}`,
+    );
     return;
   }
   p.log.message(pc.dim("Ctrl+C stops following; the deploy goes on."));
@@ -487,6 +496,25 @@ export async function deployLogs(id: string | undefined, options: DeployDirOptio
   printLog(deployment);
   process.stderr.write(pc.dim(`Deploy ${deployment.id}: ${deployment.status}\n`));
   if (deployment.status === "failed") process.exitCode = 1;
+}
+
+/** `dstack deploy rollback [deployment]`: run an earlier release again. */
+export async function deployRollback(
+  id: string | undefined,
+  options: DeployDirOptions & { wait: boolean; yes?: boolean },
+) {
+  const project = projectOrFail(options);
+  const link = linkOrFail(project.directory);
+  const provider = providerOrFail(link.provider);
+  intro(`Roll back on ${provider.name}`);
+  const client = await connect(provider, link.url, isInteractive(options.yes));
+  if (!client.rollback)
+    fail(
+      `${provider.name} keeps no releases to roll back to. Deploy an earlier commit, or roll back in ${provider.name}.`,
+    );
+  const rollbackId = await attempt(client.rollback(link, id));
+  p.log.info(pc.dim("The database is not rolled back; migrations of the newer release stay applied."));
+  await finishDeploy(link, client, rollbackId, options.wait);
 }
 
 /** `dstack deploy env push`: upload .env.production to the platform again. */
