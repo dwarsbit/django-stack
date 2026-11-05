@@ -16,6 +16,7 @@ frontend/.svelte-kit/
 frontend/.nuxt/
 frontend/.output/
 frontend/.next/
+frontend/next-env.d.ts
 .DS_Store
 backend/backups/
 backend/huey-stats.db*

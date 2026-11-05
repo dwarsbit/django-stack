@@ -1,0 +1,67 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { Blocks, Image, VERSION } from "../src/index";
+
+const image = {
+  id: "1",
+  type: "image",
+  name: "Photo",
+  alt: "A photo",
+  url: "http://localhost:3000/media/photo",
+  width: 1600,
+  height: 900,
+  focal_point: null,
+  sizes: { content: { url: "http://localhost:3000/media/content.webp", width: 1200, height: 675 } },
+};
+
+function Gallery({ block }: { block: { value: { title: string } } }) {
+  return <p>Gallery: {block.value.title}</p>;
+}
+
+describe("Blocks", () => {
+  it("renders every block type and skips unknown ones", () => {
+    const html = renderToStaticMarkup(
+      <Blocks
+        blocks={[
+          { id: "a", type: "text", value: { body: "<p>Hello <strong>world</strong></p>" } },
+          { id: "b", type: "image", value: { image, caption: "A caption" } },
+          { id: "c", type: "quote", value: { text: "Quoted", attribution: "Someone" } },
+          {
+            id: "d",
+            type: "call_to_action",
+            value: { title: "Act", text: "", button_label: "Go", button_url: "/go" },
+          },
+          { id: "e", type: "unknown", value: {} },
+        ]}
+      />,
+    );
+    expect(html).toContain("<strong>world</strong>");
+    expect(html).toContain('src="http://localhost:3000/media/content.webp"');
+    expect(html).toContain('alt="A photo"');
+    expect(html).toContain("A caption");
+    expect(html).toContain("Quoted");
+    expect(html).toContain('href="/go"');
+  });
+
+  it("renders added block types", () => {
+    const html = renderToStaticMarkup(
+      <Blocks
+        blocks={[{ id: "a", type: "gallery", value: { title: "Holiday" } }]}
+        components={{ gallery: Gallery }}
+      />,
+    );
+    expect(html).toContain("Gallery: Holiday");
+  });
+});
+
+describe("Image", () => {
+  it("renders nothing without media", () => {
+    expect(renderToStaticMarkup(<Image media={null} />)).toBe("");
+  });
+});
+
+describe("package", () => {
+  it("has a version", () => {
+    expect(VERSION).toMatch(/^\d+\.\d+\.\d+/);
+  });
+});

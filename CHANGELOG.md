@@ -1,9 +1,32 @@
 # Changelog
 
 All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
-`@django-stack/react`, `@django-stack/next` on npm and `django-stack` on
-PyPI. Add your change under the unreleased version; the release workflow
-releases it.
+`@django-stack/react`, `@django-stack/next`, `@django-stack/svelte`,
+`@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
+the unreleased version; the release workflow releases it.
+
+## 0.4.0 (unreleased)
+
+- **SvelteKit frontend.** `npx @django-stack/cli init --frontend
+  sveltekit` (preset `a5`) creates the site with SvelteKit and the Node
+  adapter instead of Astro: the same pages, preview, revalidation, feeds and
+  Content-Security-Policy. Content loads in server load functions only, so
+  the API key stays on the server. The new `@django-stack/svelte` package
+  has the components for blocks, rich text, images and SEO tags.
+- **Nuxt frontend.** `npx @django-stack/cli init --frontend nuxt` (preset
+  `a4`) creates the site with Nuxt and Nitro's Node server instead of
+  Astro: the same pages, preview, revalidation, feeds and
+  Content-Security-Policy (through `nuxt-security`). Pages load content
+  from the frontend's own server routes under `/_content/`, so the API key
+  stays on the server. The new `@django-stack/vue` package has the
+  components for blocks, rich text and images.
+- **Next.js frontend.** `npx @django-stack/cli init --frontend next`
+  creates the site with Next.js 16 and the App Router instead of Astro: the
+  same pages, preview, revalidation, feeds and Content-Security-Policy, with
+  a nonce from `src/proxy.ts`. API responses stay in Next's data cache until
+  Django calls `/revalidate`. `@django-stack/react` now has the components
+  for blocks, rich text and images, and `@django-stack/next` the route
+  handlers, the metadata and the security headers.
 
 ## 0.3.0 (2026-11-05)
 

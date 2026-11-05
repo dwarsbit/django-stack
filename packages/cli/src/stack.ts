@@ -32,7 +32,7 @@ export const STACK_OPTIONS = [
     description: "The frontend framework",
     values: [
       { value: "astro", label: "Astro", hint: "server-rendered, fast by default", generated: true },
-      { value: "next", label: "Next.js", hint: "React, server components", generated: false },
+      { value: "next", label: "Next.js", hint: "React, server components", generated: true },
       { value: "headless", label: "Headless", hint: "just the API and the admin", generated: false },
       {
         value: "templates",
@@ -40,8 +40,8 @@ export const STACK_OPTIONS = [
         hint: "no Node, Django renders the site",
         generated: false,
       },
-      { value: "nuxt", label: "Nuxt", hint: "Vue, server-rendered", generated: false },
-      { value: "sveltekit", label: "SvelteKit", hint: "Svelte, server-rendered", generated: false },
+      { value: "nuxt", label: "Nuxt", hint: "Vue, server-rendered", generated: true },
+      { value: "sveltekit", label: "SvelteKit", hint: "Svelte, server-rendered", generated: true },
     ],
   },
   {

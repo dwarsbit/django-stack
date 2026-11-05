@@ -27,6 +27,8 @@ and [Deploy to a server](https://dwarsbit.github.io/django-stack/docs/production
 | `packages/utils` | `@django-stack/utils`: the API client, content helpers, SEO, images and webhook signatures |
 | `packages/react` | `@django-stack/react`: React components |
 | `packages/next` | `@django-stack/next`: Next.js glue |
+| `packages/svelte` | `@django-stack/svelte`: Svelte components |
+| `packages/vue` | `@django-stack/vue`: Vue components |
 | `python/django-stack` | `django-stack` on PyPI: settings, API defaults, health checks, system checks, backups |
 | `templates/` | The files `init` copies into a new project |
 | `scripts/e2e.sh`, `scripts/e2e-prod.sh` | The end-to-end tests: create a project with the CLI and run it with Docker Compose, in development and in production |

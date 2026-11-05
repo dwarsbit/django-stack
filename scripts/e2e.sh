@@ -57,7 +57,11 @@ expect 200 http://localhost:3000/about/team
 expect 200 http://localhost:3000/blog
 expect 200 http://localhost:3000/blog/hello-world
 expect 404 http://localhost:3000/does-not-exist
-expect 301 http://localhost:3000/old-about
+# A permanent redirect: 301, or 308 from Next.js.
+case "$(status http://localhost:3000/old-about)" in
+  301|308) echo "ok permanent redirect http://localhost:3000/old-about" ;;
+  *) fail "http://localhost:3000/old-about is not a permanent redirect" ;;
+esac
 expect 200 http://localhost:3000/sitemap.xml
 expect 200 http://localhost:3000/rss.xml
 expect 200 http://localhost:3000/admin/

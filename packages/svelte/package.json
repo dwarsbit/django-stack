@@ -1,0 +1,62 @@
+{
+  "name": "@django-stack/svelte",
+  "version": "0.3.0",
+  "description": "Svelte components for DjangoStack frontends: blocks, rich text, images and SEO.",
+  "license": "MIT",
+  "author": "Leon van der Grient",
+  "homepage": "https://github.com/dwarsbit/django-stack/tree/main/packages/svelte#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dwarsbit/django-stack.git",
+    "directory": "packages/svelte"
+  },
+  "bugs": "https://github.com/dwarsbit/django-stack/issues",
+  "keywords": [
+    "django",
+    "django-stack",
+    "headless-cms",
+    "svelte",
+    "sveltekit"
+  ],
+  "type": "module",
+  "svelte": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "@django-stack/utils": "workspace:^",
+    "svelte": "^5.0.0"
+  },
+  "devDependencies": {
+    "@django-stack/utils": "workspace:*",
+    "@sveltejs/package": "^3.0.2",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.8",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.0"
+  },
+  "scripts": {
+    "build": "svelte-package --input src --output dist",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "test": "vitest run"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
