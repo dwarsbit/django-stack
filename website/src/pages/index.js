@@ -47,16 +47,13 @@ export default function Home() {
   const { siteConfig } = useDocusaurusContext();
 
   return (
-    <Layout title="Home" description={siteConfig.tagline}>
+    <Layout title="Developer-first Django tooling" description={siteConfig.tagline}>
       <header className="hero-dst">
         <div className="container">
           <div>
-            <h1>
-              Django and a frontend.
-              <br />
-              Ready in one command.
-            </h1>
-            <p className="tagline">
+            <h1>Developer-first Django tooling</h1>
+            <p className="tagline">{siteConfig.tagline}</p>
+            <p className="hero-intro">
               DjangoStack creates a website project with a Django backend, an Astro frontend, Postgres and
               Docker Compose. Django Headless serves the content API and Django Content Studio is the admin.
             </p>

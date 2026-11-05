@@ -1,5 +1,7 @@
 # DjangoStack
 
+**Developer-first Django tooling.** The production-ready Django, batteries included stack.
+
 DjangoStack creates a ready-to-run website project in one command: a Django
 backend with [Django Headless](https://djangoheadless.org) for the content
 API and [Django Content Studio](https://djangocontentstudio.org) as the

@@ -52,6 +52,8 @@ releases it.
   or takes `-C <directory>`. `init` saves the stack's preset in
   `package.json`, and `compose.yaml` reads the containers' variables from
   `${ENV_FILE:-.env}`.
+- **Tagline.** The `@django-stack/cli` description and README lead with
+  "The production-ready Django, batteries included stack."
 
 ## 0.0.1 (2026-11-04)
 
