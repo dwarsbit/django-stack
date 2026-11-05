@@ -22,13 +22,27 @@ const services = [
 
 // Logos are shown in one color; `width` and `height` keep each one's aspect
 // ratio. Wordmarks carry their own name, marks get it as text.
-const logos = [
-  { name: "Django", file: "django.svg", width: 87, height: 30, wordmark: true },
-  { name: "Astro", file: "astro.svg", width: 111, height: 30, wordmark: true },
-  { name: "Docker", file: "docker.svg", width: 30, height: 30 },
-  { name: "Valkey", file: "valkey.svg", width: 26, height: 30 },
-  { name: "Coolify", file: "coolify.svg", width: 26, height: 26 },
-  { name: "Umami", file: "umami.svg", width: 29, height: 26 },
+const logoGroups = [
+  {
+    title: "Built with",
+    logos: [
+      { name: "Django", file: "django.svg", width: 87, height: 30, wordmark: true },
+      { name: "Docker", file: "docker.svg", width: 30, height: 30 },
+      { name: "Valkey", file: "valkey.svg", width: 26, height: 30 },
+      { name: "Umami", file: "umami.svg", width: 29, height: 26 },
+    ],
+  },
+  {
+    title: "Frontends",
+    logos: [
+      { name: "Astro", file: "astro.svg", width: 111, height: 30, wordmark: true },
+      { name: "Next.js", file: "next.svg", width: 99, height: 20, wordmark: true },
+    ],
+  },
+  {
+    title: "Deploy to",
+    logos: [{ name: "Coolify", file: "coolify.svg", width: 26, height: 26 }],
+  },
 ];
 
 const features = [
@@ -119,14 +133,18 @@ export default function Home() {
           </div>
         </div>
       </header>
-      <section className="logos-dst" aria-label="Built with">
-        <div className="container">
-          <p className="logos-title">Built with</p>
-          <ul className="logos-row">
-            {logos.map((logo) => (
-              <Logo logo={logo} key={logo.name} />
-            ))}
-          </ul>
+      <section className="logos-dst">
+        <div className="container logos-grid">
+          {logoGroups.map((group) => (
+            <div className="logos-group" key={group.title}>
+              <p className="logos-title">{group.title}</p>
+              <ul className="logos-row">
+                {group.logos.map((logo) => (
+                  <Logo logo={logo} key={logo.name} />
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </section>
       <main>
