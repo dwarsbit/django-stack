@@ -2,7 +2,7 @@
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "DjangoStack",
-  tagline: "Django, a frontend of your choice, Postgres and Docker Compose, ready in one command",
+  tagline: "The production-ready Django, batteries included stack.",
   favicon: "img/favicon.svg",
   // GitHub Pages at its default address until the site has its own domain.
   // With a domain: set url to it, baseUrl to "/" and add static/CNAME.
