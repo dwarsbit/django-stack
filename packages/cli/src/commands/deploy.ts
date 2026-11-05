@@ -16,11 +16,11 @@ import {
   gitRemote,
   httpsRepository,
   LINK_FILE,
-  normalizeUrl,
   PROVIDERS,
   type ProviderClient,
   readLink,
   saveToken,
+  uncommittedReason,
   unpushedReason,
   writeLink,
 } from "../deploy";
@@ -86,8 +86,17 @@ function deployEnv(directory: string, provider: DeployProvider): Record<string, 
   return { ...parseEnv(readFileSync(file, "utf8")), ...provider.platformEnv };
 }
 
+type TokenAuth = Extract<DeployProvider["auth"], { kind: "token" }>;
+
+/** The API key settings of a provider, or a one-line failure for one that uses SSH. */
+function tokenAuth(provider: DeployProvider): TokenAuth {
+  if (provider.auth.kind !== "token")
+    fail(`${provider.name} uses your SSH keys and ~/.ssh/config; there is no API key to save.`);
+  return provider.auth;
+}
+
 async function askToken(provider: DeployProvider, instance: string): Promise<string> {
-  p.log.info(provider.tokenHelp(instance));
+  p.log.info(tokenAuth(provider).help(instance));
   return unwrap(
     await p.password({
       message: `${provider.name} API key`,
@@ -106,22 +115,23 @@ async function login(provider: DeployProvider, instance: string, token: string):
   if (where === "keychain") p.log.success("Saved the key in the system keychain.");
   else
     p.log.warn(
-      `There is no system keychain here, so the key is in ~/.config/dstack/credentials.json, readable only by you. Set ${provider.tokenEnv} instead to keep it off disk.`,
+      `There is no system keychain here, so the key is in ~/.config/dstack/credentials.json, readable only by you. Set ${tokenAuth(provider).env} instead to keep it off disk.`,
     );
   return token;
 }
 
-/** A client for a provider instance: the saved key, or a new one when the CLI may ask. */
+/** A client for a provider target: the saved key, or a new one when the CLI may ask. */
 async function connect(
   provider: DeployProvider,
   instance: string,
   interactive: boolean,
 ): Promise<ProviderClient> {
-  const saved = getToken(provider.id, instance, provider.tokenEnv);
+  if (provider.auth.kind === "ssh") return attempt(Promise.resolve().then(() => provider.connect(instance)));
+  const saved = getToken(provider.id, instance, provider.auth.env);
   if (saved) return provider.connect(instance, saved.token);
   if (!interactive)
     fail(
-      `No ${provider.name} API key for ${instance}. Run ${command("dstack deploy login")} or set ${provider.tokenEnv}.`,
+      `No ${provider.name} API key for ${instance}. Run ${command("dstack deploy login")} or set ${provider.auth.env}.`,
     );
   const token = await login(provider, instance, await askToken(provider, instance));
   return provider.connect(instance, token);
@@ -204,11 +214,11 @@ export async function deploySetup(options: SetupCommandOptions) {
     if (!interactive) fail(`Pass --url, the address of your ${provider.name}.`);
     instance = unwrap(
       await p.text({
-        message: `${provider.name} URL`,
-        placeholder: "https://coolify.example.com",
+        message: provider.target.label,
+        placeholder: provider.target.placeholder,
         validate: (value) => {
           try {
-            normalizeUrl(value ?? "");
+            provider.target.normalize(value ?? "");
           } catch (error) {
             return (error as Error).message;
           }
@@ -217,7 +227,7 @@ export async function deploySetup(options: SetupCommandOptions) {
     );
   }
   try {
-    instance = normalizeUrl(instance);
+    instance = provider.target.normalize(instance);
   } catch (error) {
     fail((error as Error).message);
   }
@@ -229,17 +239,20 @@ export async function deploySetup(options: SetupCommandOptions) {
       `SITE_URL in ${PRODUCTION_ENV} is not a public domain. Run ${command("dstack production --domain example.com --force")}.`,
     );
 
+  // Providers that upload the local commit need no repository.
   let repository = options.repository;
-  if (!repository) {
-    const remote = gitRemote(project.directory);
-    if (!remote)
-      fail("This project has no git remote origin. Push it to GitHub first, or pass --repository.");
-    repository = remote;
-  }
-  try {
-    repository = httpsRepository(repository);
-  } catch (error) {
-    fail((error as Error).message);
+  if (provider.source === "remote") {
+    if (!repository) {
+      const remote = gitRemote(project.directory);
+      if (!remote)
+        fail("This project has no git remote origin. Push it to GitHub first, or pass --repository.");
+      repository = remote;
+    }
+    try {
+      repository = httpsRepository(repository);
+    } catch (error) {
+      fail((error as Error).message);
+    }
   }
   const branch = options.branch ?? gitBranch(project.directory) ?? "main";
 
@@ -266,7 +279,7 @@ export async function deploySetup(options: SetupCommandOptions) {
   );
   p.note(
     [
-      `Point the DNS of ${pc.bold(domain)} at the ${provider.name} server.`,
+      `Point the DNS of ${pc.bold(domain)} at the ${provider.auth.kind === "ssh" ? "" : `${provider.name} `}server.`,
       `Change variables in ${provider.name}, or in ${PRODUCTION_ENV} and run ${command("dstack deploy env push")}.`,
     ].join("\n"),
     "Next",
@@ -276,7 +289,7 @@ export async function deploySetup(options: SetupCommandOptions) {
     options.deploy ??
     (interactive ? unwrap(await p.confirm({ message: "Deploy now?", initialValue: true })) : false);
   if (deployNow) {
-    await startDeploy(project.directory, link, client, { force: false, wait: true });
+    await startDeploy(project.directory, provider, link, client, { force: false, wait: true });
     return;
   }
   p.outro(`Deploy with ${command("dstack deploy")}`);
@@ -325,15 +338,27 @@ async function follow(link: DeployLink, client: ProviderClient, id: string): Pro
   return deployment;
 }
 
+/** Why the deploy would not include the local work, or undefined. */
+async function notDeployedReason(
+  directory: string,
+  provider: DeployProvider,
+  link: DeployLink,
+  client: ProviderClient,
+): Promise<string | undefined> {
+  if (provider.source === "local") return uncommittedReason(directory);
+  const status = await attempt(client.status(link));
+  return status.branch ? unpushedReason(directory, status.branch) : undefined;
+}
+
 async function startDeploy(
   directory: string,
+  provider: DeployProvider,
   link: DeployLink,
   client: ProviderClient,
   options: { force: boolean; wait: boolean; pushCheck?: boolean },
 ) {
   if (options.pushCheck !== false) {
-    const status = await attempt(client.status(link));
-    const reason = status.branch ? unpushedReason(directory, status.branch) : undefined;
+    const reason = await notDeployedReason(directory, provider, link, client);
     if (reason) fail(`${reason} Or pass --no-push-check.`);
   }
   const id = await attempt(client.deploy(link, { force: options.force }));
@@ -368,7 +393,7 @@ export async function deploy(options: DeployCommandOptions) {
   const provider = providerOrFail(link.provider);
   intro(`Deploy to ${provider.name}`);
   const client = await connect(provider, link.url, isInteractive(options.yes));
-  await startDeploy(project.directory, link, client, {
+  await startDeploy(project.directory, provider, link, client, {
     force: Boolean(options.force),
     wait: options.wait,
     pushCheck: options.pushCheck,
@@ -496,15 +521,16 @@ async function loginTarget(
     link = readLink(project.directory);
   } catch {}
   const provider = providerOrFail(options.provider ?? link?.provider ?? DEFAULT_PROVIDER.id);
+  tokenAuth(provider);
   let instance = options.url ?? link?.url;
   if (!instance) {
     if (!interactive) fail(`Pass --url, the address of your ${provider.name}.`);
     instance = unwrap(
-      await p.text({ message: `${provider.name} URL`, placeholder: "https://coolify.example.com" }),
+      await p.text({ message: provider.target.label, placeholder: provider.target.placeholder }),
     );
   }
   try {
-    return { provider, instance: normalizeUrl(instance) };
+    return { provider, instance: provider.target.normalize(instance) };
   } catch (error) {
     fail((error as Error).message);
   }
@@ -517,9 +543,10 @@ export async function deployLogin(
   const interactive = isInteractive(options.yes);
   intro("Deploy login");
   const { provider, instance } = await loginTarget(options, interactive);
-  let token = options.token ?? (options.yes ? process.env[provider.tokenEnv] : undefined);
+  const auth = tokenAuth(provider);
+  let token = options.token ?? (options.yes ? process.env[auth.env] : undefined);
   if (!token) {
-    if (!interactive) fail(`Pass --token or set ${provider.tokenEnv}.`);
+    if (!interactive) fail(`Pass --token or set ${auth.env}.`);
     token = await askToken(provider, instance);
   }
   await login(provider, instance, token);

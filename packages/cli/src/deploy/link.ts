@@ -80,3 +80,16 @@ export function unpushedReason(directory: string, branch: string): string | unde
     return `Your last commit is not on origin/${branch}, so the deploy would not include it. Push first: git push`;
   return undefined;
 }
+
+/**
+ * Why an upload of HEAD would not match the working tree, or undefined when
+ * it does. Providers that upload the local commit deploy HEAD only, so
+ * changes to tracked files must be committed first.
+ */
+export function uncommittedReason(directory: string): string | undefined {
+  if (git(directory, ["rev-parse", "HEAD"]) === undefined)
+    return "This project has no commit yet. Commit it first: git add -A && git commit";
+  const changes = git(directory, ["status", "--porcelain", "--untracked-files=no"]);
+  if (changes) return "You have uncommitted changes, so the deploy would not include them. Commit first.";
+  return undefined;
+}

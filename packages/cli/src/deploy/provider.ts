@@ -39,9 +39,9 @@ export interface AppStatus {
 /** Where a project deploys: saved in `.dstack/deploy.json`, without secrets. */
 export interface DeployLink {
   provider: string;
-  /** The platform instance, such as https://coolify.example.com. */
+  /** The target: a platform instance such as https://coolify.example.com, or a server. */
   url: string;
-  /** Provider-specific ids, such as the project, environment and application. */
+  /** Provider-specific ids, such as the project, environment and application, or a directory. */
   project: string;
   environment: string;
   application: string;
@@ -67,8 +67,8 @@ export interface SetupContext {
   ask: Ask;
   /** The project name, from compose.yaml. */
   name: string;
-  /** The https URL of the git repository. */
-  repository: string;
+  /** The https URL of the git repository; set for providers that build from the remote. */
+  repository?: string;
   branch: string;
   /** The site's domain, from SITE_URL in .env.production. */
   domain: string;
@@ -78,7 +78,7 @@ export interface SetupContext {
   options: Record<string, string | undefined>;
 }
 
-/** A provider connected to one instance with one API key. */
+/** A provider connected to one target. */
 export interface ProviderClient {
   /** Checks the key; returns the platform's version. */
   verify(): Promise<string>;
@@ -99,18 +99,47 @@ export interface ProviderFlag {
   description: string;
 }
 
+/** How the CLI gets in: an API key it saves, or the user's own SSH keys and config. */
+export type ProviderAuth =
+  | {
+      kind: "token";
+      /** The environment variable that overrides the saved API key. */
+      env: string;
+      /** Where to create an API key, and which permissions it needs. */
+      help(url: string): string;
+    }
+  | { kind: "ssh" };
+
+/** What `--url` names for a provider. */
+export interface ProviderTarget {
+  /** Such as "Coolify URL" or "Server". */
+  label: string;
+  placeholder: string;
+  /** Returns the canonical form, or throws with a one-line reason. */
+  normalize(value: string): string;
+}
+
 export interface DeployProvider {
   id: string;
   name: string;
-  /** The environment variable that overrides the saved API key. */
-  tokenEnv: string;
-  /** Where to create an API key, and which permissions it needs. */
-  tokenHelp(url: string): string;
+  auth: ProviderAuth;
+  /**
+   * What a deploy builds: the branch on the git remote (so push first), or
+   * the local commit, which the CLI uploads (so commit first).
+   */
+  source: "remote" | "local";
+  target: ProviderTarget;
   /** Variables the platform needs on top of .env.production. */
   platformEnv: Record<string, string>;
   /** The flags of `deploy setup` this provider reads. */
   setupFlags: ProviderFlag[];
-  connect(url: string, token: string): ProviderClient;
+  /** Connects to a target; token providers get the API key. */
+  connect(target: string, token?: string): ProviderClient;
+}
+
+/** The target of a platform with a web API and an API key. */
+export function urlTarget(name: string, placeholder: string): ProviderTarget {
+  return { label: `${name} URL`, placeholder, normalize: normalizeUrl };
 }
 
 /** Normalizes an instance URL: https by default, no trailing slash or path. */

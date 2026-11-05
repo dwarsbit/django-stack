@@ -8,6 +8,7 @@ import {
   appState,
   CoolifyClient,
   composeDomains,
+  coolify,
   credentialsFile,
   type DeployLink,
   deleteToken,
@@ -20,6 +21,7 @@ import {
   readLink,
   saveToken,
   setKeyring,
+  uncommittedReason,
   unpushedReason,
   writeLink,
 } from "../src/deploy";
@@ -151,6 +153,44 @@ describe("unpushedReason", () => {
     writeFileSync(join(work, "a"), "2");
     git(work, "commit", "-am", "two");
     expect(unpushedReason(work, "main")).toMatch(/not on origin\/main/);
+  });
+});
+
+describe("uncommittedReason", () => {
+  const git = (cwd: string, ...args: string[]) =>
+    execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd, stdio: "ignore" });
+
+  it("checks that the tracked files are committed", () => {
+    const work = tempDir();
+    git(work, "init", "-b", "main");
+    expect(uncommittedReason(work)).toMatch(/no commit yet/);
+    writeFileSync(join(work, "a"), "1");
+    git(work, "add", ".");
+    git(work, "commit", "-m", "one");
+    expect(uncommittedReason(work)).toBeUndefined();
+    writeFileSync(join(work, "untracked"), "x");
+    expect(uncommittedReason(work)).toBeUndefined();
+    writeFileSync(join(work, "a"), "2");
+    expect(uncommittedReason(work)).toMatch(/uncommitted changes/);
+  });
+});
+
+describe("Coolify provider", () => {
+  it("uses an API key and builds from the remote", () => {
+    expect(coolify.auth.kind).toBe("token");
+    expect(coolify.source).toBe("remote");
+    expect(coolify.target.normalize("coolify.example.com/")).toBe("https://coolify.example.com");
+    expect(() => coolify.connect("https://coolify.example.com")).toThrow(/API key/);
+  });
+
+  it("needs a repository to set up", async () => {
+    const client = new CoolifyClient("https://coolify.example.com", "key", async () => {
+      throw new Error("no request expected");
+    });
+    const ask = { interactive: false } as Ask;
+    await expect(
+      client.setup({ ask, name: "site", branch: "main", domain: "example.com", env: {}, options: {} }),
+    ).rejects.toThrow(/--repository/);
   });
 });
 

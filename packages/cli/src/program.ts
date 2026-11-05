@@ -210,7 +210,7 @@ export function createProgram(): Command {
     .addOption(dirOption())
     .option("--force", "Rebuild the images without cache")
     .option("--no-wait", "Don't follow the deploy; return once it started")
-    .option("--no-push-check", "Deploy even when the last commit is not pushed")
+    .option("--no-push-check", "Deploy even when it would not include your local commits or changes")
     .option("-y, --yes", "Don't ask; fail when no API key is saved")
     .action(deploy);
 

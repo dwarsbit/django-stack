@@ -9,6 +9,7 @@ import type {
   ProviderClient,
   SetupContext,
 } from "./provider";
+import { urlTarget } from "./provider";
 
 /**
  * Coolify (https://coolify.io), through its API at /api/v1 with a bearer
@@ -220,6 +221,7 @@ export class CoolifyClient implements ProviderClient {
 
   async setup(context: SetupContext) {
     const { ask, options } = context;
+    if (!context.repository) throw new Error("Coolify builds from a git repository; pass --repository.");
     const api = this.api;
 
     const servers = await api.get<CoolifyServer[]>("/servers");
@@ -389,15 +391,23 @@ export class CoolifyClient implements ProviderClient {
 export const coolify: DeployProvider = {
   id: "coolify",
   name: "Coolify",
-  tokenEnv: "DSTACK_COOLIFY_TOKEN",
+  auth: {
+    kind: "token",
+    env: "DSTACK_COOLIFY_TOKEN",
+    help: (url) =>
+      `Create one in Coolify under Keys & Tokens › API tokens (${url}/security/api-tokens) with the read, write and deploy permissions. API access must be on under Settings › Advanced.`,
+  },
+  source: "remote",
+  target: urlTarget("Coolify", "https://coolify.example.com"),
   platformEnv: PLATFORM_ENV,
-  tokenHelp: (url) =>
-    `Create one in Coolify under Keys & Tokens › API tokens (${url}/security/api-tokens) with the read, write and deploy permissions. API access must be on under Settings › Advanced.`,
   setupFlags: [
     { name: "server", description: "The Coolify server, by name or uuid" },
     { name: "project", description: "The Coolify project, by name or uuid (default: the project name)" },
     { name: "environment", description: "The Coolify environment (default: production)" },
     { name: "githubApp", description: "A Coolify GitHub App for a private repository, or public" },
   ],
-  connect: (url, token) => new CoolifyClient(url, token),
+  connect: (url, token) => {
+    if (!token) throw new Error("Coolify needs an API key.");
+    return new CoolifyClient(url, token);
+  },
 };
