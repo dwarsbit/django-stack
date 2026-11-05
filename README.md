@@ -46,7 +46,7 @@ uv run pytest
 uv run ruff check .
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for changesets and releases, and
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the changelog and releases, and
 [AGENTS.md](AGENTS.md) for the layout and conventions.
 
 ## License

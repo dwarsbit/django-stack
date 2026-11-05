@@ -8,8 +8,7 @@ Postgres and Valkey. It is not a CMS of its own.
 ## Layout
 
 - `packages/*`: the npm packages (`@django-stack/cli`, `utils`, `react`,
-  `next`), TypeScript, built with tsdown, tested with Vitest. They share
-  one version through Changesets (a fixed group).
+  `next`), TypeScript, built with tsdown, tested with Vitest.
 - `python/django-stack`: the `django-stack` PyPI package, Hatch build
   backend, managed with uv, tested with pytest, linted with Ruff.
 - `templates/`: the files `init` copies into a new project. Placeholders
@@ -24,6 +23,10 @@ Postgres and Valkey. It is not a CMS of its own.
 - `website/`: the Docusaurus docs, published to GitHub Pages at
   https://dwarsbit.github.io/django-stack/. `website/STYLE.md` is the
   writing style guide.
+- `CHANGELOG.md`: one version for every npm and PyPI package. The
+  `Release` workflow (run by hand from `main`) releases the
+  `## X.Y.Z (unreleased)` version: `scripts/bump_version.py` sets it
+  everywhere, then it tags `vX.Y.Z` and publishes to npm and PyPI.
 
 ## Commands
 
@@ -57,7 +60,9 @@ scripts/e2e-prod.sh   # the same in production; needs ports 80 and 443
   image.
 - Every CLI prompt has a flag, and every command exits non-zero with a
   one-line reason on failure.
-- Add a changeset (`pnpm changeset`) for every change to an npm package.
+- Add an entry under the unreleased version in `CHANGELOG.md` for every
+  change users notice. If there is no unreleased heading, add one with the
+  next version (a minor bump for features, a patch for fixes only).
 - Commit messages and docs are in English. Read `website/STYLE.md` before
   writing or editing documentation, the docs website or the README: it is
   the voice and terminology of the sibling projects, adapted to DjangoStack.
