@@ -24,7 +24,8 @@ import {
   type StackValue,
   stackOption,
 } from "../stack";
-import { command, fail, has, intro, isInteractive, secret, unwrap, url } from "../ui";
+import { type Check, checkTools } from "../tools";
+import { command, fail, has, intro, isInteractive, logCheck, secret, unwrap, url } from "../ui";
 
 export interface InitOptions {
   name?: string;
@@ -105,9 +106,22 @@ function systemTimeZone(): string {
   }
 }
 
+/**
+ * Checks Docker, Node.js and Python before the prompts. Problems only warn:
+ * the project is created anyway, and Node.js and Python are for development
+ * outside the containers. Returns whether Docker can run the project.
+ */
+export function checkComputer(checks: Check[] = checkTools()): boolean {
+  const passed = checks.filter((check) => check.ok);
+  if (passed.length) p.log.success(passed.map((check) => check.detail ?? check.name).join(", "));
+  for (const check of checks.filter((check) => !check.ok)) logCheck({ ...check, warning: true });
+  return !checks.some((check) => !check.ok && !check.warning);
+}
+
 export async function init(directoryArgument: string | undefined, options: InitOptions) {
   const interactive = isInteractive(options.yes);
   intro("Create a project");
+  const dockerReady = checkComputer();
   const zoneError = options.timeZone ? validateTimeZone(options.timeZone) : undefined;
   if (zoneError) fail(zoneError);
 
@@ -235,12 +249,6 @@ export async function init(directoryArgument: string | undefined, options: InitO
     }
   }
 
-  if (!has("docker", ["compose", "version"])) {
-    p.log.warn(
-      `Docker Compose was not found. Install Docker to run the project: ${url("https://docs.docker.com/get-docker/")}`,
-    );
-  }
-
   p.note(
     [
       command(`cd ${relativeDirectory(target)}`),
@@ -265,7 +273,13 @@ export async function init(directoryArgument: string | undefined, options: InitO
   }
   p.log.message(`Create the same stack with ${command(`--preset ${encodePreset(stack)}`)}`);
 
-  if (options.start) {
+  if (options.start && !dockerReady) {
+    p.outro(
+      pc.yellow(
+        `Docker is not ready, so the project was not started. Fix the warnings above and run ${command("docker compose up")}.`,
+      ),
+    );
+  } else if (options.start) {
     // Ask before `docker compose up` takes over the terminal.
     if (options.installPrompt !== false && !options.yes) await offerGlobalInstall();
     p.outro(`Starting the project with ${command("docker compose up")}`);
