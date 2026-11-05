@@ -48,10 +48,13 @@ and the docs work with any of them:
 | Security | `API_READ_KEY` is used on the server only and never reaches the browser. Every page has a Content-Security-Policy that allows the media origins in `MEDIA_ORIGINS`. |
 | Development | The dev server listens on port 3000, allows the host `frontend` and proxies `/admin`, `/api`, `/media` and `/static` to `BACKEND_INTERNAL_URL`. |
 | Production | The Dockerfile has `dev` and `prod` targets. `prod` runs a Node server on port 3000 as the `node` user in a read-only container, with a healthcheck on `/robots.txt`. |
-| Scripts | `dev`, `build`, `start`, `check` (type checks, run by `dstack check`), `test` and `generate:types` (run by `dstack types`). |
+| Scripts | `dev`, `build`, `start`, `check` (type checks, run by `dstack check`), `test` and `generate:types`. The API types are in `src/lib/headless.ts`, where `dstack types` writes them. |
+| Files | `template.json` with the framework's `label`, `url` and `security` page, for the project's README, AGENTS.md and SECURITY.md (`init` removes it), and `AGENTS.md` with the frontend's layout, how to read a content model and how to render a block type. |
 
 Shared logic goes in `@django-stack/utils`, which has no framework
-dependency. `scripts/e2e.sh` and `scripts/e2e-prod.sh` test a frontend
+dependency; components for one framework go in its package, such as
+`@django-stack/svelte`. `test/scaffold.test.ts` checks the files and
+scripts above. `scripts/e2e.sh` and `scripts/e2e-prod.sh` test a frontend
 with `FRONTEND=<name>`, and CI runs them for every frontend in the `e2e`
 job's `frontend` list. A new frontend is a value appended to the frontend
 option in `packages/cli/src/stack.ts`, marked `generated: true` once its

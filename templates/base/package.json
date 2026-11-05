@@ -1,7 +1,7 @@
 {
   "name": "{{project_name}}",
   "private": true,
-  "description": "{{project_name}}: Django, Django Headless, Content Studio and Astro, created with DjangoStack.",
+  "description": "{{project_name}}: Django, Django Headless, Content Studio and {{frontend_label}}, created with DjangoStack.",
   "scripts": {
     "dev": "docker compose up --build",
     "start": "docker compose up --build --detach",

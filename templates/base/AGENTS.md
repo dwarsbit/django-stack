@@ -1,8 +1,9 @@
 # {{project_name}}: guide for AI agents
 
 A website built with DjangoStack: a Django backend (Django Headless serves
-the content API, Django Content Studio is the admin) and an Astro frontend
-that renders the content, run with Docker Compose.
+the content API, Django Content Studio is the admin) and a frontend built
+with {{frontend_label}} that renders the content, run with Docker Compose.
+`frontend/AGENTS.md` describes the frontend.
 
 ## Layout
 
@@ -15,12 +16,8 @@ backend/                 Django project
   content/admin.py       how each model looks in the admin (studios)
   content/seed.py        demo content
   content/tests/         pytest tests of the API
-frontend/                Astro site (server output, Node adapter)
-  src/pages/             routes: /, /[...slug], /blog, /blog/[slug], /category/[slug], /tag/[slug], sitemap.xml, rss.xml, robots.txt, /preview, /revalidate
-  src/components/        Blocks.astro maps block types to components in components/blocks/
-  src/lib/api.ts         getContent(): content helpers with the read-only key, drafts in preview
+frontend/                the {{frontend_label}} site; frontend/AGENTS.md lists its files
   src/lib/headless.ts    generated API types; do not edit, run `npm run generate:types`
-  src/middleware.ts      page cache, editor-managed redirects, security headers
 compose.yaml             every service; COMPOSE_PROFILES in .env picks dev or prod
 Caddyfile                the prod profile's reverse proxy and HTTPS
 .github/workflows/deploy.yml  optional deploy to a server over SSH
@@ -56,16 +53,15 @@ in a running container.
    `ModelStudio`.
 3. Run `makemigrations`; the backend migrates on its next start, or run
    `migrate`.
-4. Run `npm run generate:types`, then read it in the frontend through
-   `getClient()` from `src/lib/api.ts`: `getClient(Astro.cookies).model("content.mymodel").list()`.
+4. Run `npm run generate:types`, then read it in the frontend as
+   `frontend/AGENTS.md` shows.
 5. Add an API smoke test to `backend/content/tests/test_api.py`.
 
 ## How to add a block type
 
 1. Add a `Block` subclass in `backend/content/blocks.py` and add it to
    `BODY_BLOCKS`. Blocks need no migration.
-2. Add a component in `frontend/src/components/blocks/` and map the block's
-   type in `frontend/src/components/Blocks.astro`.
+2. Render it in the frontend as `frontend/AGENTS.md` shows.
 
 ## Rules
 

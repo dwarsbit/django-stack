@@ -1,11 +1,11 @@
 # {{project_name}}
 
-A website with a Django backend and an Astro frontend, created with
+A website with a Django backend and a frontend built with {{frontend_label}}, created with
 [DjangoStack](https://github.com/dwarsbit/django-stack).
 
 - [Django Headless](https://djangoheadless.org) serves the content API.
 - [Django Content Studio](https://djangocontentstudio.org) is the admin.
-- [Astro](https://astro.build) renders the site.
+- [{{frontend_label}}]({{frontend_url}}) renders the site.
 - Postgres stores the content; Valkey is the cache and task queue.
 
 ## Start
@@ -26,7 +26,7 @@ content. Edit a page in the admin, publish, and reload the site.
 ## Develop
 
 Both sides reload on save: the backend runs Django's development server and
-the frontend Astro's, with the source mounted from `backend/` and
+the frontend {{frontend_label}}'s, with the source mounted from `backend/` and
 `frontend/`. `AGENTS.md` lists the layout and the commands.
 
 | Task | Command |

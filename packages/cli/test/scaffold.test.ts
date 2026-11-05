@@ -1,8 +1,11 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  FRONTENDS,
+  type Frontend,
   normalizeDatabaseUrl,
   parseEnv,
   scaffold,
@@ -60,6 +63,41 @@ describe("env files", () => {
   });
 });
 
+describe("frontend templates", () => {
+  const templates = join(fileURLToPath(new URL("../../../templates", import.meta.url)));
+  const frontends = readdirSync(templates)
+    .filter((entry) => entry.startsWith("frontend-"))
+    .map((entry) => entry.slice("frontend-".length));
+
+  it("has a template for every generated frontend", () => {
+    for (const frontend of FRONTENDS) expect(frontends).toContain(frontend);
+  });
+
+  it.each(frontends)("%s meets the frontend contract", (frontend) => {
+    const directory = join(templates, `frontend-${frontend}`);
+    const about = JSON.parse(readFileSync(join(directory, "template.json"), "utf8"));
+    expect(Object.keys(about).sort()).toEqual(["label", "security", "url"]);
+    for (const file of ["AGENTS.md", "Dockerfile", ".dockerignore", "vendor/.gitkeep"])
+      expect(existsSync(join(directory, file)), file).toBe(true);
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
+    for (const script of ["dev", "build", "start", "check", "test", "generate:types"])
+      expect(manifest.scripts[script], script).toBeTruthy();
+    expect(manifest.scripts["generate:types"]).toContain("src/lib/headless.ts");
+    expect(existsSync(join(directory, "src/lib/headless.ts"))).toBe(true);
+    const dockerfile = readFileSync(join(directory, "Dockerfile"), "utf8");
+    for (const target of ["AS dev", "AS prod", "USER node", "HEALTHCHECK", "robots.txt"])
+      expect(dockerfile, target).toContain(target);
+  });
+
+  it.each(frontends)("%s fills in the project's documents", (frontend) => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: frontend as Frontend, demoContent: true });
+    for (const file of ["README.md", "AGENTS.md", "SECURITY.md", "package.json"]) {
+      expect(readFileSync(join(directory, file), "utf8"), file).not.toMatch(/\{\{/);
+    }
+  });
+});
+
 describe("scaffold", () => {
   it("creates a project with fresh secrets", () => {
     const directory = join(tempDir(), "my-site");
@@ -79,6 +117,7 @@ describe("scaffold", () => {
     }
     expect(existsSync(join(directory, "env.example"))).toBe(false);
     expect(existsSync(join(directory, "gitignore"))).toBe(false);
+    expect(existsSync(join(directory, "frontend/template.json"))).toBe(false);
 
     const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
     expect(env.PROJECT_NAME).toBe("my-site");

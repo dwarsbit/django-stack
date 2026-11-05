@@ -10,7 +10,12 @@ backend/db.sqlite3
 __pycache__/
 *.pyc
 frontend/dist/
+frontend/build/
 frontend/.astro/
+frontend/.svelte-kit/
+frontend/.nuxt/
+frontend/.output/
+frontend/.next/
 .DS_Store
 backend/backups/
 backend/huey-stats.db*

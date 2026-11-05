@@ -20,6 +20,14 @@ import { CLI_VERSION } from "./version";
 /** A frontend option; its template is `templates/frontend-<name>`. */
 export type Frontend = Stack["frontend"];
 
+/** `template.json` of a frontend template: its name and links. */
+interface FrontendTemplate {
+  label: string;
+  url: string;
+  /** Where to report security problems in the framework. */
+  security: string;
+}
+
 /** The frontends this version of the CLI generates. */
 export const FRONTENDS: readonly Frontend[] = stackOption("frontend")
   .values.filter((value) => value.generated)
@@ -151,10 +159,17 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   cpSync(join(templates, "backend"), join(target, "backend"), { recursive: true });
   cpSync(frontendTemplate, join(target, "frontend"), { recursive: true });
   renameSync(join(target, "gitignore"), join(target, ".gitignore"));
+  // The frontend's name and links, for the project's README, AGENTS.md and SECURITY.md.
+  const about = join(target, "frontend", "template.json");
+  const frontend = JSON.parse(readFileSync(about, "utf8")) as FrontendTemplate;
+  rmSync(about);
 
   const values = {
     project_name: options.name,
     frontend: options.frontend,
+    frontend_label: frontend.label,
+    frontend_url: frontend.url,
+    frontend_security: frontend.security,
     cli_version: CLI_VERSION,
     preset: options.preset ?? "a",
   };
