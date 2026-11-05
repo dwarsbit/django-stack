@@ -37,7 +37,7 @@ the frontend {{frontend_label}}'s, with the source mounted from `backend/` and
 | Run the tests | `npm test` |
 | Check the setup | `npm run doctor` |
 
-With the `dstack` command installed (`npm install --global @django-stack/cli`),
+With the `dstack` command installed (`npm i -g @django-stack/cli`),
 `dstack dev`, `dstack check`, `dstack manage <command>` and `dstack types` do
 the same from any directory in the project. See the
 [CLI reference](https://dwarsbit.github.io/django-stack/docs/cli).

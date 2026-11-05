@@ -5,11 +5,11 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.3.0 (unreleased)
+## 0.4.0 (unreleased)
 
 - **SvelteKit frontend.** `npx @django-stack/cli init --frontend
-  sveltekit` (preset `a5`) creates the site with SvelteKit and the Node adapter instead of
-  Astro: the same pages, preview, revalidation, feeds and
+  sveltekit` (preset `a5`) creates the site with SvelteKit and the Node
+  adapter instead of Astro: the same pages, preview, revalidation, feeds and
   Content-Security-Policy. Content loads in server load functions only, so
   the API key stays on the server. The new `@django-stack/svelte` package
   has the components for blocks, rich text, images and SEO tags.
@@ -20,6 +20,23 @@ the unreleased version; the release workflow releases it.
   from the frontend's own server routes under `/_content/`, so the API key
   stays on the server. The new `@django-stack/vue` package has the
   components for blocks, rich text and images.
+- **Next.js frontend.** `npx @django-stack/cli init --frontend next`
+  creates the site with Next.js 16 and the App Router instead of Astro: the
+  same pages, preview, revalidation, feeds and Content-Security-Policy, with
+  a nonce from `src/proxy.ts`. API responses stay in Next's data cache until
+  Django calls `/revalidate`. `@django-stack/react` now has the components
+  for blocks, rich text and images, and `@django-stack/next` the route
+  handlers, the metadata and the security headers.
+
+## 0.3.0 (2026-11-05)
+
+- **Deploy to Dokploy.** `dstack deploy setup --provider dokploy --url
+  https://dokploy.example.com` creates the project, the environment and a
+  compose service from the git repository in Dokploy, gives the `proxy`
+  service the domain with a Let's Encrypt certificate and uploads
+  `.env.production`, with an API key (`DSTACK_DOKPLOY_TOKEN` in CI).
+  `deploy`, `status` and `env push` work as for Coolify; the build log stays
+  in Dokploy's dashboard, and `deploy logs` links to it.
 - **Deploy to a server over SSH.** `dstack deploy setup --provider ssh
   --url deploy@example.com` checks Docker on the server, creates
   `/srv/<project>` (or `--path`) and uploads `.env.production`.
@@ -30,6 +47,8 @@ the unreleased version; the release workflow releases it.
 - **`dstack deploy rollback`** starts the release before the running one
   again, or the deploy you name (servers over SSH).
 - New projects keep `.env.production` out of git.
+- The CLI and the docs show the shorter install command
+  `npm i -g @django-stack/cli`.
 
 ## 0.2.0 (2026-11-05)
 

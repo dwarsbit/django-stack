@@ -21,7 +21,7 @@ package manager you ran it with. After that, `dstack init` does the same as
 `npx @django-stack/cli init`. You can also install it yourself:
 
 ```bash
-npm install --global @django-stack/cli
+npm i -g @django-stack/cli
 ```
 
 The CLI asks only once and remembers the answer in
@@ -230,9 +230,10 @@ only by you. See [Deploy to a server](./production/server.md).
 Puts the project on a hosting platform or a server, deploys it and shows
 its status. There are two providers:
 
-- **Coolify** (`--provider coolify`, the default) builds the project on its
-  server from the git repository, so push your commits before you deploy.
-  See [Coolify and Dokploy](./production/platforms.md).
+- **Coolify** (`--provider coolify`, the default) and **Dokploy**
+  (`--provider dokploy`) build the project on their server from the git
+  repository, so push your commits before you deploy. See
+  [Coolify and Dokploy](./production/platforms.md).
 - **A server over SSH** (`--provider ssh`) gets your last commit uploaded
   and runs `docker compose up` there, so commit before you deploy. See
   [Deploy to a server](./production/server.md#deploy-with-the-cli).
@@ -255,7 +256,7 @@ dstack deploy
 | `dstack deploy logout` | Removes a saved API key. |
 
 `dstack deploy` refuses when the deploy would not include your work: for
-Coolify, when your last commit is not on the branch it deploys (push it);
+Coolify and Dokploy, when your last commit is not on the branch it deploys (push it);
 for a server over SSH, when you have uncommitted changes (commit them).
 `--no-push-check` deploys anyway.
 
@@ -263,13 +264,13 @@ for a server over SSH, when you have uncommitted changes (commit them).
 
 | Option | Description |
 |--------|-------------|
-| `--provider <provider>` | `coolify` or `ssh`. Asked for when it is not given; with `--yes`, `coolify`. |
+| `--provider <provider>` | `coolify`, `dokploy` or `ssh`. Asked for when it is not given; with `--yes`, `coolify`. |
 | `--url <url>` | The platform's address, such as `https://coolify.example.com`, or the server, such as `deploy@example.com` or `deploy@example.com:2222`. |
 | `--repository <url>` | The git repository the platform builds. Default: the `origin` remote, as an `https` URL. |
 | `--branch <branch>` | The branch to deploy. Default: the current branch. |
-| `--server <server>` | The Coolify server, by name or uuid. Asked for when there are several. |
-| `--project <project>` | The Coolify project, by name or uuid. Default: a new project named after the project. |
-| `--environment <name>` | The Coolify environment. Default: `production`, created when it does not exist. |
+| `--server <server>` | The Coolify or Dokploy server, by name or id. Asked for when there are several. For Dokploy, `dokploy` is its own server, the default. |
+| `--project <project>` | The Coolify or Dokploy project, by name or id. Default: a new project named after the project. |
+| `--environment <name>` | The Coolify or Dokploy environment. Default: `production`, created when it does not exist. |
 | `--github-app <app>` | The Coolify GitHub App that reads a private repository, or `public`. Asked for when Coolify has GitHub Apps. |
 | `--path <path>` | The project directory on a server over SSH. Default: `/srv/<project>`. |
 | `--deploy`, `--no-deploy` | Deploy when done, or don't ask. |
@@ -277,11 +278,11 @@ for a server over SSH, when you have uncommitted changes (commit them).
 | `-y`, `--yes` | Don't ask; use the flags and the defaults. |
 
 It reads the variables and the domain from `.env.production`, so run
-[`production`](#production) first. For Coolify, it adds the variables that
-put Caddy behind the platform's proxy (see
-[Coolify and Dokploy](./production/platforms.md)), creates the application
-with the Docker Compose build pack and `/compose.yaml`, and gives the
-`proxy` service the domain. For a server over SSH, it checks Docker and
+[`production`](#production) first. For Coolify and Dokploy, it adds the
+variables that put Caddy behind the platform's proxy (see
+[Coolify and Dokploy](./production/platforms.md)), creates a Docker Compose
+application from the repository with `compose.yaml`, and gives the `proxy`
+service the domain. For a server over SSH, it checks Docker and
 the Compose plugin, creates the project directory and uploads the
 variables as `shared/.env`.
 
@@ -300,10 +301,12 @@ address, and never in the project. Where there is no keychain, such as on a
 server without a desktop, it saves the key in
 `~/.config/dstack/credentials.json`, readable only by you, and says so.
 
-In CI, set `DSTACK_COOLIFY_TOKEN`: it overrides a saved key and nothing is
-written. Create the key in Coolify under **Keys & Tokens** with the `read`,
-`write` and `deploy` permissions; the API must be on under
-**Settings** › **Advanced**.
+In CI, set `DSTACK_COOLIFY_TOKEN` or `DSTACK_DOKPLOY_TOKEN`: it overrides a
+saved key and nothing is written. Create a Coolify key under
+**Keys & Tokens** with the `read`, `write` and `deploy` permissions; the
+API must be on under **Settings** › **Advanced**. Create a Dokploy key
+under **Settings** › **Profile** › **API/CLI**. Servers over SSH use your
+SSH keys and need no API key.
 
 ## `doctor`
 
