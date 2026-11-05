@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 PyPI. Add your change under the unreleased version; the release workflow
 releases it.
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-11-05)
 
 - **First release.** `init` creates a Docker Compose project with a Django
   backend (Django Headless and Django Content Studio), an Astro frontend,
