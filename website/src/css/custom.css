@@ -239,3 +239,76 @@ html {
 .theme-doc-markdown code {
   border-radius: 4px;
 }
+
+/* Logo banner */
+.logos-dst {
+  border-bottom: 1px solid var(--dst-line);
+  padding: 1.6rem 0 1.8rem;
+}
+
+.logos-title {
+  margin: 0 0 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dst-muted);
+}
+
+.logos-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem 2.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--dst-muted);
+}
+
+.logo-mark {
+  display: block;
+  flex: none;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+.logo-name {
+  font-family: var(--ifm-heading-font-family);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Admin screenshot */
+.admin-dst {
+  padding: 3.5rem 0 0;
+}
+
+.section-intro {
+  margin: 0.5rem 0 1.5rem;
+  color: var(--dst-muted);
+}
+
+.screenshot {
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}

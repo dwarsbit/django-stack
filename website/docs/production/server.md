@@ -22,8 +22,9 @@ browser ─ 443 ──▶ │ proxy (Caddy) ─┬─ /admin /api /static ─▶
 
 ## What you need
 
-- A server with Docker Engine and the Compose plugin, at least 2 GB of
-  memory, and ports 80 and 443 open. Any provider works; one with 2 vCPUs
+- A server with Docker Engine and the Compose plugin, Node.js 22 or later
+  with `dstack` installed (`npm install --global @django-stack/cli`), at
+  least 2 GB of memory, and ports 80 and 443 open. Any provider works; one with 2 vCPUs
   and 4 GB is comfortable for a site with a database on the same server.
 - A domain with a DNS `A` (and `AAAA`) record pointing at the server. Caddy
   needs it before the first start to get the certificate.
@@ -35,7 +36,7 @@ browser ─ 443 ──▶ │ proxy (Caddy) ─┬─ /admin /api /static ─▶
 On your machine, in the project directory:
 
 ```bash
-npx @django-stack/cli production --domain example.com \
+dstack production --domain example.com \
   --email-url smtp+tls://user:password@smtp.example.com:587
 ```
 
@@ -69,19 +70,17 @@ scp .env.production deploy@example.com:/srv/your-site/.env
 ```bash
 ssh deploy@example.com
 cd /srv/your-site
-docker compose up -d --build
+dstack run
 ```
 
-The first start builds the images, migrates the database, creates the admin
+`run` builds the images, starts the services in the background and waits
+until they are healthy. The first start builds the images, migrates the database, creates the admin
 user and gets the certificate. It takes a few minutes. Then check it:
 
 ```bash
-docker compose ps          # every service is running, backend-prod healthy
-docker compose logs proxy  # "certificate obtained successfully"
+dstack check       # the settings, the deploy checks and the running site
+dstack logs proxy  # "certificate obtained successfully"
 ```
-
-With Node.js on the server, `npx @django-stack/cli doctor` checks the
-settings and the running site too.
 
 Open `https://example.com/admin/` and log in as `admin` with the password
 from step 1.
@@ -91,7 +90,7 @@ from step 1.
 ```bash
 cd /srv/your-site
 git pull
-docker compose up -d --build
+dstack run
 ```
 
 The backend migrates the database before it starts. Compose replaces the
@@ -151,9 +150,9 @@ memory, add backend workers with `--workers` in `backend/Dockerfile`.
 ## Troubleshooting
 
 - **No certificate**: the DNS record must point at the server and ports 80
-  and 443 must be open. `docker compose logs proxy` shows why Let's Encrypt
+  and 443 must be open. `dstack logs proxy` shows why Let's Encrypt
   refused. Caddy retries by itself.
-- **The backend does not start**: `docker compose logs backend-prod`. The
+- **The backend does not start**: `dstack logs backend-prod`. The
   start runs `check --deploy` and stops on an error, such as debug on or an
   `http://` `SITE_URL`.
 - **Mail is not sent**: `EMAIL_URL` must be your SMTP server; Mailpit only

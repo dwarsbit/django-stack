@@ -29,7 +29,7 @@ Storage, Scaleway, DigitalOcean Spaces, or your own.
    S3_PUBLIC_URL=https://media.example.com
    ```
 
-3. Restart: `docker compose up -d`.
+3. Restart: `dstack run`.
 
 Uploads go to the bucket from then on, and image URLs point to
 `S3_PUBLIC_URL`. The frontend's Content Security Policy allows images and
@@ -72,7 +72,7 @@ version DjangoStack tests with.
    ```
 
 2. Remove `db` from `COMPOSE_PROFILES`: `COMPOSE_PROFILES=prod`.
-3. Restart: `docker compose up -d`. The backend migrates the new database.
+3. Restart: `dstack run`. The backend migrates the new database.
 
 `init --database-url` and `production` set the profiles for you when the URL
 does not point to the bundled `db`.

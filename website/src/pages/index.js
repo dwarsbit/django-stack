@@ -1,11 +1,14 @@
 import Link from "@docusaurus/Link";
+import useBaseUrl from "@docusaurus/useBaseUrl";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import CodeBlock from "@theme/CodeBlock";
 import Layout from "@theme/Layout";
+import ThemedImage from "@theme/ThemedImage";
 
-const heroCode = `npx @django-stack/cli init my-site
+const heroCode = `npm install --global @django-stack/cli
+dstack init my-site
 cd my-site
-docker compose up`;
+dstack dev`;
 
 const services = [
   { name: "frontend", text: "Astro", note: "localhost:3000" },
@@ -14,6 +17,18 @@ const services = [
   { name: "db", text: "Postgres", note: "" },
   { name: "cache", text: "Valkey", note: "" },
   { name: "mail", text: "Mailpit", note: "localhost:8025" },
+  { name: "analytics", text: "Umami", note: "" },
+];
+
+// Logos are shown in one color; `width` and `height` keep each one's aspect
+// ratio. Wordmarks carry their own name, marks get it as text.
+const logos = [
+  { name: "Django", file: "django.svg", width: 87, height: 30, wordmark: true },
+  { name: "Astro", file: "astro.svg", width: 111, height: 30, wordmark: true },
+  { name: "Docker", file: "docker.svg", width: 30, height: 30 },
+  { name: "Valkey", file: "valkey.svg", width: 26, height: 30 },
+  { name: "Coolify", file: "coolify.svg", width: 26, height: 26 },
+  { name: "Umami", file: "umami.svg", width: 29, height: 26 },
 ];
 
 const features = [
@@ -35,13 +50,33 @@ const features = [
   },
   {
     title: "Production on your server",
-    text: "The same compose.yaml runs behind Caddy with HTTPS, read-only containers without privileges and daily backups.",
+    text: "The same compose.yaml runs behind Caddy with HTTPS, read-only containers without privileges and daily backups. dstack deploy puts it on Coolify.",
   },
   {
     title: "Open pieces",
-    text: "Django, Django Headless, Django Content Studio, Astro and Postgres: every piece is an open-source project you can read, change or remove.",
+    text: "Django, Django Headless, Django Content Studio, Astro, Postgres, Valkey and Umami: every piece is an open-source project you can read, change or remove.",
   },
 ];
+
+function Logo({ logo }) {
+  const url = useBaseUrl(`/img/logos/${logo.file}`);
+  return (
+    <li className="logo-item">
+      <span
+        className="logo-mark"
+        role="img"
+        aria-label={logo.name}
+        style={{
+          width: logo.width,
+          height: logo.height,
+          maskImage: `url(${url})`,
+          WebkitMaskImage: `url(${url})`,
+        }}
+      />
+      {logo.wordmark ? null : <span className="logo-name">{logo.name}</span>}
+    </li>
+  );
+}
 
 export default function Home() {
   const { siteConfig } = useDocusaurusContext();
@@ -54,8 +89,9 @@ export default function Home() {
             <h1>Developer-first Django tooling</h1>
             <p className="tagline">{siteConfig.tagline}</p>
             <p className="hero-intro">
-              DjangoStack creates a website project with a Django backend, an Astro frontend, Postgres and
-              Docker Compose. Django Headless serves the content API and Django Content Studio is the admin.
+              DjangoStack creates a website project with a Django backend, an Astro frontend, Postgres, Valkey
+              and Umami analytics, run by Docker Compose. Django Headless serves the content API and Django
+              Content Studio is the admin.
             </p>
             <div className="buttons">
               <Link className="button button--lg button-dst-primary" to="/docs/getting-started">
@@ -83,7 +119,39 @@ export default function Home() {
           </div>
         </div>
       </header>
+      <section className="logos-dst" aria-label="Built with">
+        <div className="container">
+          <p className="logos-title">Built with</p>
+          <ul className="logos-row">
+            {logos.map((logo) => (
+              <Logo logo={logo} key={logo.name} />
+            ))}
+          </ul>
+        </div>
+      </section>
       <main>
+        <section className="admin-dst">
+          <div className="container">
+            <h2 className="section-title">The admin</h2>
+            <p className="section-intro">
+              Editors write pages and posts, upload media and preview drafts in{" "}
+              <Link href="https://djangocontentstudio.org">Django Content Studio</Link>.
+            </p>
+            <figure className="screenshot">
+              <ThemedImage
+                alt="The dashboard of Django Content Studio, with statistics, the latest articles, notifications and recent activity"
+                sources={{
+                  light: useBaseUrl("/img/screenshots/dashboard-light.webp"),
+                  dark: useBaseUrl("/img/screenshots/dashboard-dark.webp"),
+                }}
+                width={1568}
+                height={1080}
+                loading="lazy"
+                decoding="async"
+              />
+            </figure>
+          </div>
+        </section>
         <section className="features-dst">
           <div className="container">
             <h2 className="section-title">What a project includes</h2>

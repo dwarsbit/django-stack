@@ -36,17 +36,18 @@ Every prompt has a flag, so the command also runs in scripts:
 npx @django-stack/cli init my-site --yes --no-demo-content
 ```
 
-When it is done, the command offers to install `dstack` globally, so that
-next time you can run `dstack init` and `dstack doctor`. See the
-[CLI reference](./cli.md) for every option.
+When it is done, the command offers to install `dstack` globally. The
+commands below use it; without it, run them as `npx @django-stack/cli dev`
+and so on. See the [CLI reference](./cli.md) for every option.
 
 ## Start it
 
 ```bash
 cd my-site
-docker compose up
+dstack dev
 ```
 
+`dev` starts the development servers in the foreground; Ctrl+C stops them.
 The first start builds the images, creates the database, the admin user and
 the demo content. Then open:
 
@@ -73,21 +74,22 @@ so the development servers reload when you save a file. Add a field to a model
 in `backend/content/models.py`, then create and run the migration:
 
 ```bash
-docker compose exec backend python manage.py makemigrations
-docker compose exec backend python manage.py migrate
+dstack manage makemigrations
+dstack manage migrate
 ```
 
 After a model change, update the frontend's API types:
 
 ```bash
-npm run generate:types
+dstack types
 ```
 
 ## Check the project
 
 ```bash
-npx @django-stack/cli doctor
+dstack check
 ```
 
-The doctor checks Docker, the values in `.env` and the running services, and
-tells you what to fix.
+It checks Docker, the values in `.env` and the running services, then runs
+Django's system checks, the migrations check and the linters, and tells you
+what to fix. `--tests` also runs the tests.

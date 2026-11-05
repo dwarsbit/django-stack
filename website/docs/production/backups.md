@@ -51,11 +51,8 @@ dstack backup
 dstack backup --list
 ```
 
-These run `backup_database` in `worker-prod`, which you can also run
-yourself: `docker compose exec worker-prod python manage.py backup_database`.
-`--list` shows the backups in the volume (`local`) and in the bucket
-(`bucket`). `--no-media` backs up the database only, and `--keep N` (on
-`backup_database`) keeps N backups instead of `BACKUP_KEEP`.
+These run `backup_database` in `worker-prod`. `--list` shows the backups in the volume (`local`) and in the bucket
+(`bucket`). `--no-media` backs up the database only.
 
 To copy a backup to your machine:
 
