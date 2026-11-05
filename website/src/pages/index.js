@@ -11,7 +11,7 @@ dstack init my-site
 cd my-site
 dstack dev`;
 
-const frontends = ["Astro", "Next.js"];
+const frontends = ["Astro", "Next.js", "Django templates", "None (headless, API only)"];
 
 // The frontend row of the hero shows each frontend option in turn. It stays
 // on the first one for visitors who ask for reduced motion.
