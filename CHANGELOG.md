@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.4.0 (unreleased)
+## 0.4.0 (2026-11-05)
 
 - **SvelteKit frontend.** `npx @django-stack/cli init --frontend
   sveltekit` (preset `a5`) creates the site with SvelteKit and the Node
