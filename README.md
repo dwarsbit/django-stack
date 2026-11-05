@@ -13,8 +13,9 @@ npx @django-stack/cli init my-site
 DjangoStack is in early development. It creates projects with the Astro
 frontend that run in development and in production on your own server,
 behind Caddy with HTTPS and daily backups; the Next.js frontend follows.
-Read the [getting started guide](website/docs/getting-started.md) and
-[Deploy to a server](website/docs/production/server.md).
+The documentation is at https://dwarsbit.github.io/django-stack/: start
+with [Getting started](https://dwarsbit.github.io/django-stack/docs/getting-started)
+and [Deploy to a server](https://dwarsbit.github.io/django-stack/docs/production/server).
 
 ## This repository
 
