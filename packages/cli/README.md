@@ -1,6 +1,6 @@
 # @django-stack/cli
 
-Create and manage DjangoStack projects: a Django backend, a frontend, Postgres and Docker Compose in one command.
+The production-ready Django, batteries included stack. Create and manage DjangoStack projects: a Django backend, a frontend, Postgres and Docker Compose in one command.
 
 ```bash
 npx @django-stack/cli init my-site

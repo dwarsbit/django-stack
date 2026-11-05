@@ -78,7 +78,15 @@ html {
 }
 
 .hero-dst .tagline {
-  font-size: 1.15rem;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  color: #e0e7ff;
+  margin: 0 0 1rem;
+  max-width: 34rem;
+}
+
+.hero-dst .hero-intro {
+  font-size: 1.05rem;
   line-height: 1.6;
   color: #c7d2fe;
   margin: 0 0 1.75rem;

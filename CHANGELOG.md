@@ -38,6 +38,8 @@ releases it.
   remembers the answer, and explains a permission error instead of
   failing. Turn the offer off with `--no-install-prompt` or
   `DJANGO_STACK_NO_INSTALL_PROMPT=1`.
+- **Tagline.** The `@django-stack/cli` description and README lead with
+  "The production-ready Django, batteries included stack."
 
 ## 0.0.1 (2026-11-04)
 
