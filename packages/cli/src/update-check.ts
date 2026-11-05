@@ -111,7 +111,9 @@ export function updateCommand(
   const path = decodeURIComponent(location).replaceAll("\\", "/");
   if (path.includes("/_npx/")) return `npx ${PACKAGE_NAME}@latest`;
   if (path.includes("/dlx/") || path.includes("/dlx-")) return `pnpm dlx ${PACKAGE_NAME}@latest`;
+  if (path.includes("/bunx-")) return `bunx ${PACKAGE_NAME}@latest`;
   if (path.includes("/pnpm/global/")) return `pnpm add -g ${PACKAGE_NAME}@latest`;
+  if (path.includes("/.bun/install/global/")) return `bun add -g ${PACKAGE_NAME}@latest`;
   if (env.npm_config_user_agent?.startsWith("pnpm")) return `pnpm add -g ${PACKAGE_NAME}@latest`;
   return `npm install -g ${PACKAGE_NAME}@latest`;
 }

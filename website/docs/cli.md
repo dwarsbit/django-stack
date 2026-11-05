@@ -6,11 +6,35 @@ sidebar_position: 7
 
 ```bash
 npx @django-stack/cli <command>
+dstack <command>            # once it is installed
 ```
 
-`npx @django-stack/cli help <command>` or `<command> --help` lists the
-options of a command. Every prompt has a flag, so each command also runs in
-scripts and CI.
+`dstack help <command>` or `<command> --help` lists the options of a
+command. Every prompt has a flag, so each command also runs in scripts and
+CI.
+
+## Install `dstack`
+
+The first time you run the CLI with `npx`, `pnpm dlx` or `bunx`, it asks
+when the command is done whether to install `dstack` globally, with the
+package manager you ran it with. After that, `dstack init` does the same as
+`npx @django-stack/cli init`. You can also install it yourself:
+
+```bash
+npm install --global @django-stack/cli
+```
+
+The CLI asks only once and remembers the answer in
+`~/.config/django-stack/config.json` (or under `$XDG_CONFIG_HOME`). It does
+not ask when `dstack` is already installed, in CI, when the input or output
+is not a terminal, or with `--yes`. Turn it off with `--no-install-prompt`
+or `DJANGO_STACK_NO_INSTALL_PROMPT=1`.
+
+When the install fails, the command still succeeds and the CLI prints the
+reason and the command to run yourself. A permission error usually means
+npm's global directory belongs to root: give npm a
+[directory in your home](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally)
+instead of using `sudo`. With pnpm, run `pnpm setup` first.
 
 ## `init`
 
@@ -69,8 +93,8 @@ storage. There are named presets too:
 | `api` | Headless, without analytics. |
 | `minimal` | Astro with analytics, tasks, cache, notifications and captcha off. |
 
-`django-stack preset` asks for the stack options and prints the code, and
-`django-stack preset <code>` shows the stack of a code. A code from a newer
+`dstack preset` asks for the stack options and prints the code, and
+`dstack preset <code>` shows the stack of a code. A code from a newer
 CLI fails with a request to update.
 
 The command refuses a directory that is not empty. When
@@ -129,21 +153,21 @@ The default is 32 bytes.
 ## `completion`
 
 Prints a script that completes commands, options and their values when you
-press Tab. It needs the CLI on your `PATH`, for example after
-`npm install -g @django-stack/cli`.
+press Tab. It needs `dstack` on your `PATH`; see
+[Install `dstack`](#install-dstack).
 
 ```bash
-django-stack completion zsh|bash|fish|powershell
+dstack completion zsh|bash|fish|powershell
 ```
 
 Add it to your shell's startup file:
 
 | Shell | Line |
 |-------|------|
-| zsh, in `~/.zshrc` | `source <(django-stack completion zsh)` |
-| bash, in `~/.bashrc` | `source <(django-stack completion bash)` |
-| fish, in `~/.config/fish/config.fish` | `django-stack completion fish \| source` |
-| PowerShell, in `$PROFILE` | `django-stack completion powershell \| Out-String \| Invoke-Expression` |
+| zsh, in `~/.zshrc` | `source <(dstack completion zsh)` |
+| bash, in `~/.bashrc` | `source <(dstack completion bash)` |
+| fish, in `~/.config/fish/config.fish` | `dstack completion fish \| source` |
+| PowerShell, in `$PROFILE` | `dstack completion powershell \| Out-String \| Invoke-Expression` |
 
 ## Update check
 

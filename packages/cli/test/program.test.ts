@@ -22,6 +22,12 @@ describe("program", () => {
       expect(help).toContain(name);
   });
 
+  it("is called dstack and can skip the install prompt", () => {
+    const help = run(["--help"]);
+    expect(help).toContain("Usage: dstack");
+    expect(help).toContain("--no-install-prompt");
+  });
+
   it("rejects an unknown frontend in one line", () => {
     expect(run(["init", "site", "--frontend", "gatsby"])).toMatch(/Allowed choices are astro/);
   });
