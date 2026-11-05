@@ -7,6 +7,13 @@ releases it.
 
 ## 0.3.0 (unreleased)
 
+- **Deploy to Dokploy.** `dstack deploy setup --provider dokploy --url
+  https://dokploy.example.com` creates the project, the environment and a
+  compose service from the git repository in Dokploy, gives the `proxy`
+  service the domain with a Let's Encrypt certificate and uploads
+  `.env.production`, with an API key (`DSTACK_DOKPLOY_TOKEN` in CI).
+  `deploy`, `status` and `env push` work as for Coolify; the build log stays
+  in Dokploy's dashboard, and `deploy logs` links to it.
 - **Deploy to a server over SSH.** `dstack deploy setup --provider ssh
   --url deploy@example.com` checks Docker on the server, creates
   `/srv/<project>` (or `--path`) and uploads `.env.production`.

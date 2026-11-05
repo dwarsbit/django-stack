@@ -29,6 +29,13 @@ export const PLATFORM_ENV: Record<string, string> = {
 
 export type Fetch = typeof fetch;
 
+/** Setup flags Coolify and Dokploy share; `deploy setup` shows each flag once. */
+export const SHARED_SETUP_FLAGS = [
+  { name: "server", description: "The server on the platform, by name or id (Dokploy: dokploy for its own)" },
+  { name: "project", description: "The platform's project, by name or id (default: the project name)" },
+  { name: "environment", description: "The platform's environment (default: production)" },
+];
+
 interface Named {
   uuid: string;
   name: string;
@@ -401,9 +408,7 @@ export const coolify: DeployProvider = {
   target: urlTarget("Coolify", "https://coolify.example.com"),
   platformEnv: PLATFORM_ENV,
   setupFlags: [
-    { name: "server", description: "The Coolify server, by name or uuid" },
-    { name: "project", description: "The Coolify project, by name or uuid (default: the project name)" },
-    { name: "environment", description: "The Coolify environment (default: production)" },
+    ...SHARED_SETUP_FLAGS,
     { name: "githubApp", description: "A Coolify GitHub App for a private repository, or public" },
   ],
   connect: (url, token) => {

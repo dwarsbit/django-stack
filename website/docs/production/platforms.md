@@ -44,6 +44,42 @@ scheme.
 
 ## Dokploy
 
+The CLI sets up the project in Dokploy and deploys it, with a Dokploy API
+key. Push the project to a public git repository first: Dokploy builds it
+on its server from there.
+
+1. In Dokploy, create an API key under **Settings** › **Profile** ›
+   **API/CLI**.
+2. Write the settings for the domain:
+
+   ```bash
+   dstack production --domain example.com \
+     --email-url smtp+tls://user:password@smtp.example.com:587
+   ```
+
+3. Set up the project in Dokploy. It asks for the API key, creates the
+   project, the environment and the compose service from your repository,
+   gives the `proxy` service the domain with a Let's Encrypt certificate and
+   uploads `.env.production` with the variables above:
+
+   ```bash
+   dstack deploy setup --provider dokploy --url https://dokploy.example.com
+   ```
+
+4. Point the domain's DNS at the Dokploy server, then deploy:
+
+   ```bash
+   dstack deploy
+   ```
+
+`dstack deploy status` shows the state of the service and the last deploys.
+Dokploy shows the build log in its dashboard only, so `dstack deploy logs`
+links to it. `--force` has no effect: Dokploy has no rebuild without cache
+in its API. For a private repository, set up the compose service by hand as
+below, with a git provider connected in Dokploy.
+
+To set up the service by hand instead:
+
 1. Create a project, then a **Compose** service with your repository as the
    source and `compose.yaml` as the compose path.
 2. Under **Environment**, paste the variables from above. Dokploy writes them
