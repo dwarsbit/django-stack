@@ -27,8 +27,8 @@ Postgres, Valkey and Umami analytics, run by Docker Compose.
 <p align="center"><strong>Documentation: <a href="https://dwarsbit.github.io/django-stack/">dwarsbit.github.io/django-stack</a></strong></p>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="website/static/img/screenshots/home-dark.webp">
-  <img src="website/static/img/screenshots/home-light.webp" alt="The DjangoStack homepage with the install commands, the services of a project, the frontends and the deploy targets">
+  <source media="(prefers-color-scheme: dark)" srcset="website/static/img/screenshots/dashboard-dark.webp">
+  <img src="website/static/img/screenshots/dashboard-light.webp" alt="The dashboard of Django Content Studio, the admin of a DjangoStack project, with statistics, the latest articles, notifications and recent activity">
 </picture>
 
 ## Features
