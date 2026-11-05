@@ -4,14 +4,26 @@ import { Command, InvalidArgumentError, Option } from "commander";
 import pc from "picocolors";
 import { doctor } from "./commands/doctor";
 import { init } from "./commands/init";
+import { preset } from "./commands/preset";
 import { production } from "./commands/production";
-import { FRONTENDS } from "./scaffold";
 import { generateSecret } from "./secrets";
+import { NAMED_PRESETS, STACK_OPTIONS } from "./stack";
 import { checkForUpdate, updateCheckEnabled, updateCommand } from "./update-check";
 import { CLI_VERSION } from "./version";
 
 /** Commands that print machine-readable output, so no update notice. */
 const QUIET_COMMANDS = new Set(["secret", "complete", "completion"]);
+
+/** A flag for each stack option, such as `--cache <cache>`. */
+function stackFlags(): Option[] {
+  return STACK_OPTIONS.map((option) => {
+    const name = option.flag.slice(2);
+    return new Option(
+      `${option.flag} <${name}>`,
+      `${option.description} (default: ${option.values[0].value})`,
+    ).choices(option.values.map((value) => value.value));
+  });
+}
 
 function positiveInteger(value: string): number {
   const number = Number(value);
@@ -38,18 +50,19 @@ export function createProgram(): Command {
     })
     .configureOutput({ outputError: (text, write) => write(pc.red(text)) });
 
-  program
+  const initCommand = program
     .command("init")
     .alias("create")
     .description("Create a project")
     .argument("[directory]", "Where to create the project")
     .option("--name <name>", "The project name (default: from the directory)")
-    .addOption(
-      new Option("--frontend <frontend>", "The frontend framework (default: astro)").choices(FRONTENDS),
+    .option(
+      "--preset <preset>",
+      `A preset code from a previous init, or ${Object.keys(NAMED_PRESETS).join(", ")}`,
     )
     .option("--database-url <url>", "Use an external Postgres instead of the bundled one")
     .option("--time-zone <zone>", "The time zone of the backend, such as Europe/Amsterdam (default: UTC)")
-    .option("--local-s3", "Store uploads in a local S3 service in development")
+    .addOption(new Option("--local-s3", "Same as --storage s3").hideHelp())
     .option("--no-demo-content", "Start with an empty site")
     .option("--no-git", "Don't create a git repository")
     .option("--start", "Run `docker compose up` when done")
@@ -61,6 +74,17 @@ export function createProgram(): Command {
         fromCli: (option) => cmd.getOptionValueSource(option) === "cli",
       }),
     );
+  for (const flag of stackFlags()) initCommand.addOption(flag);
+
+  const presetCommand = program
+    .command("preset")
+    .description("Print the preset code of a stack, or the stack of a code")
+    .argument("[preset]", "A preset code or name to show")
+    .option("-y, --yes", "Don't ask; use the flags and the defaults")
+    .action((code: string | undefined, options, cmd: Command) =>
+      preset(code, { ...options, fromCli: (option) => cmd.getOptionValueSource(option) === "cli" }),
+    );
+  for (const flag of stackFlags()) presetCommand.addOption(flag);
 
   program
     .command("production")

@@ -3,8 +3,6 @@ import { basename, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import {
-  FRONTENDS,
-  type Frontend,
   lockBackend,
   relativeDirectory,
   scaffold,
@@ -13,12 +11,26 @@ import {
   validateProjectName,
   validateTimeZone,
 } from "../scaffold";
+import {
+  applies,
+  DEFAULT_STACK,
+  encodePreset,
+  pendingChoices,
+  resolvePreset,
+  STACK_OPTIONS,
+  type Stack,
+  type StackKey,
+  type StackValue,
+  stackOption,
+} from "../stack";
 import { command, fail, has, intro, isInteractive, secret, unwrap, url } from "../ui";
 
 export interface InitOptions {
   name?: string;
-  frontend?: Frontend;
+  /** A preset name or code that sets the stack options. */
+  preset?: string;
   databaseUrl?: string;
+  /** Deprecated: `--storage s3`. */
   localS3?: boolean;
   demoContent: boolean;
   git: boolean;
@@ -26,13 +38,62 @@ export interface InitOptions {
   start?: boolean;
   yes?: boolean;
   link?: string;
+  /** The stack options given as flags, by key. */
+  [key: string]: unknown;
   /** Whether each option came from the command line, by option name. */
   fromCli: (option: string) => boolean;
 }
 
-const FRONTEND_LABELS: Record<Frontend, { label: string; hint: string }> = {
-  astro: { label: "Astro", hint: "server-rendered, fast by default" },
-};
+/** The prompt choices of an option; values this version does not generate yet are shown but disabled. */
+function choices(key: StackKey) {
+  const option = stackOption(key);
+  return option.values.map((value: StackValue, index) => ({
+    value: value.value,
+    label: value.label,
+    hint: value.generated || index === 0 ? value.hint : "coming soon",
+    disabled: !value.generated && index > 0,
+  }));
+}
+
+/**
+ * The stack from, in order of precedence, the flags, the preset, the prompts
+ * and the defaults. `askDatabase` asks for the Postgres version together with
+ * the external database choice; it returns the version, or a URL.
+ */
+export async function chooseStack(
+  options: Pick<InitOptions, "preset" | "fromCli"> & Record<string, unknown>,
+  interactive: boolean,
+  askDatabase?: (initial: string) => Promise<{ postgres: string } | { databaseUrl: string }>,
+): Promise<{ stack: Stack; databaseUrl?: string }> {
+  let preset: Stack | undefined;
+  if (options.preset) {
+    try {
+      preset = resolvePreset(options.preset);
+    } catch (error) {
+      fail((error as Error).message);
+    }
+  }
+  const stack = { ...DEFAULT_STACK } as Record<string, string>;
+  let databaseUrl: string | undefined;
+  for (const option of STACK_OPTIONS) {
+    const key = option.key as StackKey;
+    if (options.fromCli(key)) stack[key] = options[key] as string;
+    else if (key === "storage" && options.fromCli("localS3") && options.localS3) stack[key] = "s3";
+    else if (preset) stack[key] = preset[key];
+    else if (!interactive || !applies(key, stack as Stack)) continue;
+    else if (key === "postgres" && askDatabase && !options.databaseUrl) {
+      const answer = await askDatabase(stack[key] as string);
+      if ("databaseUrl" in answer) databaseUrl = answer.databaseUrl;
+      else stack[key] = answer.postgres;
+    } else if (key === "postgres" && options.databaseUrl) continue;
+    else {
+      stack[key] = unwrap(
+        await p.select<string>({ message: option.message, options: choices(key), initialValue: stack[key] }),
+      );
+    }
+  }
+  return { stack: stack as Stack, databaseUrl };
+}
 
 function systemTimeZone(): string {
   try {
@@ -71,39 +132,40 @@ export async function init(directoryArgument: string | undefined, options: InitO
     );
   }
 
-  let frontend = options.frontend;
-  if (frontend === undefined) {
-    frontend = interactive
-      ? unwrap(
-          await p.autocomplete<Frontend>({
-            message: "Frontend",
-            placeholder: "Type to filter",
-            options: FRONTENDS.map((value) => ({ value, ...FRONTEND_LABELS[value] })),
-          }),
-        )
-      : "astro";
-  }
-
-  let databaseUrl = options.databaseUrl;
-  if (!databaseUrl && interactive) {
-    const bundled = unwrap(
-      await p.select({
+  const chosen = await chooseStack(options, interactive, async (initial) => {
+    const choice = unwrap(
+      await p.select<string>({
         message: "Database",
+        initialValue: initial,
         options: [
-          { value: true, label: "Bundled Postgres", hint: "runs in Docker Compose" },
-          { value: false, label: "External Postgres", hint: "a URL to your own server" },
+          ...choices("postgres").map((value) => ({
+            ...value,
+            label: `Bundled Postgres, ${value.label.toLowerCase()}`,
+          })),
+          { value: "external", label: "External Postgres", hint: "a URL to your own server" },
         ],
       }),
     );
-    if (!bundled) {
-      databaseUrl = unwrap(
+    if (choice !== "external") return { postgres: choice };
+    return {
+      databaseUrl: unwrap(
         await p.text({
           message: "Postgres URL",
           placeholder: "postgres://user:password@host:5432/name",
           validate: (value) => (value?.startsWith("postgres") ? undefined : "Enter a postgres:// URL."),
         }),
-      );
-    }
+      ),
+    };
+  });
+  const stack = chosen.stack;
+  const databaseUrl = options.databaseUrl ?? chosen.databaseUrl;
+
+  const pending = pendingChoices(stack);
+  const unavailable = pending.filter((item) => !item.isDefault);
+  if (unavailable.length) {
+    fail(
+      `${unavailable.map((item) => item.choice).join(", ")} ${unavailable.length > 1 ? "are" : "is"} not available yet. Leave ${unavailable.length > 1 ? "them" : "it"} at the default.`,
+    );
   }
 
   let timeZone = options.timeZone;
@@ -124,30 +186,11 @@ export async function init(directoryArgument: string | undefined, options: InitO
     );
   }
 
-  let localS3 = Boolean(options.localS3);
   let demoContent = options.demoContent;
-  if (interactive) {
-    const extras: { value: "demo" | "s3"; label: string; hint: string }[] = [];
-    if (!options.fromCli("demoContent"))
-      extras.push({ value: "demo", label: "Demo content", hint: "example pages and posts" });
-    if (!options.fromCli("localS3"))
-      extras.push({
-        value: "s3",
-        label: "Local S3 for uploads",
-        hint: "the same code path as S3 in production",
-      });
-    if (extras.length) {
-      const chosen = unwrap(
-        await p.multiselect({
-          message: "Extras",
-          options: extras,
-          initialValues: extras.filter((extra) => extra.value === "demo").map((extra) => extra.value),
-          required: false,
-        }),
-      );
-      if (!options.fromCli("demoContent")) demoContent = chosen.includes("demo");
-      if (!options.fromCli("localS3")) localS3 = chosen.includes("s3");
-    }
+  if (interactive && !options.fromCli("demoContent")) {
+    demoContent = unwrap(
+      await p.confirm({ message: "Add demo content? (example pages and posts)", initialValue: true }),
+    );
   }
 
   const spinner = p.spinner();
@@ -157,10 +200,10 @@ export async function init(directoryArgument: string | undefined, options: InitO
     result = scaffold({
       directory: target,
       name,
-      frontend,
+      frontend: "astro",
       demoContent,
       databaseUrl,
-      localS3,
+      localS3: stack.storage === "s3",
       timeZone,
       link: options.link,
     });
@@ -210,6 +253,15 @@ export async function init(directoryArgument: string | undefined, options: InitO
     ].join("\n"),
     "Next steps",
   );
+
+  if (pending.length) {
+    p.log.info(
+      `Coming in a later version, so not in this project yet: ${pending
+        .map((item) => `${stackOption(item.key).message.toLowerCase()} (${stack[item.key]})`)
+        .join(", ")}.`,
+    );
+  }
+  p.log.message(`Create the same stack with ${command(`--preset ${encodePreset(stack)}`)}`);
 
   if (options.start) {
     p.outro(`Starting the project with ${command("docker compose up")}`);

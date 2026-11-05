@@ -12,4 +12,14 @@ export {
   validateProjectName,
 } from "./scaffold";
 export { generateProjectSecrets, generateSecret } from "./secrets";
+export {
+  DEFAULT_STACK,
+  decodePreset,
+  encodePreset,
+  NAMED_PRESETS,
+  pendingChoices,
+  resolvePreset,
+  STACK_OPTIONS,
+  type Stack,
+} from "./stack";
 export { CLI_VERSION as VERSION } from "./version";

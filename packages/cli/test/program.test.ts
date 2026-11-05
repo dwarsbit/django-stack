@@ -18,11 +18,34 @@ function run(args: string[]) {
 describe("program", () => {
   it("lists the commands", () => {
     const help = run(["--help"]);
-    for (const name of ["init", "production", "doctor", "secret", "completion"]) expect(help).toContain(name);
+    for (const name of ["init", "preset", "production", "doctor", "secret", "completion"])
+      expect(help).toContain(name);
   });
 
   it("rejects an unknown frontend in one line", () => {
     expect(run(["init", "site", "--frontend", "gatsby"])).toMatch(/Allowed choices are astro/);
+  });
+
+  it("has a flag for every stack option", () => {
+    const help = run(["init", "--help"]);
+    for (const flag of [
+      "--preset",
+      "--postgres",
+      "--analytics",
+      "--tasks",
+      "--cache",
+      "--notifications",
+      "--captcha",
+      "--storage",
+      "--package-manager",
+    ])
+      expect(help).toContain(flag);
+  });
+
+  it("rejects an unknown cache in one line", () => {
+    expect(run(["init", "site", "--cache", "memcached"])).toMatch(
+      /Allowed choices are database, valkey, off/,
+    );
   });
 
   it("suggests a command for a typo", () => {
