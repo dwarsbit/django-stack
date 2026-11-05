@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.5.0 (unreleased)
+## 0.5.0 (2026-11-05)
 
 - Publishes `@django-stack/utils`, `@django-stack/svelte` and
   `@django-stack/vue` through npm trusted publishing, which the 0.4.0

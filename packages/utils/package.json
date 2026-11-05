@@ -1,6 +1,6 @@
 {
   "name": "@django-stack/utils",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Framework-agnostic helpers for DjangoStack frontends: the API client, content helpers, SEO, images and webhooks.",
   "license": "MIT",
   "author": "Leon van der Grient",
