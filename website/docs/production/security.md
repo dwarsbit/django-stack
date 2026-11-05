@@ -22,7 +22,7 @@ from the site and from `S3_PUBLIC_URL`. Uploaded files in `/media` are
 served with `script-src 'none'`, so an uploaded HTML or SVG file cannot run
 scripts on your domain.
 
-**Containers.** The backend, worker, backup and frontend containers run as
+**Containers.** The backend, worker and frontend containers run as
 a user without privileges. They, Caddy and Valkey run on a read-only file
 system with only `/tmp` and their volumes writable, without Linux
 capabilities (Caddy keeps only the one to bind ports 80 and 443) and with

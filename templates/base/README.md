@@ -70,9 +70,9 @@ has every step.
 | Task | Command (on the server) |
 |------|---------|
 | Update | `git pull && docker compose up -d --build` |
-| Back up now | `docker compose exec backup python manage.py backup_database` |
-| List backups | `docker compose exec backup python manage.py backup_database --list` |
-| Restore | `docker compose exec backup python manage.py restore_database <name>` |
+| Back up the database and media now | `docker compose exec worker-prod python manage.py backup_database` |
+| List backups | `docker compose exec worker-prod python manage.py backup_database --list` |
+| Restore | `docker compose exec worker-prod python manage.py restore_database <name> --media` |
 | Logs | `docker compose logs --follow backend-prod` |
 
 ## Security

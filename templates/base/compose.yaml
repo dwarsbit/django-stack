@@ -4,7 +4,7 @@
 #   dev,db    `docker compose up` on a laptop: dev servers with hot reload,
 #             http://localhost:3000, Mailpit at http://localhost:8025.
 #   prod,db   `docker compose up -d` on a server: production images behind
-#             Caddy on ports 80 and 443, with automatic HTTPS and backups.
+#             Caddy on ports 80 and 443, with automatic HTTPS and daily backups.
 #   Leave out `db` to use an external Postgres through DATABASE_URL, and add
 #   `s3` in development for a local S3 service (see .env).
 #
@@ -156,11 +156,17 @@ services:
     <<: *hardened
     env_file: ${ENV_FILE:-.env}
     command: ["python", "manage.py", "run_huey"]
+    # Also runs the daily backup of the database, and of the media volume
+    # when uploads are not in S3, at BACKUP_TIME (UTC) into the backups
+    # volume and BACKUP_S3_BUCKET. See README.md.
     environment:
       DJANGO_DEBUG: "0"
       NUM_PROXIES: ${NUM_PROXIES:-1}
+      BACKUP_DAILY: "1"
+      BACKUP_DIR: /app/backups
     volumes:
       - media:/app/media
+      - backups:/app/backups
     depends_on:
       backend-prod:
         condition: service_healthy
@@ -218,33 +224,6 @@ services:
         condition: service_healthy
       frontend-prod:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    restart: unless-stopped
-
-  # Backs up the database every day at BACKUP_TIME (UTC) into the backups
-  # volume, and into BACKUP_S3_BUCKET when it is set. See README.md.
-  backup:
-    profiles: [prod]
-    image: ${BACKEND_IMAGE:-{{project_name}}-backend}
-    build:
-      context: ./backend
-      target: prod
-    <<: *hardened
-    env_file: ${ENV_FILE:-.env}
-    command: ["python", "manage.py", "run_backups"]
-    environment:
-      DJANGO_DEBUG: "0"
-      BACKUP_DIR: /app/backups
-    volumes:
-      - backups:/app/backups
-    depends_on:
-      backend-prod:
-        condition: service_healthy
-    healthcheck:
-      disable: true
     deploy:
       resources:
         limits:

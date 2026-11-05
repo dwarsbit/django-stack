@@ -104,7 +104,7 @@ set: without it, Compose starts only the cache.
 ## Updates and backups
 
 Each deploy from the platform rebuilds the images and restarts the services;
-the backend migrates the database before it starts. The `backup` service
-works as on a server: see [Backups](./backups.md). The platforms' own
+the backend migrates the database before it starts. The daily backup
+in `worker-prod` works as on a server: see [Backups](./backups.md). The platforms' own
 database backups do not cover the bundled database, which lives in the
 project's volume.

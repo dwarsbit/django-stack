@@ -7,6 +7,20 @@ releases it.
 
 ## 0.2.0 (unreleased)
 
+- **Media backups.** When uploads are on the server's disk, the daily
+  backup also archives the `media` volume (`<name>.media.tar.gz`, next to
+  the database dump, in the volume and in `BACKUP_S3_BUCKET`, with the same
+  retention). `restore_database --media` and `dstack restore --media`
+  restore it with the database, `restore_media` on its own, and
+  `dstack backup --no-media` or `BACKUP_MEDIA=0` skip it. Media in S3 is
+  not archived; storing uploads in S3 is still the recommended setup.
+- **Backups in the worker.** The daily backup is a Huey periodic task in
+  `worker-prod` (`django_stack.tasks.daily_backup`, on with
+  `BACKUP_DAILY=1`), and new projects no longer have a `backup` service. It
+  checks every hour and when the worker starts, so a backup missed while
+  the server was down is made when it is back, and a failed backup is
+  retried three times, ten minutes apart. `run_backups` and the `backup`
+  service of existing projects keep working.
 - **Deploy to Coolify.** `dstack deploy setup` creates the project and the
   application in Coolify from the git repository (Docker Compose build
   pack, built on the server), sets the domain and uploads

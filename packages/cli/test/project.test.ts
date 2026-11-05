@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkSteps } from "../src/commands/project";
+import { checkSteps, restoreArgs } from "../src/commands/project";
 import { applyStack, setManifestPreset } from "../src/config";
 import { parseEnv } from "../src/env";
 import {
@@ -150,5 +150,22 @@ describe("checkSteps", () => {
     expect(checkSteps(readProject(project()), true)).toHaveLength(6);
     const prod = checkSteps(readProject(project("COMPOSE_PROFILES=prod,db\n")), true);
     expect(prod.map((step) => step.name)).toEqual(["Django deploy checks", "Migrations are up to date"]);
+  });
+});
+
+describe("restoreArgs", () => {
+  it("restores the database, its media, or a media archive", () => {
+    expect(restoreArgs("site-20261104T030000Z.dump", {})).toEqual([
+      "python",
+      "manage.py",
+      "restore_database",
+      "site-20261104T030000Z.dump",
+    ]);
+    expect(restoreArgs("site-20261104T030000Z.dump", { media: true, yes: true }).slice(3)).toEqual([
+      "site-20261104T030000Z.dump",
+      "--media",
+      "--yes",
+    ]);
+    expect(restoreArgs("site-20261104T030000Z.media.tar.gz", { media: true })[2]).toBe("restore_media");
   });
 });

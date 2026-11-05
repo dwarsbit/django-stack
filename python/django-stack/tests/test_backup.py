@@ -1,4 +1,5 @@
 import subprocess
+import tarfile
 from datetime import UTC, datetime
 
 import pytest
@@ -83,3 +84,62 @@ def test_next_run():
     now = datetime(2026, 11, 4, 2, 30, tzinfo=UTC)
     assert next_run("03:00", now) == datetime(2026, 11, 4, 3, 0, tzinfo=UTC)
     assert next_run("02:00", now) == datetime(2026, 11, 5, 2, 0, tzinfo=UTC)
+
+
+@pytest.fixture
+def media(tmp_path, settings, backups):
+    root = tmp_path / "media-root"
+    (root / "images").mkdir(parents=True)
+    (root / "images" / "a.jpg").write_bytes(b"a")
+    (root / "b.pdf").write_bytes(b"b")
+    settings.MEDIA_ROOT = str(root)
+    disk = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+    settings.STORAGES = {**settings.STORAGES, "default": disk}
+    return root
+
+
+def test_media_name():
+    assert backup.media_name("site-20261104T030000Z.dump") == "site-20261104T030000Z.media.tar.gz"
+
+
+def test_media_backup_and_restore(media, backups):
+    result = backup.create_media_backup("site-20261104T030000Z.dump", keep=5)
+    assert result.path == backups / "site-20261104T030000Z.media.tar.gz"
+    assert backup.local_backups(backup.MEDIA_PATTERN) == [result.name]
+    assert backup.local_backups() == []
+
+    (media / "b.pdf").unlink()
+    (media / "new.txt").write_bytes(b"new")
+    backup.restore_media(backup.fetch_backup(result.name))
+    files = sorted(str(path.relative_to(media)) for path in media.rglob("*"))
+    assert files == ["b.pdf", "images", "images/a.jpg"]
+    assert (media / "images" / "a.jpg").read_bytes() == b"a"
+
+
+def test_broken_media_archive_changes_nothing(media, tmp_path):
+    broken = tmp_path / "broken.media.tar.gz"
+    broken.write_bytes(b"not a tar")
+    with pytest.raises(tarfile.ReadError):
+        backup.restore_media(broken)
+    assert (media / "b.pdf").exists()
+    assert not (media / ".restoring").exists()
+
+
+def test_media_retention_is_separate(media, backups):
+    for day in range(1, 4):
+        (backups / f"site-2026110{day}T030000Z.dump").write_bytes(b"")
+        backup.create_media_backup(f"site-2026110{day}T030000Z.dump", keep=2)
+    assert backup.local_backups(backup.MEDIA_PATTERN) == [
+        "site-20261102T030000Z.media.tar.gz",
+        "site-20261103T030000Z.media.tar.gz",
+    ]
+    assert len(backup.local_backups()) == 3
+
+
+def test_media_backups_only_on_disk(media, settings):
+    assert backup.media_backups_enabled()
+    settings.DJANGO_STACK = {**settings.DJANGO_STACK, "BACKUP_MEDIA": False}
+    assert not backup.media_backups_enabled()
+    settings.DJANGO_STACK = {**settings.DJANGO_STACK, "BACKUP_MEDIA": True}
+    settings.STORAGES = {**settings.STORAGES, "default": {"BACKEND": "storages.backends.s3.S3Storage"}}
+    assert not backup.media_backups_enabled()
