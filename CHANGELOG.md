@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 PyPI. Add your change under the unreleased version; the release workflow
 releases it.
 
-## 0.3.0 (unreleased)
+## 0.3.0 (2026-11-05)
 
 - **Deploy to Dokploy.** `dstack deploy setup --provider dokploy --url
   https://dokploy.example.com` creates the project, the environment and a
