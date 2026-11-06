@@ -14,8 +14,9 @@ import {
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseEnv, setEnvValues } from "./env";
+import { portValues } from "./ports";
 import { generateProjectSecrets } from "./secrets";
-import { type Stack, stackOption, taskQueue } from "./stack";
+import { DEFAULT_STACK, encodePreset, type Stack, stackOption, taskQueue } from "./stack";
 import { CLI_VERSION } from "./version";
 
 /** A frontend option; its template is `templates/frontend-<name>`. */
@@ -56,6 +57,8 @@ export interface ScaffoldOptions {
   link?: string;
   /** The time zone of the backend, such as Europe/Amsterdam. UTC by default. */
   timeZone?: string;
+  /** The development ports by `.env` variable, such as SITE_PORT; the usual ones when not set. */
+  ports?: Record<string, number>;
   /** The preset code of the stack, saved in package.json for `config`. */
   preset?: string;
   /** Where the templates are; the ones in the package by default. */
@@ -111,16 +114,20 @@ export function usesValkey(env: Record<string, string | undefined>): boolean {
   );
 }
 
-/** The local S3 service of the `s3` profile. It accepts any credentials. */
-export const LOCAL_S3: Record<string, string> = {
-  S3_BUCKET: "media",
-  S3_ENDPOINT_URL: "http://s3:8333",
-  S3_REGION: "us-east-1",
-  S3_ACCESS_KEY_ID: "local",
-  S3_SECRET_ACCESS_KEY: "local",
-  S3_PUBLIC_URL: "http://localhost:8333/media",
-  S3_CREATE_BUCKET: "1",
-};
+/** The local S3 service of the `s3` profile, published on `port`. It accepts any credentials. */
+export function localS3(port = 8333): Record<string, string> {
+  return {
+    S3_BUCKET: "media",
+    S3_ENDPOINT_URL: "http://s3:8333",
+    S3_REGION: "us-east-1",
+    S3_ACCESS_KEY_ID: "local",
+    S3_SECRET_ACCESS_KEY: "local",
+    S3_PUBLIC_URL: `http://localhost:${port}/media`,
+    S3_CREATE_BUCKET: "1",
+  };
+}
+
+export const LOCAL_S3: Record<string, string> = localS3();
 
 const TEXT_EXTENSIONS =
   /\.(py|ts|tsx|mjs|js|jsx|json|astro|vue|svelte|css|md|yaml|yml|toml|txt|html|sh|svg)$|Dockerfile$|gitignore$|\.dockerignore$|env\.example$/;
@@ -220,7 +227,9 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     frontend_url: frontend.url,
     frontend_security: frontend.security,
     cli_version: CLI_VERSION,
-    preset: options.preset ?? "a",
+    preset: options.preset ?? encodePreset(DEFAULT_STACK),
+    site_port: String(options.ports?.SITE_PORT ?? 3000),
+    mail_port: String(options.ports?.MAIL_PORT ?? 8025),
   };
   const files = walk(target);
   for (const file of files) {
@@ -262,6 +271,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   env = setEnvValues(env, cache);
   if (usesValkey(cache)) profiles.push("valkey");
   env = setEnvValues(env, { COMPOSE_PROFILES: profiles.join(",") });
+  if (options.ports) env = setEnvValues(env, portValues(parseEnv(env), options.ports));
   if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });
   writeFileSync(join(target, ".env"), env, { mode: 0o600 });
   writeFileSync(join(target, ".env.example"), envExample);

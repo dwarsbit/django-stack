@@ -18,9 +18,12 @@ You need Docker.
 docker compose up --build
 ```
 
-- Site: http://localhost:3000
-- Admin: http://localhost:3000/admin/ (user `admin`, password `ADMIN_PASSWORD` in `.env`)
-- Outgoing mail: http://localhost:8025
+- Site: http://localhost:{{site_port}}
+- Admin: http://localhost:{{site_port}}/admin/ (user `admin`, password `ADMIN_PASSWORD` in `.env`)
+- Outgoing mail: http://localhost:{{mail_port}}
+
+The ports are `SITE_PORT` and `MAIL_PORT` in `.env`. When you change
+`SITE_PORT`, change `SITE_URL` and `BACKEND_URL` with it.
 
 The first start migrates the database, creates the admin user and adds demo
 content. Edit a page in the admin, publish, and reload the site.

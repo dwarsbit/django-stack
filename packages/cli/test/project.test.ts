@@ -200,6 +200,14 @@ describe("applyStack", () => {
     expect(env.COMPOSE_PROFILES).toBe("dev,db,valkey");
   });
 
+  it("switches uploads in production in the preset only", () => {
+    const result = applyStack(dev, parseEnv(dev), local, { ...local, media: "s3" });
+    expect(result.env).toBe(dev);
+    expect(result.changes).toEqual([
+      "Uploads in production go to S3; dstack settings asks for the S3 settings.",
+    ]);
+  });
+
   it("changes nothing for the same stack", () => {
     expect(applyStack(dev, parseEnv(dev), local, local)).toEqual({ env: dev, changes: [] });
   });

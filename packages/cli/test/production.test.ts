@@ -64,6 +64,17 @@ describe("productionEnv", () => {
     expect(result.todo.join(" ")).toContain("S3_");
   });
 
+  it("asks for the S3 settings with uploads in S3", () => {
+    const text = devEnv();
+    expect(productionEnv(text, { domain: "example.com" }).todo.join(" ")).not.toContain("S3_");
+    const result = productionEnv(text, { domain: "example.com", media: "s3" });
+    expect(result.todo).toContain(
+      "Set the S3_* variables to your S3 service: uploads go to S3 in production.",
+    );
+    const local = productionEnv(devEnv({ localS3: true }), { domain: "example.com", media: "s3" });
+    expect(local.todo.filter((item) => item.includes("S3_"))).toHaveLength(1);
+  });
+
   it("validates the domain", () => {
     expect(validateDomain("example.com")).toBeUndefined();
     expect(validateDomain("https://example.com")).toBeDefined();

@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { selfCommand } from "../global-install";
-import { applies, encodePreset, NAMED_PRESETS, resolvePreset, STACK_OPTIONS, type StackKey } from "../stack";
+import { applies, encodePreset, NAMED_PRESETS, PROMPT_ORDER, resolvePreset, stackOption } from "../stack";
 import { command, fail, intro, isInteractive } from "../ui";
 import { chooseStack } from "./init";
 
@@ -21,8 +21,9 @@ export async function preset(code: string | undefined, options: PresetOptions) {
     } catch (error) {
       fail((error as Error).message);
     }
-    const lines = STACK_OPTIONS.filter((option) => applies(option.key as StackKey, stack)).map((option) => {
-      const value = option.values.find((candidate) => candidate.value === stack[option.key as StackKey]);
+    const lines = PROMPT_ORDER.filter((key) => applies(key, stack)).map((key) => {
+      const option = stackOption(key);
+      const value = option.values.find((candidate) => candidate.value === stack[key]);
       return `${pc.bold(option.message.padEnd(24))}${value?.label ?? ""}`;
     });
     p.note(lines.join("\n"), command(`--preset ${encodePreset(stack)}`));

@@ -26,3 +26,16 @@ export function setEnvValues(text: string, values: Record<string, string>): stri
   }
   return result;
 }
+
+/**
+ * A value as Docker Compose reads it literally: single-quoted when it has
+ * characters Compose would interpolate or cut, such as `$`, `#` or a
+ * space at either end.
+ * Throws for a value it cannot quote.
+ */
+export function quoteEnvValue(value: string): string {
+  if (/[\r\n]/.test(value)) throw new Error("A value can't have a line break.");
+  if (!/[$#"`\\]|^\s|\s$|^'/.test(value)) return value;
+  if (value.includes("'")) throw new Error("A value with ' and other special characters can't be quoted.");
+  return `'${value}'`;
+}

@@ -2,7 +2,8 @@ import { execFileSync } from "node:child_process";
 import { basename, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { offerGlobalInstall } from "../global-install";
+import { isOnPath, offerGlobalInstall } from "../global-install";
+import { chooseFreePorts, describeMove } from "../ports";
 import {
   lockBackend,
   relativeDirectory,
@@ -98,11 +99,13 @@ export async function chooseStack(
       else stack[key] = answer.postgres;
     } else if (key === "postgres" && options.databaseUrl) continue;
     else {
+      // With S3 in production, suggest the local S3 service in development: the same code path.
+      const initialValue = key === "storage" && stack.media === "s3" ? "s3" : stack[key];
       stack[key] = unwrap(
         await p.select<string>({
           message: option.message,
           options: choices(key, stack as Partial<Stack>),
-          initialValue: stack[key],
+          initialValue,
         }),
       );
     }
@@ -221,6 +224,10 @@ export async function init(directoryArgument: string | undefined, options: InitO
     );
   }
 
+  // Free ports for the development services, from the usual ones up.
+  const ports = await chooseFreePorts({}, stack.storage === "s3" ? ["s3"] : []);
+  for (const move of ports.moves) p.log.info(describeMove(move));
+
   const spinner = p.spinner();
   spinner.start("Creating the project");
   let result: ReturnType<typeof scaffold>;
@@ -237,6 +244,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
       tasks: stack.tasks,
       preset: encodePreset(stack),
       timeZone,
+      ports: ports.ports,
       link: options.link,
     });
   } catch (error) {
@@ -265,14 +273,18 @@ export async function init(directoryArgument: string | undefined, options: InitO
     }
   }
 
+  // Ask before the next steps, so they can name `dstack` once it is installed.
+  if (options.installPrompt !== false && !options.yes) await offerGlobalInstall();
+  const startCommand = isOnPath() ? "dstack dev" : "docker compose up";
+
   p.note(
     [
       command(`cd ${relativeDirectory(target)}`),
-      command("docker compose up"),
+      command(startCommand),
       "",
-      `${pc.bold("Site")}    ${url("http://localhost:3000")}`,
-      `${pc.bold("Admin")}   ${url("http://localhost:3000/admin/")}`,
-      `${pc.bold("Mail")}    ${url("http://localhost:8025")}`,
+      `${pc.bold("Site")}    ${url(`http://localhost:${ports.ports.SITE_PORT}`)}`,
+      `${pc.bold("Admin")}   ${url(`http://localhost:${ports.ports.SITE_PORT}/admin/`)}`,
+      `${pc.bold("Mail")}    ${url(`http://localhost:${ports.ports.MAIL_PORT}`)}`,
       "",
       `Admin user ${secret(result.adminUsername)}, password ${secret(result.adminPassword)}`,
       pc.dim("The password is in .env as ADMIN_PASSWORD. Change it after you sign in."),
@@ -287,17 +299,19 @@ export async function init(directoryArgument: string | undefined, options: InitO
         .join(", ")}.`,
     );
   }
+  if (stack.media === "s3")
+    p.log.info(
+      `Uploads go to S3 in production. Before the first deploy, ${command("dstack production")} asks for the S3 settings; ${command("dstack settings")} changes them later.`,
+    );
   p.log.message(`Create the same stack with ${command(`--preset ${encodePreset(stack)}`)}`);
 
   if (options.start && !dockerReady) {
     p.outro(
       pc.yellow(
-        `Docker is not ready, so the project was not started. Fix the warnings above and run ${command("docker compose up")}.`,
+        `Docker is not ready, so the project was not started. Fix the warnings above and run ${command(startCommand)}.`,
       ),
     );
   } else if (options.start) {
-    // Ask before `docker compose up` takes over the terminal.
-    if (options.installPrompt !== false && !options.yes) await offerGlobalInstall();
     p.outro(`Starting the project with ${command("docker compose up")}`);
     execFileSync("docker", ["compose", "up"], { cwd: target, stdio: "inherit" });
   } else {

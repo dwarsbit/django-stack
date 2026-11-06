@@ -7,6 +7,8 @@ export interface ProductionOptions {
   domain: string;
   /** The SMTP server for outgoing mail. */
   emailUrl?: string;
+  /** Where uploads go: `s3` asks for the S3 settings (the `media` stack option). */
+  media?: string;
 }
 
 export interface ProductionEnv {
@@ -14,6 +16,11 @@ export interface ProductionEnv {
   adminPassword: string;
   /** Things to finish by hand before the first deploy. */
   todo: string[];
+}
+
+/** The S3 settings that uploads to S3 need and that are empty. */
+export function missingS3(env: Record<string, string>): string[] {
+  return ["S3_BUCKET", "S3_REGION", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"].filter((name) => !env[name]);
 }
 
 export function validateDomain(domain: string): string | undefined {
@@ -90,10 +97,13 @@ export function productionEnv(devEnv: string, options: ProductionOptions): Produ
       S3_PUBLIC_URL: "",
       S3_CREATE_BUCKET: "0",
     });
-    todo.push(
-      "Set the S3_* variables to your S3 service, or leave them empty to keep uploads on the server.",
-    );
+    if (options.media !== "s3")
+      todo.push(
+        "Set the S3_* variables to your S3 service, or leave them empty to keep uploads on the server.",
+      );
   }
+  if (options.media === "s3" && missingS3(parseEnv(setEnvValues(devEnv, values))).length)
+    todo.push("Set the S3_* variables to your S3 service: uploads go to S3 in production.");
   if (!current.ADMIN_EMAIL || current.ADMIN_EMAIL.endsWith("@example.com")) {
     todo.push("Set ADMIN_EMAIL to your address.");
   }

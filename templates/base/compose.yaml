@@ -2,7 +2,8 @@
 #
 # COMPOSE_PROFILES in .env picks the services:
 #   dev,db    `docker compose up` on a laptop: dev servers with hot reload,
-#             http://localhost:3000, Mailpit at http://localhost:8025.
+#             http://localhost:3000, Mailpit at http://localhost:8025 (the
+#             *_PORT variables in .env change the ports).
 #   prod,db   `docker compose up -d` on a server: production images behind
 #             Caddy on ports 80 and 443, with automatic HTTPS and daily backups.
 #   Leave out `db` to use an external Postgres through DATABASE_URL, and add
@@ -74,7 +75,7 @@ services:
       - ./backend:/app
       - media:/app/media
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     depends_on: *backend-depends
     healthcheck: *backend-health
     restart: unless-stopped
@@ -107,7 +108,7 @@ services:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${SITE_PORT:-3000}:3000"
     depends_on:
       backend:
         condition: service_healthy
@@ -117,11 +118,12 @@ services:
     profiles: [dev]
     image: axllent/mailpit:v1.27
     ports:
-      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:${MAIL_PORT:-8025}:8025"
     restart: unless-stopped
 
   # A local S3 service, so development runs the same storage code as
-  # production with S3. Files are public at http://localhost:8333/<bucket>/.
+  # production with S3. Files are public at http://localhost:8333/<bucket>/
+  # (S3_PORT).
   s3:
     profiles: [s3]
     image: chrislusf/seaweedfs:4.52
@@ -129,7 +131,7 @@ services:
     volumes:
       - s3data:/data
     ports:
-      - "127.0.0.1:8333:8333"
+      - "127.0.0.1:${S3_PORT:-8333}:8333"
     restart: unless-stopped
 
   # Production -------------------------------------------------------------
