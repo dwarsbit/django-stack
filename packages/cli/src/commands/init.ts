@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { basename, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { offerGlobalInstall } from "../global-install";
+import { isOnPath, offerGlobalInstall } from "../global-install";
 import {
   lockBackend,
   relativeDirectory,
@@ -250,10 +250,14 @@ export async function init(directoryArgument: string | undefined, options: InitO
     }
   }
 
+  // Ask before the next steps, so they can name `dstack` once it is installed.
+  if (options.installPrompt !== false && !options.yes) await offerGlobalInstall();
+  const startCommand = isOnPath() ? "dstack dev" : "docker compose up";
+
   p.note(
     [
       command(`cd ${relativeDirectory(target)}`),
-      command("docker compose up"),
+      command(startCommand),
       "",
       `${pc.bold("Site")}    ${url("http://localhost:3000")}`,
       `${pc.bold("Admin")}   ${url("http://localhost:3000/admin/")}`,
@@ -277,12 +281,10 @@ export async function init(directoryArgument: string | undefined, options: InitO
   if (options.start && !dockerReady) {
     p.outro(
       pc.yellow(
-        `Docker is not ready, so the project was not started. Fix the warnings above and run ${command("docker compose up")}.`,
+        `Docker is not ready, so the project was not started. Fix the warnings above and run ${command(startCommand)}.`,
       ),
     );
   } else if (options.start) {
-    // Ask before `docker compose up` takes over the terminal.
-    if (options.installPrompt !== false && !options.yes) await offerGlobalInstall();
     p.outro(`Starting the project with ${command("docker compose up")}`);
     execFileSync("docker", ["compose", "up"], { cwd: target, stdio: "inherit" });
   } else {

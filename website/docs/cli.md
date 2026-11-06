@@ -16,7 +16,8 @@ CI.
 ## Install `dstack`
 
 The first time you run the CLI with `npx`, `pnpm dlx` or `bunx`, it asks
-when the command is done whether to install `dstack` globally, with the
+when the command is done (`init`: before its next steps) whether to install
+`dstack` globally, with the
 package manager you ran it with. After that, `dstack init` does the same as
 `npx @django-stack/cli init`. You can also install it yourself:
 

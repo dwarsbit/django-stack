@@ -37,9 +37,10 @@ Every prompt has a flag, so the command also runs in scripts:
 npx @django-stack/cli init my-site --yes --no-demo-content
 ```
 
-When it is done, the command offers to install `dstack` globally. The
-commands below use it; without it, run them as `npx @django-stack/cli dev`
-and so on. See the [CLI reference](./cli.md) for every option.
+Before it prints the next steps, the command offers to install `dstack`
+globally. The next steps then start the project with `dstack dev`, or with
+`docker compose up` when `dstack` is not installed. The commands below use
+`dstack`; without it, run them as `npx @django-stack/cli dev` and so on. See the [CLI reference](./cli.md) for every option.
 
 ## Start it
 

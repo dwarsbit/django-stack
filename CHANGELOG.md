@@ -13,6 +13,9 @@ the unreleased version; the release workflow releases it.
   A mistyped code is refused rather than read as another stack. The
   shorter codes that start with `a` keep working, also in the
   `package.json` of existing projects.
+- **`dstack dev` in the next steps.** `init` now offers to install `dstack`
+  before it prints the next steps, and the next steps say `dstack dev`
+  when `dstack` is installed, `docker compose up` otherwise.
 
 ## 0.6.0 (2026-11-06)
 
