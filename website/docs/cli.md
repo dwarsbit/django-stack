@@ -88,7 +88,7 @@ the defaults it does not generate yet when it is done.
 | `--captcha` | `on` (later, the built-in captcha), `off` |
 | `--storage` | `local`, `s3` (a local S3 service in development, the same code path as S3 in production; see [Media and database](./production/media-and-database.md#s3-in-development)) |
 | `--package-manager` | `pnpm` (later), `npm`, `bun` (later). Only for a Node frontend. |
-| `--media` | `server` (uploads in a volume on the server), `s3` (uploads in S3 in production; `production` lists the S3 settings to set). Asked before `--storage`, which then suggests `s3`. See [Media in S3](./production/media-and-database.md#media-in-s3). |
+| `--media` | `server` (uploads in a volume on the server), `s3` (uploads in S3 in production; [`settings`](#settings) asks for the credentials). Asked before `--storage`, which then suggests `s3`. See [Media in S3](./production/media-and-database.md#media-in-s3). |
 
 ### Presets
 
@@ -231,6 +231,45 @@ secrets for everything, including the admin password and the bundled
 database's password. The local S3 service's values are cleared. It then
 prints what is left to fill in and the admin password. The file is readable
 only by you. See [Deploy to a server](./production/server.md).
+
+In a terminal, it then offers to ask for the missing settings, as
+[`settings`](#settings) does.
+
+## `settings`
+
+Asks for the production settings and credentials that are missing in
+`.env.production`, one at a time, and saves them there.
+
+```bash
+dstack settings [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `-C`, `--dir <directory>` | The project directory (default: this one or a parent). |
+| `--file <file>` | The file to change. The default is `.env.production`, or `.env` when it runs the prod profile, as on a server. |
+| `--set <NAME=value>` | Set a value without asking. Repeat it for more values. |
+| `--all` | Ask for every setting, also the ones that are set. Each answer starts with the current value; an empty secret keeps the current one. |
+| `-y`, `--yes` | Don't ask. With settings still missing, it lists them and exits 1. |
+
+It asks for:
+
+| Setting | When | Saved as |
+|---------|------|----------|
+| Your email address | `ADMIN_EMAIL` is empty or at `example.com` | `ADMIN_EMAIL` |
+| The SMTP server, port, user name and password | `EMAIL_URL` is empty, Mailpit or the placeholder | `EMAIL_URL`, such as `smtp+tls://user:password@smtp.example.com:587`: `smtps://` on port 465, `smtp://` on port 25 |
+| The S3 bucket, endpoint, region, access key and public URL | uploads go to S3 (`init --media s3`, or `S3_BUCKET` is set) and one of them is empty | `S3_BUCKET`, `S3_ENDPOINT_URL`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL` |
+
+```bash
+dstack settings --yes \
+  --set ADMIN_EMAIL=you@example.com \
+  --set EMAIL_URL=smtp+tls://user:password@smtp.example.com:587
+```
+
+Passwords are hidden as you type. A value with `$`, `#` or quotes is saved
+in single quotes, so Docker Compose reads it as it is. When the project is
+linked to a platform, push the new values with
+[`dstack deploy env push`](#deploy).
 
 ## `deploy`
 

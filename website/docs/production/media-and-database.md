@@ -14,9 +14,9 @@ server then holds no data, and can be replaced at any time.
 Any S3-compatible service works: AWS S3, Cloudflare R2, Hetzner Object
 Storage, Scaleway, DigitalOcean Spaces, or your own.
 
-`init` asks where uploads go in production. With S3 (`--media s3`),
-`dstack production` lists the `S3_*` variables to set; it does not ask for
-credentials during `init`.
+`init` asks where uploads go in production, but not for credentials. With
+S3 (`--media s3`), `dstack production` and
+[`dstack settings`](../cli.md#settings) ask for the `S3_*` variables.
 
 1. Create a bucket whose files are publicly readable, and an access key
    that may write to it.

@@ -79,7 +79,7 @@ export function applyStack(
       // Only the preset changes: `dstack production` and `dstack settings` act on it.
       changes.push(
         to.media === "s3"
-          ? "Uploads in production go to S3; set the S3_* variables in .env.production."
+          ? "Uploads in production go to S3; dstack settings asks for the S3 settings."
           : "Uploads in production stay on the server.",
       );
     }

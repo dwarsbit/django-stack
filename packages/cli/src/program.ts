@@ -30,6 +30,7 @@ import {
   types,
   update as updateProject,
 } from "./commands/project";
+import { settings } from "./commands/settings";
 import { DEFAULT_PROVIDER, PROVIDERS } from "./deploy";
 import { BIN, offerGlobalInstall } from "./global-install";
 import { generateSecret } from "./secrets";
@@ -315,6 +316,20 @@ export function createProgram(): Command {
     .option("--force", "Overwrite an existing .env.production")
     .option("-y, --yes", "Don't ask; fail when --domain is missing")
     .action(production);
+
+  program
+    .command("settings")
+    .description("Ask for the missing production settings and credentials, and save them")
+    .addOption(dirOption())
+    .option("--file <file>", "The file to change (default: .env.production, or .env on a server)")
+    .option(
+      "--set <NAME=value>",
+      "Set a value without asking, such as --set ADMIN_EMAIL=you@example.com",
+      (value: string, previous: string[] = []) => [...previous, value],
+    )
+    .option("--all", "Ask for every setting, also the ones that are set")
+    .option("-y, --yes", "Don't ask; fail when a setting is still missing")
+    .action(settings);
 
   program
     .command("doctor")

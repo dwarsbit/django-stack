@@ -2,25 +2,18 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
+import { parseEnv } from "../env";
 import { productionEnv, validateDomain } from "../production";
-import { projectStack, readProject } from "../project";
 import { relativeDirectory } from "../scaffold";
+import { remainingTodo, SETTING_NAMES, settingsToAsk } from "../settings";
 import { command, fail, intro, isInteractive, secret, unwrap, url } from "../ui";
+import { askSettings, projectContext, writeSettings } from "./settings";
 
 export interface ProductionCommandOptions {
   domain?: string;
   emailUrl?: string;
   force?: boolean;
   yes?: boolean;
-}
-
-/** The `media` stack option of the project, from the preset in package.json. */
-function projectMedia(directory: string): string | undefined {
-  try {
-    return projectStack(readProject(directory)).media;
-  } catch {
-    return undefined;
-  }
 }
 
 export async function production(directoryArgument: string | undefined, options: ProductionCommandOptions) {
@@ -43,20 +36,42 @@ export async function production(directoryArgument: string | undefined, options:
       }),
     );
   }
+  const context = projectContext(directory);
   let result: ReturnType<typeof productionEnv>;
   try {
     result = productionEnv(readFileSync(envPath, "utf8"), {
       domain,
       emailUrl: options.emailUrl,
-      media: projectMedia(directory),
+      media: context.media,
     });
   } catch (error) {
     fail((error as Error).message);
   }
   writeFileSync(target, result.text, { mode: 0o600 });
   p.log.success(`Wrote ${pc.bold(relativeDirectory(target))} with new secrets for the server.`);
-  if (result.todo.length)
-    p.note(result.todo.map((item) => `${pc.yellow("•")} ${item}`).join("\n"), "Before the first deploy");
+
+  let todo = result.todo;
+  const missing = settingsToAsk(parseEnv(result.text), context);
+  if (interactive && missing.length) {
+    const now = unwrap(
+      await p.confirm({
+        message: `Set the ${missing.map((group) => group.title.toLowerCase()).join(", ")} now?`,
+        initialValue: true,
+      }),
+    );
+    if (now) {
+      try {
+        writeSettings(target, await askSettings(missing, parseEnv(result.text)));
+      } catch (error) {
+        fail((error as Error).message);
+      }
+      todo = remainingTodo(todo, parseEnv(readFileSync(target, "utf8")));
+    }
+  }
+  if (todo.some((item) => SETTING_NAMES.some((name) => item.includes(name.startsWith("S3_") ? "S3_" : name))))
+    todo = [...todo, `Run ${command("dstack settings")} to set them.`];
+  if (todo.length)
+    p.note(todo.map((item) => `${pc.yellow("•")} ${item}`).join("\n"), "Before the first deploy");
   p.note(
     [
       `Copy the project to the server, with ${pc.bold(".env.production")} as ${pc.bold(".env")}, then:`,

@@ -32,8 +32,15 @@ the unreleased version; the release workflow releases it.
   production (`--media s3`) or stay on the server (`--media server`, the
   default), before it asks about uploads in development, which then
   suggests the local S3 service. It asks for no credentials: with S3,
-  `dstack production` lists the `S3_*` variables to set. `dstack config
-  --media` changes it later.
+  `dstack production` and `dstack settings` ask for the `S3_*` variables.
+  `dstack config --media` changes it later.
+- **`dstack settings`.** Asks for the production settings and credentials
+  that are missing in `.env.production`, one at a time: `ADMIN_EMAIL`,
+  the SMTP server, port, user name and password for `EMAIL_URL`, and the
+  `S3_*` variables when uploads go to S3. `--set NAME=value` sets them
+  without asking, `--all` asks for every setting again, and `--yes` lists
+  what is missing and exits 1. `dstack production` offers to ask for them
+  right after it writes `.env.production`.
 
 ### Fixes
 

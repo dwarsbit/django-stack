@@ -286,7 +286,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
   }
   if (stack.media === "s3")
     p.log.info(
-      `Uploads go to S3 in production. ${command("dstack production")} lists the S3 settings to set before the first deploy.`,
+      `Uploads go to S3 in production. Before the first deploy, ${command("dstack production")} asks for the S3 settings; ${command("dstack settings")} changes them later.`,
     );
   p.log.message(`Create the same stack with ${command(`--preset ${encodePreset(stack)}`)}`);
 

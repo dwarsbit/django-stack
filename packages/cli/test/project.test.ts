@@ -152,7 +152,7 @@ describe("applyStack", () => {
     const result = applyStack(dev, parseEnv(dev), local, { ...local, media: "s3" });
     expect(result.env).toBe(dev);
     expect(result.changes).toEqual([
-      "Uploads in production go to S3; set the S3_* variables in .env.production.",
+      "Uploads in production go to S3; dstack settings asks for the S3 settings.",
     ]);
   });
 
