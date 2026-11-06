@@ -27,6 +27,12 @@
 	header ?X-Frame-Options "DENY"
 	header -Server
 
+	# A request ID for every request: Django and the frontend add it to
+	# their log lines and return it in X-Request-ID, and Caddy's own log
+	# line carries it as request_id. One sent by the client is replaced.
+	request_header X-Request-ID {http.request.uuid}
+	log_append request_id {http.request.uuid}
+
 	# Uploads, when media is stored on the server instead of S3. No scripts
 	# run from uploaded files, whatever their type.
 	handle_path /media/* {
@@ -59,6 +65,6 @@
 
 	log {
 		output stdout
-		format console
+		format json
 	}
 }

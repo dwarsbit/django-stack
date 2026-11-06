@@ -7,6 +7,23 @@ the unreleased version; the release workflow releases it.
 
 ## 0.9.0 (unreleased)
 
+- **JSON logs and request IDs.** In production (`DJANGO_DEBUG=0`) Django,
+  the worker and Caddy now write one JSON object per line; development
+  keeps plain text. `LOG_FORMAT=json` or `plain` picks the format, and
+  `LOG_LEVEL` the level. Caddy gives every request an ID in the
+  `X-Request-ID` header, and the new `django_stack.logs.RequestIdMiddleware`
+  adds it to every log line of that request, returns it in the response
+  and writes one access log line per request, without the health checks
+  (`LOG_ACCESS=0` turns it off). Gunicorn no longer writes its own access
+  log. Docker keeps at most five log files of 10 MB per container. In an
+  existing project, add `"django_stack.logs.RequestIdMiddleware"` as the
+  first entry of `MIDDLEWARE` in `backend/config/settings.py`, remove
+  `"--access-logfile", "-",` from the `CMD` in `backend/Dockerfile`, add
+  `request_header X-Request-ID {http.request.uuid}` and
+  `log_append request_id {http.request.uuid}` to the site block of the
+  `Caddyfile` and change its `format console` to `format json`, and add a
+  `logging` entry with `driver: json-file` and the options
+  `max-size: 10m` and `max-file: "5"` to each service in `compose.yaml`.
 - **Notifications.** `init` now turns on Django Content Studio's
   notifications unless you pass `--notifications off` (presets with
   notifications on, such as the default, now get them). Editors get them in
