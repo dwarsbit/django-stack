@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.7.0 (unreleased)
+## 0.7.0 (2026-11-06)
 
 - **The cache and the task queue in Postgres.** New projects keep the
   cache in a database table (`CACHE_URL=db://`) and Huey's task queue in
