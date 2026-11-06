@@ -163,6 +163,15 @@ export async function manage(args: string[], options: DirectoryOptions) {
   exitWith(compose(project, inService(project, project.services.backend, ["python", "manage.py", ...args])));
 }
 
+/** `dstack status`: the containers, then the database, cache, worker and backup checks. */
+export async function status(options: DirectoryOptions) {
+  const project = activeProject(open(options));
+  if (!runningServices(project).includes(project.services.backend))
+    fail(`The ${project.services.backend} service is not running.`);
+  compose(project, ["ps"]);
+  exitWith(compose(project, ["exec", "-T", project.services.backend, "python", "manage.py", "health"]));
+}
+
 /** `dstack shell`: Django's shell in the backend container. */
 export async function shell(options: DirectoryOptions) {
   return manage(["shell"], options);

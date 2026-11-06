@@ -5,7 +5,13 @@ from pathlib import Path
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 
-from django_stack.logs import JsonFormatter, PlainFormatter, RequestIdFilter, request_id
+from django_stack.logs import (
+    JsonFormatter,
+    PlainFormatter,
+    QuietHeartbeatFilter,
+    RequestIdFilter,
+    request_id,
+)
 from django_stack.settings import configure
 
 BASE_ENV = {"DJANGO_SECRET_KEY": "x" * 60}
@@ -104,3 +110,14 @@ def test_health_checks_stay_out_of_the_access_log(client, caplog):
     with caplog.at_level(logging.INFO, logger="django_stack.access"):
         client.get("/healthz")
     assert not [r for r in caplog.records if r.name == "django_stack.access"]
+
+
+def test_heartbeat_task_stays_out_of_the_log():
+    quiet = QuietHeartbeatFilter()
+
+    def huey(message, level=logging.INFO):
+        return logging.LogRecord("huey.consumer.Worker", level, __file__, 1, message, None, None)
+
+    assert not quiet.filter(huey("Executing django_stack.tasks.heartbeat: 1f2e"))
+    assert quiet.filter(huey("Executing django_stack.tasks.daily_backup: 1f2e"))
+    assert quiet.filter(huey("Unhandled exception in django_stack.tasks.heartbeat", logging.ERROR))

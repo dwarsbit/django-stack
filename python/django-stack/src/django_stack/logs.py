@@ -58,6 +58,15 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
+class QuietHeartbeatFilter(logging.Filter):
+    """Drops Huey's lines about the worker's heartbeat task, which runs every minute."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if not record.name.startswith("huey") or record.levelno > logging.INFO:
+            return True
+        return "django_stack.tasks.heartbeat" not in record.getMessage()
+
+
 class JsonFormatter(logging.Formatter):
     """One JSON object per line: time, level, logger, message, request ID, extras, exception."""
 
@@ -164,7 +173,10 @@ def logging_settings(log_format: str, level: str, *, access: bool = True) -> dic
     return {
         "version": 1,
         "disable_existing_loggers": False,
-        "filters": {"request_id": {"()": "django_stack.logs.RequestIdFilter"}},
+        "filters": {
+            "request_id": {"()": "django_stack.logs.RequestIdFilter"},
+            "quiet_heartbeat": {"()": "django_stack.logs.QuietHeartbeatFilter"},
+        },
         "formatters": {
             "plain": {
                 "()": "django_stack.logs.PlainFormatter",
@@ -174,7 +186,11 @@ def logging_settings(log_format: str, level: str, *, access: bool = True) -> dic
             "json": {"()": "django_stack.logs.JsonFormatter"},
         },
         "handlers": {
-            "console": {"class": "logging.StreamHandler", "formatter": formatter, "filters": ["request_id"]}
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": formatter,
+                "filters": ["request_id", "quiet_heartbeat"],
+            }
         },
         "root": {"handlers": handler, "level": level},
         "loggers": {

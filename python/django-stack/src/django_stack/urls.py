@@ -1,5 +1,5 @@
 """
-DjangoStack's URLs: the health checks at /healthz and /readyz.
+DjangoStack's URLs: the health checks at /healthz, /readyz and /statusz.
 
     # config/urls.py
     from django_stack.urls import media_urlpatterns

@@ -38,8 +38,9 @@ kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
 | `S3_BUCKET` and the other `S3_*` | Store uploads in S3 instead of on disk. See [Media and database](./production/media-and-database.md). |
 | `UMAMI_URL` and the other `UMAMI_*` | Page analytics with Umami. See [Page analytics](./analytics.md#variables). |
 | `BACKUP_TIME`, `BACKUP_KEEP`, `BACKUP_S3_BUCKET` | The daily database backup. See [Backups](./production/backups.md). |
+| `BACKUP_PING_URL` | Requested after each daily backup, for an alert when backups stop. See [Health checks](./production/logs.md#alerts-for-missed-backups). |
 | `CADDY_ADDRESS`, `TRUSTED_PROXIES`, `HTTP_PORT`, `HTTPS_PORT` | Caddy behind a platform's proxy. See [Coolify and Dokploy](./production/platforms.md). |
-| `LOG_FORMAT`, `LOG_LEVEL`, `LOG_ACCESS` | The format and level of the logs. See [Logs](./production/logs.md). |
+| `LOG_FORMAT`, `LOG_LEVEL`, `LOG_ACCESS` | The format and level of the logs. See [Logs and health checks](./production/logs.md). |
 | `SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD` | Extend HSTS to subdomains and the preload list. Off by default. |
 | `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The admin user created on the first start. |
 | `SEED_DEMO_CONTENT` | `1` adds the demo content to an empty site on the first start. |
