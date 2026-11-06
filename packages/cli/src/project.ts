@@ -1,5 +1,5 @@
 import { type SpawnSyncOptions, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { parseEnv } from "./env";
 import { envPorts } from "./ports";
@@ -31,6 +31,25 @@ export interface Project {
   composeArgs: string[];
   /** Extra environment for `docker compose`. */
   composeEnv: Record<string, string>;
+}
+
+/**
+ * The project's scripts that must be executable. npm and pnpm packages do
+ * not keep the executable bit of non-bin files, so the templates arrive
+ * without it.
+ */
+export const EXECUTABLES = ["backend/entrypoint.sh", "backend/manage.py"];
+
+/** Makes the project's scripts executable for everyone who can read them. */
+export function makeExecutable(directory: string) {
+  for (const file of EXECUTABLES) {
+    const path = join(directory, file);
+    try {
+      const { mode } = statSync(path);
+      const executable = mode | ((mode & 0o444) >> 2);
+      if (executable !== mode) chmodSync(path, executable & 0o7777);
+    } catch {}
+  }
 }
 
 /** The project directory: `start` or the nearest parent with `compose.yaml` and `.env`. */
@@ -83,6 +102,8 @@ export function readProject(start = "."): Project {
   const directory = findProjectDirectory(start);
   if (!directory)
     throw new Error(`No DjangoStack project in ${resolve(start)}: run this where compose.yaml and .env are.`);
+  // Repairs projects created by a CLI that copied the scripts without the executable bit.
+  makeExecutable(directory);
   return fromEnv(directory, projectName(directory), ".env", false);
 }
 

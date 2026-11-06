@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -30,6 +30,15 @@ afterEach(() => {
 });
 
 describe("readProject", () => {
+  it.skipIf(process.platform === "win32")("makes the entrypoint of an existing project executable", () => {
+    const dir = project();
+    mkdirSync(join(dir, "backend"));
+    writeFileSync(join(dir, "backend/entrypoint.sh"), "#!/bin/sh\n");
+    chmodSync(join(dir, "backend/entrypoint.sh"), 0o644);
+    readProject(dir);
+    expect(statSync(join(dir, "backend/entrypoint.sh")).mode & 0o777).toBe(0o755);
+  });
+
   it("finds the project from a subdirectory", () => {
     const dir = project();
     mkdirSync(join(dir, "backend", "content"), { recursive: true });
