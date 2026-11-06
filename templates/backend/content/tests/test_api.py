@@ -5,6 +5,7 @@ Run them with `pnpm test` at the project root.
 """
 
 import pytest
+from django.apps import apps
 from django.conf import settings
 from rest_framework.test import APIClient
 
@@ -67,6 +68,23 @@ def test_contact_form(seeded):
     )
     assert response.status_code == 201
     assert FormSubmission.objects.filter(email="ada@example.com").exists()
+
+
+@pytest.mark.skipif(not apps.is_installed("content_studio.notifications"), reason="notifications are off")
+def test_contact_form_notifies_the_editors(seeded, django_capture_on_commit_callbacks):
+    from content_studio.notifications.models import Notification
+    from django.contrib.auth import get_user_model
+
+    editor = get_user_model().objects.create_superuser("editor", "editor@example.com", "x")
+    with django_capture_on_commit_callbacks(execute=True):
+        APIClient().post(
+            "/api/content.formsubmission",
+            {"name": "Ada", "email": "ada@example.com", "message": "100% sure"},
+            format="json",
+        )
+    notification = Notification.objects.get(recipient=editor, event="site.form_submitted")
+    assert notification.get_title() == "Message from Ada"
+    assert notification.get_body() == "100% sure"
 
 
 def test_read_key_cannot_read_submissions(reader):

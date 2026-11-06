@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "headless",
     "content_studio",
     "content_studio.media_library",
+    "content_studio.notifications",
     "django_stack",
     "tests.testapp",
     "headless.rest",

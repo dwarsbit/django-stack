@@ -50,6 +50,8 @@ export interface ScaffoldOptions {
   localS3?: boolean;
   /** Page analytics with the bundled Umami (the `analytics` profile). */
   analytics?: boolean;
+  /** Content Studio's notifications app; on by default. */
+  notifications?: boolean;
   /** The cache backend; the database by default. */
   cache?: Stack["cache"];
   /** The task queue; Huey where the cache is by default. */
@@ -106,6 +108,31 @@ const TASK_ENV: Record<ReturnType<typeof taskQueue>, Record<string, string>> = {
 /** The `.env` values of a cache and a task queue: CACHE_URL, TASKS_URL and TASK_WORKERS. */
 export function cacheEnv(stack: Pick<Stack, "cache" | "tasks">): Record<string, string> {
   return { CACHE_URL: CACHE_URLS[stack.cache], ...TASK_ENV[taskQueue(stack)] };
+}
+
+/** The line of Content Studio's notifications app in the backend's INSTALLED_APPS. */
+const NOTIFICATIONS_APP = '    "content_studio.notifications",  # notifications in the admin and by email\n';
+const NOTIFICATIONS_PATTERN = /^ *["']content_studio\.notifications["'],.*\n/m;
+
+/**
+ * Adds or removes Content Studio's notifications app in the text of
+ * `backend/config/settings.py`. Throws when it can't find where it goes.
+ */
+export function setNotificationsApp(settingsText: string, on: boolean): string {
+  const present = NOTIFICATIONS_PATTERN.test(settingsText);
+  if (!on) return settingsText.replace(NOTIFICATIONS_PATTERN, "");
+  if (present) return settingsText;
+  // After Content Studio's other apps, as in a new project.
+  const after = [
+    /^ *["']content_studio\.contrib\.password_reset["'],.*\n/m,
+    /^ *["']content_studio\.media_library["'],.*\n/m,
+    /^ *["']content_studio["'],.*\n/m,
+  ].find((pattern) => pattern.test(settingsText));
+  if (!after)
+    throw new Error(
+      'backend/config/settings.py has no "content_studio" in INSTALLED_APPS; add "content_studio.notifications" there yourself.',
+    );
+  return settingsText.replace(after, (line) => line + NOTIFICATIONS_APP);
 }
 
 /** Whether `.env` values use the Valkey service (the `valkey` profile). */
@@ -239,6 +266,11 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     const text = readFileSync(file, "utf8");
     const rendered = render(text, values);
     if (rendered !== text) writeFileSync(file, rendered);
+  }
+
+  if (options.notifications === false) {
+    const settings = join(target, "backend", "config", "settings.py");
+    writeFileSync(settings, setNotificationsApp(readFileSync(settings, "utf8"), false));
   }
 
   if (options.timeZone && options.timeZone !== "UTC") {

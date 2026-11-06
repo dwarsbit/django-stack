@@ -9,6 +9,7 @@ export {
   type ScaffoldOptions,
   type ScaffoldResult,
   scaffold,
+  setNotificationsApp,
   toProjectName,
   usesValkey,
   validateProjectName,
