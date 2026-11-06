@@ -1,4 +1,5 @@
 import { parseEnv, setEnvValues } from "./env";
+import { umamiDatabaseUrl } from "./scaffold";
 import { generateProjectSecrets } from "./secrets";
 
 export interface ProductionOptions {
@@ -61,6 +62,14 @@ export function productionEnv(devEnv: string, options: ProductionOptions): Produ
     const name = current.POSTGRES_DB || "app";
     values.POSTGRES_PASSWORD = secrets.postgres ?? "";
     values.DATABASE_URL = `postgres://${user}:${secrets.postgres}@db:5432/${name}`;
+  }
+
+  // Umami gets new secrets; on the server's fresh database the backend sets
+  // its admin password and creates the website again.
+  if (current.UMAMI_URL) {
+    values.UMAMI_ADMIN_PASSWORD = secrets.umami_admin ?? "";
+    values.UMAMI_APP_SECRET = secrets.umami_app ?? "";
+    values.UMAMI_DATABASE_URL = umamiDatabaseUrl(values.DATABASE_URL ?? current.DATABASE_URL ?? "");
   }
 
   if (options.emailUrl) {

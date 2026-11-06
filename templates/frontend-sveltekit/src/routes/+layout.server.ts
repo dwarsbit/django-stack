@@ -14,5 +14,7 @@ export const load: LayoutServerLoad = async ({ cookies }) => {
     footerMenu,
     preview: cookies.get(PREVIEW_COOKIE) !== undefined,
     siteUrl: SITE_URL,
+    // Page analytics: Umami's tracker, served from this site at /_a/.
+    analytics: process.env.UMAMI_WEBSITE_ID || null,
   };
 };

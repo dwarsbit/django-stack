@@ -369,6 +369,12 @@ export async function config(options: ConfigOptions) {
     }
   }
 
+  if (next.analytics === "umami" && current.analytics !== "umami") {
+    const compose = join(project.directory, "compose.yaml");
+    if (!existsSync(compose) || !/^ {2}umami:/m.test(readFileSync(compose, "utf8")))
+      fail("compose.yaml has no umami service. Add it as the analytics docs describe, then run this again.");
+  }
+
   const envPath = join(project.directory, ".env");
   let result: ReturnType<typeof applyStack>;
   try {

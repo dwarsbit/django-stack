@@ -173,6 +173,39 @@ describe("scaffold", () => {
     expect(env.S3_PUBLIC_URL).toBe("http://localhost:8333/media");
   });
 
+  it("runs Umami for page analytics", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true, analytics: true });
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.COMPOSE_PROFILES).toBe("dev,db,analytics");
+    expect(env.UMAMI_URL).toBe("http://umami:3000");
+    expect(env.UMAMI_WEBSITE_ID).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    expect(env.UMAMI_DATABASE_URL).toBe(`postgres://app:${env.POSTGRES_PASSWORD}@db:5432/app?schema=umami`);
+    expect(env.UMAMI_ADMIN_PASSWORD).not.toBe(env.ADMIN_PASSWORD);
+    expect(env.UMAMI_APP_SECRET?.length).toBeGreaterThan(40);
+    const example = parseEnv(readFileSync(join(directory, ".env.example"), "utf8"));
+    expect(example.UMAMI_ADMIN_PASSWORD).toBe("");
+  });
+
+  it("puts Umami's tables in a schema of an external database", () => {
+    const directory = join(tempDir(), "site");
+    const databaseUrl = "postgres://u:p@db.example.com/app";
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true, analytics: true, databaseUrl });
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.COMPOSE_PROFILES).toBe("dev,analytics");
+    expect(env.UMAMI_DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require&schema=umami");
+  });
+
+  it("leaves analytics off by default", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true });
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.UMAMI_URL).toBe("");
+    expect(env.UMAMI_ADMIN_PASSWORD).toBe("");
+  });
+
   it("refuses a directory that is not empty", () => {
     const directory = tempDir();
     writeFileSync(join(directory, "file.txt"), "");

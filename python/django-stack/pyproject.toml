@@ -24,7 +24,7 @@ dependencies = [
     "Django>=5.2,<7",
     "djangorestframework>=3.17,<4",
     "django-headless[schema]>=1.1.1,<2",
-    "django-content-studio[images,huey]>=1.8,<2",
+    "django-content-studio[images,huey]>=1.11,<2",
 ]
 
 [project.optional-dependencies]

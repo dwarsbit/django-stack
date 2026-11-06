@@ -41,7 +41,8 @@ Run them at the project root. They need Docker; Node is only needed for the `npm
 
 In production (`COMPOSE_PROFILES=prod,db`) the services are `backend-prod`,
 `worker-prod` (which also runs the daily backup), `frontend-prod` and
-`proxy`; their containers are
+`proxy`, with `umami` for page analytics when the `analytics` profile is on;
+their containers are
 read-only, so a change goes through the code and a new image, never an edit
 in a running container.
 

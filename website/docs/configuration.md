@@ -31,9 +31,10 @@ kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
 | `REVALIDATE_SECRET` | Signs the requests that tell the frontend content changed. Shared with the frontend. |
 | `REVALIDATE_URL` | Where the backend sends those requests. |
 | `ALLOWED_HOSTS` | Extra host names, separated by commas. The hosts of `SITE_URL` and `BACKEND_URL` are always allowed. |
-| `COMPOSE_PROFILES` | The services Docker Compose starts: `dev,db` in development, `prod,db` on a server. Leave out `db` for an external Postgres; add `s3` in development for the local S3 service. |
+| `COMPOSE_PROFILES` | The services Docker Compose starts: `dev,db` in development, `prod,db` on a server. Leave out `db` for an external Postgres; add `s3` in development for the local S3 service. `analytics` runs Umami. |
 | `NUM_PROXIES` | The number of reverse proxies in front of the backend, so client IPs and HTTPS are detected. The `prod` profile sets 1, for Caddy. |
 | `S3_BUCKET` and the other `S3_*` | Store uploads in S3 instead of on disk. See [Media and database](./production/media-and-database.md). |
+| `UMAMI_URL` and the other `UMAMI_*` | Page analytics with Umami. See [Page analytics](./analytics.md#variables). |
 | `BACKUP_TIME`, `BACKUP_KEEP`, `BACKUP_S3_BUCKET` | The daily database backup. See [Backups](./production/backups.md). |
 | `CADDY_ADDRESS`, `TRUSTED_PROXIES`, `HTTP_PORT`, `HTTPS_PORT` | Caddy behind a platform's proxy. See [Coolify and Dokploy](./production/platforms.md). |
 | `SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD` | Extend HSTS to subdomains and the preload list. Off by default. |
@@ -55,3 +56,4 @@ kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
 | `django_stack.W003` | The secret key is short (with `--deploy`). |
 | `django_stack.W004` | The cache is in local memory (with `--deploy`). |
 | `django_stack.W005` | An `https` site without `NUM_PROXIES`, so Django cannot tell requests came over HTTPS (with `--deploy`). |
+| `django_stack.W006` | `UMAMI_URL` without `UMAMI_ADMIN_PASSWORD` or `UMAMI_WEBSITE_ID`. |

@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import {
   cpSync,
   existsSync,
@@ -12,7 +13,7 @@ import {
 } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { setEnvValues } from "./env";
+import { parseEnv, setEnvValues } from "./env";
 import { generateProjectSecrets } from "./secrets";
 import { type Stack, stackOption } from "./stack";
 import { CLI_VERSION } from "./version";
@@ -45,6 +46,8 @@ export interface ScaffoldOptions {
   databaseUrl?: string;
   /** Store uploads in the local S3 service in development, like S3 in production. */
   localS3?: boolean;
+  /** Page analytics with the bundled Umami (the `analytics` profile). */
+  analytics?: boolean;
   /** A DjangoStack monorepo to take the packages from instead of the registries (for development). */
   link?: string;
   /** The time zone of the backend, such as Europe/Amsterdam. UTC by default. */
@@ -60,6 +63,24 @@ export interface ScaffoldResult {
   adminUsername: string;
   adminPassword: string;
   files: number;
+}
+
+/** Umami's database URL: the project's database, with Umami's tables in the `umami` schema. */
+export function umamiDatabaseUrl(databaseUrl: string): string {
+  const url = new URL(databaseUrl);
+  url.searchParams.set("schema", "umami");
+  return url.toString();
+}
+
+/** The `.env` values of the bundled Umami, from the project's database URL and secrets. */
+export function umamiEnv(databaseUrl: string, secrets: Record<string, string>): Record<string, string> {
+  return {
+    UMAMI_URL: "http://umami:3000",
+    UMAMI_WEBSITE_ID: randomUUID(),
+    UMAMI_ADMIN_PASSWORD: secrets.umami_admin ?? "",
+    UMAMI_APP_SECRET: secrets.umami_app ?? "",
+    UMAMI_DATABASE_URL: umamiDatabaseUrl(databaseUrl),
+  };
 }
 
 /** The local S3 service of the `s3` profile. It accepts any credentials. */
@@ -204,6 +225,10 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   if (options.localS3) {
     profiles.push("s3");
     env = setEnvValues(env, LOCAL_S3);
+  }
+  if (options.analytics) {
+    profiles.push("analytics");
+    env = setEnvValues(env, umamiEnv(parseEnv(env).DATABASE_URL ?? "", secrets));
   }
   env = setEnvValues(env, { COMPOSE_PROFILES: profiles.join(",") });
   if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });

@@ -7,13 +7,24 @@ import { parseEnv, productionEnv, scaffold, validateDomain } from "../src";
 const root = mkdtempSync(join(tmpdir(), "django-stack-prod-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-function devEnv(options: { localS3?: boolean; databaseUrl?: string } = {}) {
+function devEnv(options: { localS3?: boolean; databaseUrl?: string; analytics?: boolean } = {}) {
   const directory = join(root, `p${Math.random().toString(36).slice(2)}`);
   scaffold({ directory, name: "site", frontend: "astro", demoContent: true, ...options });
   return readFileSync(join(directory, ".env"), "utf8");
 }
 
 describe("productionEnv", () => {
+  it("gives Umami new secrets and keeps its website", () => {
+    const text = devEnv({ analytics: true });
+    const dev = parseEnv(text);
+    const prod = parseEnv(productionEnv(text, { domain: "example.com" }).text);
+    expect(prod.COMPOSE_PROFILES).toBe("prod,db,analytics");
+    expect(prod.UMAMI_WEBSITE_ID).toBe(dev.UMAMI_WEBSITE_ID);
+    expect(prod.UMAMI_ADMIN_PASSWORD).not.toBe(dev.UMAMI_ADMIN_PASSWORD);
+    expect(prod.UMAMI_APP_SECRET).not.toBe(dev.UMAMI_APP_SECRET);
+    expect(prod.UMAMI_DATABASE_URL).toBe(`postgres://app:${prod.POSTGRES_PASSWORD}@db:5432/app?schema=umami`);
+  });
+
   it("switches to the prod profile with new secrets", () => {
     const text = devEnv();
     const dev = parseEnv(text);

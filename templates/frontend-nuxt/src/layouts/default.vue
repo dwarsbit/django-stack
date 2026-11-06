@@ -10,6 +10,9 @@ useHead(() => ({
   link: [
     { rel: "alternate", type: "application/rss+xml", title: data.value?.settings?.site_name ?? "RSS", href: "/rss.xml" },
   ],
+  script: data.value?.analytics
+    ? [{ src: "/_a/script.js", defer: true, "data-website-id": data.value.analytics }]
+    : [],
 }));
 </script>
 

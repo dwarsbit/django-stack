@@ -95,7 +95,7 @@ wheels = [
 
 [[package]]
 name = "django-content-studio"
-version = "1.8.0"
+version = "1.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
@@ -107,9 +107,9 @@ dependencies = [
     { name = "pyjwt" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6c/b4/11409eb44283b4fc8fc816b52c3252395eab0db985947306fb9027664450/django_content_studio-1.8.0.tar.gz", hash = "sha256:3ec9b23b4fcef2ec510976798e886d9d30ac344b6d82127d8ba03c0a778a0669", size = 2842270, upload-time = "2026-11-04T09:05:59.106Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a5/40/874315a46e3ff8f3f681340cc6dad32376a2c86cc9f57fa9601ea8398d73/django_content_studio-1.11.0.tar.gz", hash = "sha256:320d48dfc2a7362fea4302b48ac830fb81652adf2635174fd2320a68e6f63f5c", size = 2933570, upload-time = "2026-11-05T15:30:30.903Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/37/cafcf973bf735997fd6445c0824962d46adb0595290e402224fcc88fb4e6/django_content_studio-1.8.0-py3-none-any.whl", hash = "sha256:0126933be27a486bcc8e7d28af47d8cb3d193da3e55c3ac39bf68ca86b6eecda", size = 2902329, upload-time = "2026-11-04T09:05:56.873Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/d8/8627ff42e79455b64bbe39177419717542f9839b643af7b7936aabf2f952/django_content_studio-1.11.0-py3-none-any.whl", hash = "sha256:4f96c77045aafc6409d8c510f87a83bcb1d77bf200333090ba20069e63c6c11d", size = 2997674, upload-time = "2026-11-05T15:30:29.02Z" },
 ]
 
 [package.optional-dependencies]
@@ -178,7 +178,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "django", specifier = ">=5.2,<7" },
-    { name = "django-content-studio", extras = ["images", "huey"], specifier = ">=1.8,<2" },
+    { name = "django-content-studio", extras = ["images", "huey"], specifier = ">=1.11,<2" },
     { name = "django-headless", extras = ["schema"], specifier = ">=1.1.1,<2" },
     { name = "django-storages", extras = ["s3"], marker = "extra == 's3'", specifier = ">=1.14" },
     { name = "djangorestframework", specifier = ">=3.17,<4" },

@@ -2,6 +2,7 @@ import "./globals.css";
 import { Image, RichText } from "@django-stack/react";
 import { linkHref } from "@django-stack/utils";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { NavLink } from "@/components/NavLink";
 import { getContent, previewToken, SITE_URL } from "@/lib/api";
 
@@ -64,6 +65,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </nav>
           </div>
         </footer>
+        {/* Page analytics: Umami's tracker, served from this site at /_a/. */}
+        {process.env.UMAMI_WEBSITE_ID ? (
+          <Script
+            src="/_a/script.js"
+            data-website-id={process.env.UMAMI_WEBSITE_ID}
+            strategy="afterInteractive"
+          />
+        ) : null}
       </body>
     </html>
   );

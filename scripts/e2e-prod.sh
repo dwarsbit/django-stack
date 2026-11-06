@@ -32,7 +32,7 @@ cd "$project"
 node "$cli" production . --domain site.localhost --email-url smtp://mail.invalid:25 --yes
 mv .env .env.development
 mv .env.production .env
-grep -q '^COMPOSE_PROFILES=prod,db$' .env || fail "the production settings do not use the prod profile"
+grep -q '^COMPOSE_PROFILES=prod,db,analytics$' .env || fail "the production settings do not use the prod profile"
 
 docker compose build
 docker compose up --detach --wait --wait-timeout 300
@@ -91,6 +91,19 @@ for header in strict-transport-security content-security-policy x-content-type-o
 done
 grep -qi '^server:' <<<"$headers" && fail "$site/ shows the server software"
 echo "ok security headers"
+
+echo "Checking page analytics"
+home="$(c "$site/")"
+grep -q '/_a/script.js' <<<"$home" || fail "the site does not load the analytics tracker"
+expect 200 "$site/_a/script.js"
+expect 404 "$site/_a/api/websites"
+expect 404 "$site/_a/login"
+website="$(grep '^UMAMI_WEBSITE_ID=' .env | cut -d= -f2)"
+expect 200 -X POST -H "Content-Type: application/json" -A "Mozilla/5.0 (X11; Linux x86_64) Chrome/130.0" \
+  -d "{\"type\":\"event\",\"payload\":{\"website\":\"$website\",\"hostname\":\"site.localhost\",\"url\":\"/\",\"language\":\"en\",\"screen\":\"1x1\"}}" \
+  "$site/_a/api/send"
+docker compose exec -T backend-prod python manage.py shell -c "from content_studio.analytics.ranges import get_query; from django_stack.analytics import UmamiProvider; views = UmamiProvider().get_summary(None, get_query('today'))['pageviews'].value; assert views >= 1, views"
+echo "ok the admin reads the page view from Umami"
 
 echo "Checking the deployment"
 docker compose exec -T backend-prod python manage.py check --deploy --fail-level WARNING

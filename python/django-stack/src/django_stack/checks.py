@@ -13,6 +13,8 @@ DjangoStack's system checks.
   sessions and presence are not shared between workers.
 - ``django_stack.W005`` (deploy): ``SITE_URL`` is https but ``NUM_PROXIES`` is 0,
   so Django does not see that requests came in over HTTPS.
+- ``django_stack.W006``: ``UMAMI_URL`` is set without ``UMAMI_ADMIN_PASSWORD`` or
+  ``UMAMI_WEBSITE_ID``; Content Studio reports it with its analytics checks.
 """
 
 from django.apps import apps

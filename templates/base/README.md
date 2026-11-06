@@ -51,6 +51,15 @@ site with drafts shown, for an hour.
 When an editor saves, Django tells the frontend (`REVALIDATE_URL`), which
 empties its page cache, so the change shows on the next visit.
 
+## Analytics
+
+When `COMPOSE_PROFILES` in `.env` has `analytics`, the `umami` service
+counts page views without cookies, and the admin shows them under
+**Analytics**. Umami's own interface is not served: only its tracker and the
+page views pass through the site at `/_a/`. To turn it off, remove
+`analytics` from `COMPOSE_PROFILES` and empty `UMAMI_URL`. See
+[Page analytics](https://dwarsbit.github.io/django-stack/docs/analytics).
+
 ## Deploy
 
 On a server with Docker and a domain pointing at it:

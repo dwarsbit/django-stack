@@ -4,6 +4,8 @@ import { defineConfig } from "vitest/config";
 
 // The Django backend: the frontend container reaches it on the Compose network.
 const backend = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000";
+// Umami, for page analytics: only its tracker and page views, under /_a/.
+const umami = process.env.UMAMI_URL || "http://umami:3000";
 
 export default defineConfig({
   plugins: [
@@ -37,9 +39,15 @@ export default defineConfig({
     allowedHosts: ["frontend"],
     // In development, serve Django's paths from the same origin as the site,
     // like the reverse proxy does in production.
-    proxy: Object.fromEntries(
-      ["/admin", "/api", "/media", "/static"].map((path) => [path, { target: backend, changeOrigin: false }]),
-    ),
+    proxy: {
+      ...Object.fromEntries(
+        ["/admin", "/api", "/media", "/static"].map((path) => [
+          path,
+          { target: backend, changeOrigin: false },
+        ]),
+      ),
+      "^/_a/(script\\.js|api/send)$": { target: umami, rewrite: (path) => path.slice("/_a".length) },
+    },
   },
   test: {
     include: ["test/**/*.test.ts"],

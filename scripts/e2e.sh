@@ -87,6 +87,20 @@ expect 200 -X PATCH -H "Authorization: Bearer $token" -H "Content-Type: applicat
 curl -s http://localhost:3000/about | grep -q "Edited by the end-to-end test" || fail "the edit does not show on the site"
 echo "ok the edit shows on the site"
 
+# Page analytics: the site loads Umami's tracker, only the tracker and the
+# page views pass through /_a/, and the admin reads the page view back.
+home="$(curl -s http://localhost:3000/)"
+grep -q '/_a/script.js' <<<"$home" || fail "the site does not load the analytics tracker"
+echo "ok the site loads the analytics tracker"
+expect 200 http://localhost:3000/_a/script.js
+expect 404 http://localhost:3000/_a/api/websites
+website="$(grep '^UMAMI_WEBSITE_ID=' .env | cut -d= -f2)"
+expect 200 -X POST -H "Content-Type: application/json" -A "Mozilla/5.0 (X11; Linux x86_64) Chrome/130.0" \
+  -d "{\"type\":\"event\",\"payload\":{\"website\":\"$website\",\"hostname\":\"localhost\",\"url\":\"/\",\"language\":\"en\",\"screen\":\"1x1\"}}" \
+  http://localhost:3000/_a/api/send
+docker compose exec -T backend python manage.py shell -c "from content_studio.analytics.ranges import get_query; from django_stack.analytics import UmamiProvider; views = UmamiProvider().get_summary(None, get_query('today'))['pageviews'].value; assert views >= 1, views"
+echo "ok the admin reads the page view from Umami"
+
 echo "Running the template tests"
 docker compose exec -T backend python manage.py check --fail-level WARNING
 docker compose exec -T backend python manage.py makemigrations --check --dry-run

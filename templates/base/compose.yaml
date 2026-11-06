@@ -6,7 +6,8 @@
 #   prod,db   `docker compose up -d` on a server: production images behind
 #             Caddy on ports 80 and 443, with automatic HTTPS and daily backups.
 #   Leave out `db` to use an external Postgres through DATABASE_URL, and add
-#   `s3` in development for a local S3 service (see .env).
+#   `s3` in development for a local S3 service (see .env). `analytics` runs
+#   Umami for page analytics.
 #
 # The frontend only receives the variables it needs: never the full-access
 # API key or the database password.
@@ -31,6 +32,9 @@ x-frontend-env: &frontend-env
   PREVIEW_SECRET: ${PREVIEW_SECRET}
   REVALIDATE_SECRET: ${REVALIDATE_SECRET}
   MEDIA_ORIGINS: ${S3_PUBLIC_URL:-${S3_ENDPOINT_URL:-}}
+  # Page analytics: the tracker loads from /_a/ on the site when set.
+  UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+  UMAMI_URL: ${UMAMI_URL:-}
 
 x-backend-depends: &backend-depends
   db:
@@ -39,6 +43,10 @@ x-backend-depends: &backend-depends
   cache:
     condition: service_healthy
   s3:
+    condition: service_started
+    required: false
+  # The backend sets Umami up on start; it waits for it by itself.
+  umami:
     condition: service_started
     required: false
 
@@ -231,6 +239,36 @@ services:
     restart: unless-stopped
 
   # Shared -----------------------------------------------------------------
+
+  # Page analytics (the analytics profile). Umami's interface and API stay on
+  # the internal network: Caddy, and the frontend's dev server, pass on only
+  # the tracker and the page views at /_a/, and the admin reads the numbers
+  # with UMAMI_ADMIN_PASSWORD. Its tables are in the umami schema of the
+  # database.
+  umami:
+    profiles: [analytics]
+    image: umamisoftware/umami:3.4
+    <<: *hardened
+    environment:
+      DATABASE_URL: ${UMAMI_DATABASE_URL:-}
+      APP_SECRET: ${UMAMI_APP_SECRET:-}
+      DISABLE_TELEMETRY: "1"
+      DISABLE_UPDATES: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+        required: false
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/heartbeat').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      start_period: 60s
+      retries: 30
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    restart: unless-stopped
 
   db:
     profiles: [db]

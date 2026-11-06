@@ -9,5 +9,10 @@ export default defineEventHandler(async (event) => {
     ]);
     return { settings, mainMenu, footerMenu, siteUrl: SITE_URL };
   });
-  return { ...data, preview: previewToken(event) !== null };
+  return {
+    ...data,
+    preview: previewToken(event) !== null,
+    // Page analytics: Umami's tracker, served from this site at /_a/.
+    analytics: process.env.UMAMI_WEBSITE_ID || null,
+  };
 });

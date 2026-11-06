@@ -15,5 +15,7 @@ export function generateProjectSecrets(): Record<string, string> {
     preview: generateSecret(32),
     revalidate: generateSecret(32),
     admin: generateSecret(12),
+    umami_app: generateSecret(32),
+    umami_admin: generateSecret(24),
   };
 }

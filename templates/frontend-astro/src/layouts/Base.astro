@@ -20,6 +20,8 @@ const [settings, mainMenu, footerMenu] = await Promise.all([
 ]);
 const preview = Astro.cookies.has(PREVIEW_COOKIE);
 const path = Astro.url.pathname;
+// Page analytics: Umami's tracker, served from this site at /_a/.
+const analytics = process.env.UMAMI_WEBSITE_ID;
 ---
 
 <!doctype html>
@@ -30,6 +32,7 @@ const path = Astro.url.pathname;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="alternate" type="application/rss+xml" title={settings?.site_name ?? "RSS"} href="/rss.xml" />
     <Seo page={page} settings={settings} type={type} />
+    {analytics && <script is:inline defer src="/_a/script.js" data-website-id={analytics} />}
   </head>
   <body>
     {
