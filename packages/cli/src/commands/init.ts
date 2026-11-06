@@ -16,9 +16,9 @@ import {
   applies,
   DEFAULT_STACK,
   encodePreset,
+  PROMPT_ORDER,
   pendingChoices,
   resolvePreset,
-  STACK_OPTIONS,
   type Stack,
   type StackKey,
   type StackValue,
@@ -46,15 +46,24 @@ export interface InitOptions {
   fromCli: (option: string) => boolean;
 }
 
-/** The prompt choices of an option; values this version does not generate yet are shown but disabled. */
-function choices(key: StackKey) {
+/**
+ * The prompt choices of an option; values this version does not generate yet
+ * are shown but disabled. The tasks follow the cache chosen before them: Huey
+ * keeps its queue in the database, or in Valkey with the Valkey cache.
+ */
+export function choices(key: StackKey, stack: Partial<Stack> = {}) {
   const option = stackOption(key);
-  return option.values.map((value: StackValue, index) => ({
-    value: value.value,
-    label: value.label,
-    hint: value.generated || index === 0 ? value.hint : "coming soon",
-    disabled: !value.generated && index > 0,
-  }));
+  return option.values.flatMap((value: StackValue, index) => {
+    let hint = value.generated || index === 0 ? value.hint : "coming soon";
+    if (key === "tasks" && value.value === "huey") {
+      hint =
+        stack.cache === "valkey"
+          ? "a worker container, the queue in Valkey"
+          : "a worker container, the queue in Postgres";
+    }
+    if (key === "tasks" && value.value === "huey-valkey" && stack.cache === "valkey") return [];
+    return [{ value: value.value, label: value.label, hint, disabled: !value.generated && index > 0 }];
+  });
 }
 
 /**
@@ -77,8 +86,8 @@ export async function chooseStack(
   }
   const stack = { ...DEFAULT_STACK } as Record<string, string>;
   let databaseUrl: string | undefined;
-  for (const option of STACK_OPTIONS) {
-    const key = option.key as StackKey;
+  for (const key of PROMPT_ORDER) {
+    const option = stackOption(key);
     if (options.fromCli(key)) stack[key] = options[key] as string;
     else if (key === "storage" && options.fromCli("localS3") && options.localS3) stack[key] = "s3";
     else if (preset) stack[key] = preset[key];
@@ -90,7 +99,11 @@ export async function chooseStack(
     } else if (key === "postgres" && options.databaseUrl) continue;
     else {
       stack[key] = unwrap(
-        await p.select<string>({ message: option.message, options: choices(key), initialValue: stack[key] }),
+        await p.select<string>({
+          message: option.message,
+          options: choices(key, stack as Partial<Stack>),
+          initialValue: stack[key],
+        }),
       );
     }
   }
@@ -220,6 +233,8 @@ export async function init(directoryArgument: string | undefined, options: InitO
       databaseUrl,
       localS3: stack.storage === "s3",
       analytics: stack.analytics === "umami",
+      cache: stack.cache,
+      tasks: stack.tasks,
       preset: encodePreset(stack),
       timeZone,
       link: options.link,

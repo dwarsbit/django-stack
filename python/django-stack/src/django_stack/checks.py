@@ -121,7 +121,7 @@ def check_deploy(app_configs, **kwargs):
         warnings.append(
             Warning(
                 "The default cache is not shared between processes.",
-                hint="Set CACHE_URL to the Valkey or Redis service.",
+                hint="Set CACHE_URL to db:// (a table in the database) or the Valkey service.",
                 id="django_stack.W004",
             )
         )
@@ -132,6 +132,15 @@ def check_deploy(app_configs, **kwargs):
                 "SITE_URL is https, but Django does not trust the proxy's X-Forwarded-Proto header.",
                 hint="Set NUM_PROXIES=1 behind Caddy, so secure cookies and CSRF checks see HTTPS.",
                 id="django_stack.W005",
+            )
+        )
+    huey = getattr(settings, "HUEY", None)
+    if isinstance(huey, dict) and huey.get("immediate"):
+        warnings.append(
+            Warning(
+                "Tasks run in the request and there is no worker, so the daily backup does not run.",
+                hint="Set TASKS_URL to db:// and run the worker, or back up yourself.",
+                id="django_stack.W006",
             )
         )
     return warnings

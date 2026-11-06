@@ -7,7 +7,8 @@
 #             Caddy on ports 80 and 443, with automatic HTTPS and daily backups.
 #   Leave out `db` to use an external Postgres through DATABASE_URL, and add
 #   `s3` in development for a local S3 service (see .env). `analytics` runs
-#   Umami for page analytics.
+#   Umami for page analytics, `valkey` the Valkey service for CACHE_URL or
+#   TASKS_URL.
 #
 # The frontend only receives the variables it needs: never the full-access
 # API key or the database password.
@@ -42,6 +43,7 @@ x-backend-depends: &backend-depends
     required: false
   cache:
     condition: service_healthy
+    required: false
   s3:
     condition: service_started
     required: false
@@ -87,6 +89,9 @@ services:
     volumes:
       - ./backend:/app
       - media:/app/media
+    # 0 with TASKS_URL=immediate://: tasks run in the request.
+    deploy:
+      replicas: ${TASK_WORKERS:-1}
     depends_on:
       backend:
         condition: service_healthy
@@ -181,6 +186,7 @@ services:
     healthcheck:
       disable: true
     deploy:
+      replicas: ${TASK_WORKERS:-1}
       resources:
         limits:
           memory: 512M
@@ -292,9 +298,11 @@ services:
           memory: 1G
     restart: unless-stopped
 
-  # Cache, sessions and the task queue. Only keys with an expiry are
-  # evicted when memory runs out, so queued tasks are never dropped.
+  # Valkey (the valkey profile), for CACHE_URL or TASKS_URL redis://cache.
+  # Only keys with an expiry are evicted when memory runs out, so queued
+  # tasks are never dropped.
   cache:
+    profiles: [valkey]
     image: valkey/valkey:8-alpine
     user: valkey
     command: ["valkey-server", "--save", "", "--appendonly", "no", "--maxmemory", "200mb", "--maxmemory-policy", "volatile-lru"]

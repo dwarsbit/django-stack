@@ -94,7 +94,7 @@ def parse_database_url(url: str) -> dict:
 
 
 def parse_cache_url(url: str, *, key_prefix: str = "") -> dict:
-    """Django's CACHES entry for redis://, rediss://, locmem:// or dummy://."""
+    """Django's CACHES entry for redis://, rediss://, db://, locmem:// or dummy://."""
     scheme = urlsplit(url).scheme.lower()
 
     if scheme in ("redis", "rediss", "valkey", "valkeys"):
@@ -102,6 +102,13 @@ def parse_cache_url(url: str, *, key_prefix: str = "") -> dict:
         return {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
             "LOCATION": location,
+            "KEY_PREFIX": key_prefix,
+        }
+    if scheme == "db":
+        # A table in the project's database; `migrate` creates it.
+        return {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": "django_cache",
             "KEY_PREFIX": key_prefix,
         }
     if scheme == "locmem":
@@ -113,7 +120,7 @@ def parse_cache_url(url: str, *, key_prefix: str = "") -> dict:
         return {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}
 
     raise ImproperlyConfigured(
-        f"CACHE_URL has an unsupported scheme {scheme!r}; use redis://, locmem:// or dummy://."
+        f"CACHE_URL has an unsupported scheme {scheme!r}; use redis://, db://, locmem:// or dummy://."
     )
 
 

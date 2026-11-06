@@ -1,10 +1,10 @@
-import { setEnvValues } from "./env";
-import { LOCAL_S3, umamiEnv } from "./scaffold";
+import { parseEnv, setEnvValues } from "./env";
+import { cacheEnv, LOCAL_S3, umamiEnv, usesValkey } from "./scaffold";
 import { generateProjectSecrets } from "./secrets";
 import { STACK_OPTIONS, type Stack, type StackKey, type StackValue } from "./stack";
 
 /** The options `config` can switch in an existing project. The rest follow with code generation. */
-export const SWITCHABLE: readonly StackKey[] = ["storage", "analytics"];
+export const SWITCHABLE: readonly StackKey[] = ["storage", "analytics", "cache", "tasks"];
 
 export interface ConfigChange {
   /** The new `.env` text. */
@@ -57,6 +57,32 @@ export function applyStack(
           ? "Uploads go to the local S3 service (the s3 profile)."
           : "Uploads go to a Docker volume; the local S3 service is off.",
       );
+    }
+    if (key === "cache") {
+      text = setEnvValues(text, { CACHE_URL: cacheEnv(to).CACHE_URL ?? "" });
+      changes.push(
+        {
+          database: "The cache is a table in the database.",
+          valkey: "The cache is in Valkey (the valkey profile).",
+          off: "The cache is per process; nothing is shared.",
+        }[to.cache],
+      );
+    }
+    if (key === "tasks" || (key === "cache" && from.tasks === "huey" && to.tasks === "huey")) {
+      const { CACHE_URL: _, ...tasks } = cacheEnv(to);
+      const before = parseEnv(text).TASKS_URL;
+      text = setEnvValues(text, tasks);
+      if (before !== tasks.TASKS_URL)
+        changes.push(
+          to.tasks === "off"
+            ? "Tasks run in the request; the worker is off, so there are no daily backups."
+            : `The worker keeps its task queue in ${tasks.TASKS_URL === "db://" ? "the database" : "Valkey"}.`,
+        );
+    }
+    if (key === "cache" || key === "tasks") {
+      profiles = profiles.filter((profile) => profile !== "valkey");
+      if (usesValkey(parseEnv(text))) profiles.push("valkey");
+      text = setEnvValues(text, { COMPOSE_PROFILES: profiles.join(",") });
     }
     if (key === "analytics") {
       profiles = profiles.filter((profile) => profile !== "analytics");

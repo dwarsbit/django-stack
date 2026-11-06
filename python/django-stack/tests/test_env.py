@@ -29,6 +29,10 @@ def test_cache_urls():
     assert parse_cache_url("redis://cache:6379/0")["BACKEND"].endswith("RedisCache")
     assert parse_cache_url("valkey://cache:6379/0")["LOCATION"] == "redis://cache:6379/0"
     assert parse_cache_url("locmem://")["BACKEND"].endswith("LocMemCache")
+    database = parse_cache_url("db://", key_prefix="site")
+    assert database["BACKEND"] == "django.core.cache.backends.db.DatabaseCache"
+    assert database["LOCATION"] == "django_cache"
+    assert database["KEY_PREFIX"] == "site"
 
 
 def test_email_urls():

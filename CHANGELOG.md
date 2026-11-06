@@ -5,6 +5,28 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.7.0 (unreleased)
+
+- **The cache and the task queue in Postgres.** New projects keep the
+  cache in a database table (`CACHE_URL=db://`) and Huey's task queue in
+  `huey_*` tables (`TASKS_URL=db://`), so the default stack runs no Valkey.
+  `migrate` creates the tables. `init --cache valkey` runs Valkey for both,
+  as before; `--tasks huey-valkey` puts only the queue in Valkey; `--cache
+  off` keeps a cache per process; `--tasks off` runs tasks in the request
+  without a worker (`TASKS_URL=immediate://`, `TASK_WORKERS=0`), with no
+  daily backups. `init` asks for the cache before the tasks, and the tasks
+  follow it. The `cache` service is now in the `valkey` profile.
+- **`dstack config --cache` and `--tasks`** switch an existing project,
+  turning the `valkey` profile on or off.
+- **`TASKS_URL`** in `django_stack.settings`: `db://`, `redis://` or
+  `immediate://`. Projects without it keep their queue in a Redis
+  `CACHE_URL`. `CACHE_URL` accepts `db://`. New deploy check
+  `django_stack.W006` warns when tasks run in the request.
+- **Existing projects** keep working unchanged. To drop Valkey, set
+  `CACHE_URL=db://` and `TASKS_URL=db://` in `.env`, add `profiles: [valkey]`
+  to the `cache` service and `required: false` to its `depends_on` entry in
+  `compose.yaml`, and run `migrate`.
+
 ## 0.6.0 (2026-11-06)
 
 - **Page analytics with Umami.** `init` now runs Umami for page analytics

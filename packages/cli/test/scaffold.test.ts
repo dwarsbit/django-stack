@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  cacheEnv,
   FRONTENDS,
   type Frontend,
   normalizeDatabaseUrl,
@@ -11,6 +12,7 @@ import {
   scaffold,
   setEnvValues,
   toProjectName,
+  usesValkey,
   validateProjectName,
 } from "../src";
 
@@ -204,6 +206,43 @@ describe("scaffold", () => {
     const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
     expect(env.UMAMI_URL).toBe("");
     expect(env.UMAMI_ADMIN_PASSWORD).toBe("");
+  });
+
+  it("keeps the cache and the tasks in the database by default", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true });
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env).toMatchObject({ CACHE_URL: "db://", TASKS_URL: "db://", TASK_WORKERS: "1" });
+    expect(env.COMPOSE_PROFILES).toBe("dev,db");
+  });
+
+  it("runs Valkey for the cache or the tasks", () => {
+    expect(cacheEnv({ cache: "valkey", tasks: "huey" })).toEqual({
+      CACHE_URL: "redis://cache:6379/0",
+      TASKS_URL: "redis://cache:6379/1",
+      TASK_WORKERS: "1",
+    });
+    expect(cacheEnv({ cache: "database", tasks: "huey-valkey" }).TASKS_URL).toBe("redis://cache:6379/1");
+    expect(cacheEnv({ cache: "off", tasks: "off" })).toEqual({
+      CACHE_URL: "locmem://",
+      TASKS_URL: "immediate://",
+      TASK_WORKERS: "0",
+    });
+    expect(usesValkey({ CACHE_URL: "db://", TASKS_URL: "redis://cache:6379/1" })).toBe(true);
+    expect(usesValkey({ CACHE_URL: "rediss://cache.example.com:6379" })).toBe(false);
+
+    const directory = join(tempDir(), "site");
+    scaffold({
+      directory,
+      name: "site",
+      frontend: "astro",
+      demoContent: true,
+      cache: "valkey",
+      tasks: "huey",
+    });
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.COMPOSE_PROFILES).toBe("dev,db,valkey");
+    expect(env.CACHE_URL).toBe("redis://cache:6379/0");
   });
 
   it("refuses a directory that is not empty", () => {

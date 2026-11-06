@@ -266,7 +266,10 @@ function probeFor(definition: ComposeService, ports: number[]): ProbePlan | unde
 
 /** Plans the Bunny app for a resolved Compose project. */
 export function planApp(project: ComposeProject, options: PlanOptions): AppPlan {
-  const entries = Object.entries(project.services).sort(([a], [b]) => a.localeCompare(b));
+  // A service scaled to 0, such as the worker with TASK_WORKERS=0, does not run.
+  const entries = Object.entries(project.services)
+    .filter(([, definition]) => (definition.deploy as { replicas?: number } | undefined)?.replicas !== 0)
+    .sort(([a], [b]) => a.localeCompare(b));
   if (!entries.length) throw new Error("compose.yaml has no services for production.");
 
   // Which names reach which service, and which ports other services use.

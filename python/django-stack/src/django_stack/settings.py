@@ -41,6 +41,8 @@ from collections.abc import Mapping, MutableMapping
 from pathlib import Path
 from typing import Any
 
+from django.core.exceptions import ImproperlyConfigured
+
 from .env import Env, hostname, mail_settings, origin, parse_cache_url, parse_database_url, parse_email_url
 
 DEFAULT_IMAGE_SIZES = {
@@ -88,6 +90,56 @@ def _merge(defaults: dict, overrides: Any) -> dict:
     return merged
 
 
+REDIS_SCHEMES = ("redis", "rediss", "valkey", "valkeys")
+
+
+def _scheme(url: str | None) -> str:
+    return (url or "").split(":", 1)[0].lower()
+
+
+def task_settings(
+    tasks_url: str | None, cache_url: str | None, database_url: str, project_name: str, e: Env
+) -> dict[str, Any]:
+    """HUEY and TASKS for a TASKS_URL (or, without one, the cache's Redis)."""
+    scheme = _scheme(tasks_url)
+    if not scheme:
+        scheme, tasks_url = ("redis", cache_url) if _scheme(cache_url) in REDIS_SCHEMES else ("immediate", "")
+    immediate = {
+        "HUEY": {"huey_class": "huey.MemoryHuey", "name": project_name, "immediate": True},
+        "TASKS": {"default": {"BACKEND": "django.tasks.backends.immediate.ImmediateBackend"}},
+    }
+    if scheme == "immediate" or not _installed("huey"):
+        return immediate
+    consumer = {"workers": e.int("HUEY_WORKERS", 2), "worker_type": "thread"}
+    if scheme in REDIS_SCHEMES:
+        huey: dict[str, Any] = {
+            "huey_class": "huey.RedisHuey",
+            "connection": {"url": str(tasks_url).replace("valkey", "redis", 1)},
+        }
+    elif scheme == "db":
+        database_scheme = _scheme(database_url)
+        if database_scheme in ("postgres", "postgresql"):
+            database = "psycopg3:" + database_url.split(":", 1)[1]
+        elif database_scheme == "sqlite":
+            database = "sqlite:///" + parse_database_url(database_url)["NAME"]
+        else:
+            raise ImproperlyConfigured("TASKS_URL=db:// needs a postgres:// or sqlite:// DATABASE_URL.")
+        # Polls the database; `migrate` creates the huey_* tables.
+        huey = {
+            "huey_class": "django_stack.huey.SqlHuey",
+            "database": database,
+            "create_tables": False,
+        }
+    else:
+        raise ImproperlyConfigured(
+            f"TASKS_URL has an unsupported scheme {scheme!r}; use db://, redis:// or immediate://."
+        )
+    return {
+        "HUEY": {"name": project_name, "immediate": False, **huey, "consumer": consumer},
+        "TASKS": {"default": {"BACKEND": "huey.contrib.djhuey.tasks_backend.HueyBackend"}},
+    }
+
+
 def configure(
     namespace: MutableMapping[str, Any],
     *,
@@ -123,29 +175,20 @@ def configure(
     s["DATABASES"] = {"default": parse_database_url(database_url)}
     s["DEFAULT_AUTO_FIELD"] = "django.db.models.BigAutoField"
 
-    # Cache: shared by Content Studio (login throttles, sessions, presence),
-    # the task queue and the content API.
+    # Cache: shared by Content Studio (login throttles, sessions, presence)
+    # and the content API. db:// is a table in the database, redis:// the
+    # Valkey service.
     cache_url = e.str("CACHE_URL")
     if cache_url:
         s["CACHES"] = {"default": parse_cache_url(cache_url, key_prefix=project_name)}
     else:
         s["CACHES"] = {"default": parse_cache_url("locmem://", key_prefix=project_name)}
 
-    # Tasks: Huey on the shared Redis-compatible cache, run by the worker
-    # service. Without a cache, tasks run in the request.
-    redis_cache = bool(cache_url) and cache_url.split(":", 1)[0] in ("redis", "rediss", "valkey", "valkeys")
-    if redis_cache and _installed("huey"):
-        s["HUEY"] = {
-            "huey_class": "huey.RedisHuey",
-            "name": project_name,
-            "immediate": False,
-            "connection": {"url": cache_url.replace("valkey", "redis", 1)},
-            "consumer": {"workers": e.int("HUEY_WORKERS", 2), "worker_type": "thread"},
-        }
-        s["TASKS"] = {"default": {"BACKEND": "huey.contrib.djhuey.tasks_backend.HueyBackend"}}
-    else:
-        s["HUEY"] = {"huey_class": "huey.MemoryHuey", "name": project_name, "immediate": True}
-        s["TASKS"] = {"default": {"BACKEND": "django.tasks.backends.immediate.ImmediateBackend"}}
+    # Tasks: Huey, run by the worker service. TASKS_URL picks its queue:
+    # db:// (tables in the database), redis:// (the Valkey service) or
+    # immediate:// (no worker: tasks run in the request). Without TASKS_URL
+    # the queue follows a Redis-compatible CACHE_URL, as before 0.7.
+    s.update(task_settings(e.str("TASKS_URL"), cache_url, database_url, project_name, e))
     # Task statistics for the admin's task page: in Postgres, so the web and
     # worker containers share them (the default is a SQLite file per container).
     if database_url.split(":", 1)[0] in ("postgres", "postgresql") and "HUEY_STATS" not in namespace:

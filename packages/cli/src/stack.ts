@@ -70,8 +70,14 @@ export const STACK_OPTIONS = [
     message: "Background tasks",
     description: "The task queue",
     values: [
-      { value: "huey", label: "Huey", hint: "a worker container with Valkey", generated: true },
-      { value: "off", label: "Off", generated: false },
+      {
+        value: "huey",
+        label: "Huey",
+        hint: "a worker container, the queue where the cache is",
+        generated: true,
+      },
+      { value: "off", label: "Off", hint: "tasks run in the request, no daily backups", generated: true },
+      { value: "huey-valkey", label: "Huey on Valkey", hint: "the queue in Valkey", generated: true },
     ],
   },
   {
@@ -84,10 +90,10 @@ export const STACK_OPTIONS = [
         value: "database",
         label: "Database",
         hint: "a Postgres table, nothing extra to run",
-        generated: false,
+        generated: true,
       },
-      { value: "valkey", label: "Valkey", hint: "in memory, Redis-compatible", generated: false },
-      { value: "off", label: "Off", generated: false },
+      { value: "valkey", label: "Valkey", hint: "in memory, Redis-compatible", generated: true },
+      { value: "off", label: "Off", hint: "a cache per process", generated: true },
     ],
   },
   {
@@ -150,6 +156,23 @@ export function stackValues(key: StackKey): string[] {
 export const DEFAULT_STACK = Object.fromEntries(
   STACK_OPTIONS.map((option) => [option.key, option.values[0].value]),
 ) as Stack;
+
+/**
+ * The order of the prompts. It differs from STACK_OPTIONS (the preset order,
+ * append-only): the cache comes before the tasks, whose queue follows it.
+ */
+export const PROMPT_ORDER: readonly StackKey[] = (() => {
+  const keys = STACK_OPTIONS.map((option) => option.key as StackKey).filter((key) => key !== "cache");
+  keys.splice(keys.indexOf("tasks"), 0, "cache");
+  return keys;
+})();
+
+/** Where the task queue of a stack is: the database, Valkey, or none (tasks run in the request). */
+export function taskQueue(stack: Pick<Stack, "cache" | "tasks">): "database" | "valkey" | "none" {
+  if (stack.tasks === "off") return "none";
+  if (stack.tasks === "huey-valkey" || stack.cache === "valkey") return "valkey";
+  return "database";
+}
 
 /** The frontends that run on Node, with a `frontend/` directory and a package manager. */
 export const NODE_FRONTENDS: readonly string[] = ["astro", "next", "nuxt", "sveltekit"];

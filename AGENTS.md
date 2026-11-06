@@ -3,7 +3,7 @@
 DjangoStack is a bootstrapper and glue layer: `npx @django-stack/cli init`
 creates a Docker Compose project with a Django backend (Django Headless for
 the API, Django Content Studio for the admin), an Astro or Next.js frontend,
-Postgres and Valkey, and the `dstack` command manages it from development
+Postgres (and Valkey if chosen), and the `dstack` command manages it from development
 to deploy.
 
 - **Repository**: https://github.com/dwarsbit/django-stack

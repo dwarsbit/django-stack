@@ -6,7 +6,9 @@ A website with a Django backend and a frontend built with {{frontend_label}}, cr
 - [Django Headless](https://djangoheadless.org) serves the content API.
 - [Django Content Studio](https://djangocontentstudio.org) is the admin.
 - [{{frontend_label}}]({{frontend_url}}) renders the site.
-- Postgres stores the content; Valkey is the cache and task queue.
+- Postgres stores the content, and by default also the cache and the task
+  queue (`CACHE_URL` and `TASKS_URL` in `.env`); Valkey can take those over
+  with the `valkey` profile.
 
 ## Start
 

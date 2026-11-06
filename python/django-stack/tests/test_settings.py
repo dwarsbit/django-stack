@@ -54,6 +54,46 @@ def test_production_settings():
     assert s["HUEY_STATS"] == {"database": "psycopg3://app:pw@db/app"}
 
 
+POSTGRES = {"DATABASE_URL": "postgres://app:pw@db/app?sslmode=require", "PROJECT_NAME": "site"}
+
+
+def test_tasks_in_the_database():
+    s = run({**POSTGRES, "CACHE_URL": "db://", "TASKS_URL": "db://"})
+    assert s["CACHES"]["default"]["BACKEND"].endswith("DatabaseCache")
+    assert s["HUEY"]["huey_class"] == "django_stack.huey.SqlHuey"
+    assert s["HUEY"]["database"] == "psycopg3://app:pw@db/app?sslmode=require"
+    assert s["HUEY"]["create_tables"] is False
+    assert s["HUEY"]["immediate"] is False
+    assert s["TASKS"]["default"]["BACKEND"] == "huey.contrib.djhuey.tasks_backend.HueyBackend"
+
+
+def test_tasks_in_a_sqlite_database():
+    s = run({"DATABASE_URL": "sqlite:////srv/app/db.sqlite3", "TASKS_URL": "db://"})
+    assert s["HUEY"]["database"] == "sqlite:////srv/app/db.sqlite3"
+
+
+def test_tasks_on_valkey_with_the_database_cache():
+    s = run({**POSTGRES, "CACHE_URL": "db://", "TASKS_URL": "valkey://cache:6379/1"})
+    assert s["HUEY"]["huey_class"] == "huey.RedisHuey"
+    assert s["HUEY"]["connection"] == {"url": "redis://cache:6379/1"}
+
+
+def test_tasks_in_the_request():
+    s = run({**POSTGRES, "CACHE_URL": "redis://cache:6379/0", "TASKS_URL": "immediate://"})
+    assert s["HUEY"]["immediate"] is True
+    assert s["TASKS"]["default"]["BACKEND"].endswith("ImmediateBackend")
+
+
+def test_tasks_without_tasks_url_follow_a_redis_cache():
+    assert run({**POSTGRES, "CACHE_URL": "db://"})["HUEY"]["immediate"] is True
+    assert run({**POSTGRES, "CACHE_URL": "redis://cache:6379/0"})["HUEY"]["huey_class"] == "huey.RedisHuey"
+
+
+def test_unknown_tasks_url():
+    with pytest.raises(ImproperlyConfigured):
+        run({**POSTGRES, "TASKS_URL": "amqp://queue"})
+
+
 def test_s3_storage():
     s = run(
         {
