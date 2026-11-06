@@ -5,6 +5,7 @@ import {
   decodePreset,
   encodePreset,
   NAMED_PRESETS,
+  PROMPT_ORDER,
   pendingChoices,
   resolvePreset,
   STACK_OPTIONS,
@@ -80,6 +81,12 @@ describe("presets", () => {
       }
     }
     expect(refused / typos).toBeGreaterThan(0.9);
+  });
+
+  it("asks for uploads in production before uploads in development", () => {
+    expect(PROMPT_ORDER).toHaveLength(STACK_OPTIONS.length);
+    expect(PROMPT_ORDER.indexOf("media")).toBe(PROMPT_ORDER.indexOf("storage") - 1);
+    expect(decodePreset("a").media).toBe("server");
   });
 
   it("rejects what is not a code", () => {

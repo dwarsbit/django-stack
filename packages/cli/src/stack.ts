@@ -143,11 +143,36 @@ export const STACK_OPTIONS = [
       { value: "bun", label: "Bun", generated: false },
     ],
   },
+  {
+    key: "media",
+    flag: "--media",
+    message: "Uploads in production",
+    description: "Where uploads go in production",
+    bits: 2,
+    values: [
+      {
+        value: "server",
+        label: "On the server",
+        hint: "a Docker volume, backed up with the database",
+        generated: true,
+      },
+      { value: "s3", label: "S3", hint: "any S3-compatible service; credentials later", generated: true },
+    ],
+  },
 ] as const satisfies readonly StackOption[];
 
 type Options = (typeof STACK_OPTIONS)[number];
 export type StackKey = Options["key"];
 export type Stack = { [O in Options as O["key"]]: O["values"][number]["value"] };
+
+/** The order of the prompts: uploads in production before uploads in development. */
+export const PROMPT_ORDER: readonly StackKey[] = (() => {
+  const keys: StackKey[] = STACK_OPTIONS.map((option) => option.key as StackKey).filter(
+    (key) => key !== "media",
+  );
+  keys.splice(keys.indexOf("storage"), 0, "media");
+  return keys;
+})();
 
 export function stackOption(key: StackKey): StackOption {
   const option = STACK_OPTIONS.find((candidate) => candidate.key === key);

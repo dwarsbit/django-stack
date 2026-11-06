@@ -88,6 +88,7 @@ the defaults it does not generate yet when it is done.
 | `--captcha` | `on` (later, the built-in captcha), `off` |
 | `--storage` | `local`, `s3` (a local S3 service in development, the same code path as S3 in production; see [Media and database](./production/media-and-database.md#s3-in-development)) |
 | `--package-manager` | `pnpm` (later), `npm`, `bun` (later). Only for a Node frontend. |
+| `--media` | `server` (uploads in a volume on the server), `s3` (uploads in S3 in production; `production` lists the S3 settings to set). Asked before `--storage`, which then suggests `s3`. See [Media in S3](./production/media-and-database.md#media-in-s3). |
 
 ### Presets
 
@@ -203,8 +204,9 @@ change, or takes the same flags as `init`, such as `--storage s3`. It
 updates `.env` and the preset in `package.json`, then asks you to restart.
 
 This release can switch `--storage` between `local` and `s3` in
-development, and `--analytics` between `umami` and `off` (see
-[Page analytics](./analytics.md#turn-analytics-off-or-on)). The other
+development, `--analytics` between `umami` and `off` (see
+[Page analytics](./analytics.md#turn-analytics-off-or-on)), and `--media`
+between `server` and `s3`, which changes only the preset. The other
 options can only be set by `init`; `config` refuses them with the reason.
 
 ## `production`

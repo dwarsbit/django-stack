@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { productionEnv, validateDomain } from "../production";
+import { projectStack, readProject } from "../project";
 import { relativeDirectory } from "../scaffold";
 import { command, fail, intro, isInteractive, secret, unwrap, url } from "../ui";
 
@@ -11,6 +12,15 @@ export interface ProductionCommandOptions {
   emailUrl?: string;
   force?: boolean;
   yes?: boolean;
+}
+
+/** The `media` stack option of the project, from the preset in package.json. */
+function projectMedia(directory: string): string | undefined {
+  try {
+    return projectStack(readProject(directory)).media;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function production(directoryArgument: string | undefined, options: ProductionCommandOptions) {
@@ -35,7 +45,11 @@ export async function production(directoryArgument: string | undefined, options:
   }
   let result: ReturnType<typeof productionEnv>;
   try {
-    result = productionEnv(readFileSync(envPath, "utf8"), { domain, emailUrl: options.emailUrl });
+    result = productionEnv(readFileSync(envPath, "utf8"), {
+      domain,
+      emailUrl: options.emailUrl,
+      media: projectMedia(directory),
+    });
   } catch (error) {
     fail((error as Error).message);
   }

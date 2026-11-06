@@ -419,7 +419,8 @@ export async function config(options: ConfigOptions) {
     p.outro("Nothing changed");
     return;
   }
-  writeFileSync(envPath, result.env, { mode: 0o600 });
+  const envText = readFileSync(envPath, "utf8");
+  if (result.env !== envText) writeFileSync(envPath, result.env, { mode: 0o600 });
   const manifestPath = join(project.directory, "package.json");
   if (existsSync(manifestPath))
     writeFileSync(
@@ -427,5 +428,6 @@ export async function config(options: ConfigOptions) {
       setManifestPreset(readFileSync(manifestPath, "utf8"), encodePreset(next as Stack)),
     );
   for (const change of result.changes) p.log.success(change);
-  p.outro(`Restart to apply it: ${command("dstack stop")}, then ${command("dstack dev")}`);
+  if (result.env === envText) p.outro(pc.green("Done"));
+  else p.outro(`Restart to apply it: ${command("dstack stop")}, then ${command("dstack dev")}`);
 }

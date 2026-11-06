@@ -17,9 +17,9 @@ import {
   applies,
   DEFAULT_STACK,
   encodePreset,
+  PROMPT_ORDER,
   pendingChoices,
   resolvePreset,
-  STACK_OPTIONS,
   type Stack,
   type StackKey,
   type StackValue,
@@ -78,8 +78,8 @@ export async function chooseStack(
   }
   const stack = { ...DEFAULT_STACK } as Record<string, string>;
   let databaseUrl: string | undefined;
-  for (const option of STACK_OPTIONS) {
-    const key = option.key as StackKey;
+  for (const key of PROMPT_ORDER) {
+    const option = stackOption(key);
     if (options.fromCli(key)) stack[key] = options[key] as string;
     else if (key === "storage" && options.fromCli("localS3") && options.localS3) stack[key] = "s3";
     else if (preset) stack[key] = preset[key];
@@ -90,8 +90,10 @@ export async function chooseStack(
       else stack[key] = answer.postgres;
     } else if (key === "postgres" && options.databaseUrl) continue;
     else {
+      // With S3 in production, suggest the local S3 service in development: the same code path.
+      const initialValue = key === "storage" && stack.media === "s3" ? "s3" : stack[key];
       stack[key] = unwrap(
-        await p.select<string>({ message: option.message, options: choices(key), initialValue: stack[key] }),
+        await p.select<string>({ message: option.message, options: choices(key), initialValue }),
       );
     }
   }
@@ -282,6 +284,10 @@ export async function init(directoryArgument: string | undefined, options: InitO
         .join(", ")}.`,
     );
   }
+  if (stack.media === "s3")
+    p.log.info(
+      `Uploads go to S3 in production. ${command("dstack production")} lists the S3 settings to set before the first deploy.`,
+    );
   p.log.message(`Create the same stack with ${command(`--preset ${encodePreset(stack)}`)}`);
 
   if (options.start && !dockerReady) {

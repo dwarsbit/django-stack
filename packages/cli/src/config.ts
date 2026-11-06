@@ -5,7 +5,7 @@ import { generateProjectSecrets } from "./secrets";
 import { STACK_OPTIONS, type Stack, type StackKey, type StackValue } from "./stack";
 
 /** The options `config` can switch in an existing project. The rest follow with code generation. */
-export const SWITCHABLE: readonly StackKey[] = ["storage", "analytics"];
+export const SWITCHABLE: readonly StackKey[] = ["storage", "analytics", "media"];
 
 export interface ConfigChange {
   /** The new `.env` text. */
@@ -74,6 +74,14 @@ export function applyStack(
         text = setEnvValues(text, { UMAMI_URL: "", COMPOSE_PROFILES: profiles.join(",") });
         changes.push("Page analytics are off; Umami's data stays in the database.");
       }
+    }
+    if (key === "media") {
+      // Only the preset changes: `dstack production` and `dstack settings` act on it.
+      changes.push(
+        to.media === "s3"
+          ? "Uploads in production go to S3; set the S3_* variables in .env.production."
+          : "Uploads in production stay on the server.",
+      );
     }
   }
   return { env: text, changes };

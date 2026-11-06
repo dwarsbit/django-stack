@@ -28,6 +28,12 @@ the unreleased version; the release workflow releases it.
   `"127.0.0.1:${BACKEND_PORT:-8000}:8000"`,
   `"127.0.0.1:${MAIL_PORT:-8025}:8025"` and
   `"127.0.0.1:${S3_PORT:-8333}:8333"`.
+- **Uploads in production.** `init` now asks whether uploads go to S3 in
+  production (`--media s3`) or stay on the server (`--media server`, the
+  default), before it asks about uploads in development, which then
+  suggests the local S3 service. It asks for no credentials: with S3,
+  `dstack production` lists the `S3_*` variables to set. `dstack config
+  --media` changes it later.
 
 ### Fixes
 
