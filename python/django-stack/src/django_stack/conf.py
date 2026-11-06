@@ -23,6 +23,10 @@ DEFAULTS = {
     "BACKUP_S3": {},
     "BACKUP_MEDIA": True,
     "BACKUP_DAILY": False,
+    "UMAMI_URL": None,
+    "UMAMI_WEBSITE_ID": None,
+    "UMAMI_USERNAME": "admin",
+    "UMAMI_PASSWORD": None,
 }
 
 

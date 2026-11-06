@@ -104,15 +104,18 @@ export function projectManifest(project: Project): { version?: string; frontend?
 /**
  * The project's stack: from the preset `init` saved in `package.json`, or,
  * for projects from before that, the defaults with the storage from `.env`.
+ * Analytics follow the `analytics` profile: projects from before Umami was
+ * generated have the default in their preset without running it.
  */
 export function projectStack(project: Project): Stack {
+  const analytics = project.profiles.includes("analytics") ? "umami" : "off";
   const { preset } = projectManifest(project);
   if (preset) {
     try {
-      return decodePreset(preset);
+      return { ...decodePreset(preset), analytics };
     } catch {}
   }
-  return { ...DEFAULT_STACK, storage: project.profiles.includes("s3") ? "s3" : "local" };
+  return { ...DEFAULT_STACK, analytics, storage: project.profiles.includes("s3") ? "s3" : "local" };
 }
 
 /** The URLs of a running project. */

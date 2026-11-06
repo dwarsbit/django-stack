@@ -5,6 +5,34 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.6.0 (unreleased)
+
+- **Page analytics with Umami.** `init` now runs Umami for page analytics
+  unless you pass `--analytics off` (presets with analytics on, such as the
+  default `a`, now get it). The `umami` service in the new `analytics`
+  profile keeps its tables in the `umami` schema of the project's database,
+  so backups include them. Only its tracker and the page views pass through
+  the site, at `/_a/script.js` and `/_a/api/send`; its interface and API
+  stay on the internal network. Every frontend loads the tracker when
+  `UMAMI_WEBSITE_ID` is set. The admin shows the numbers under
+  **Analytics**, through Django Content Studio's analytics page. `init`
+  writes `UMAMI_URL`, `UMAMI_WEBSITE_ID`, `UMAMI_ADMIN_PASSWORD`,
+  `UMAMI_APP_SECRET` and `UMAMI_DATABASE_URL` to `.env`, and `production`
+  gives the server new secrets.
+- **`dstack config --analytics`.** Turns analytics on or off in a project
+  that has the `umami` service, keeping Umami's website and data.
+- **`django_stack.analytics.UmamiProvider`** connects Django Content
+  Studio's analytics to the bundled Umami with its admin password, and
+  `manage.py setup_umami` replaces Umami's default admin password and
+  creates the site's website; the backend runs it on every start when
+  `UMAMI_URL` is set. `django-stack` now needs Django Content Studio 1.11.
+  Existing projects keep working without analytics. To add them, copy the
+  `umami` service and its `x-backend-depends` and `x-frontend-env` entries
+  from a new project's `compose.yaml`, the `/_a/` block of its
+  `Caddyfile`, the `setup_umami` lines of `backend/entrypoint.sh`, the
+  analytics lines of `backend/config/studio.py` and the frontend's tracker
+  and `/_a/` proxy, then run `dstack config --analytics umami`.
+
 ## 0.5.0 (2026-11-05)
 
 - Publishes `@django-stack/utils`, `@django-stack/svelte` and

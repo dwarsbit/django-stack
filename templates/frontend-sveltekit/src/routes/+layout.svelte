@@ -13,6 +13,9 @@
 
 <svelte:head>
   <link rel="alternate" type="application/rss+xml" title={data.settings?.site_name ?? "RSS"} href="/rss.xml" />
+  {#if data.analytics}
+    <script defer src="/_a/script.js" data-website-id={data.analytics}></script>
+  {/if}
 </svelte:head>
 
 <Seo

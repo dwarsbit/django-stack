@@ -7,12 +7,18 @@ const dev = process.env.NODE_ENV === "development";
 // development, this proxy does, so the site and the admin share an origin.
 const BACKEND_PATHS = /^\/(admin|api|media|static)(\/|$)/;
 const backend = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000";
+// Umami's tracker and page views, for page analytics; Caddy passes them on in production.
+const TRACKER_PATHS = /^\/_a\/(script\.js|api\/send)$/;
+const umami = process.env.UMAMI_URL || "http://umami:3000";
 const media = mediaOrigins();
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   if (dev && BACKEND_PATHS.test(pathname)) {
     return NextResponse.rewrite(new URL(pathname + search, backend));
+  }
+  if (dev && TRACKER_PATHS.test(pathname)) {
+    return NextResponse.rewrite(new URL(pathname.slice("/_a".length) + search, umami));
   }
 
   // A fresh nonce for every page: Next adds it to the scripts it renders.

@@ -1,9 +1,10 @@
 import { setEnvValues } from "./env";
-import { LOCAL_S3 } from "./scaffold";
+import { LOCAL_S3, umamiEnv } from "./scaffold";
+import { generateProjectSecrets } from "./secrets";
 import { STACK_OPTIONS, type Stack, type StackKey, type StackValue } from "./stack";
 
 /** The options `config` can switch in an existing project. The rest follow with code generation. */
-export const SWITCHABLE: readonly StackKey[] = ["storage"];
+export const SWITCHABLE: readonly StackKey[] = ["storage", "analytics"];
 
 export interface ConfigChange {
   /** The new `.env` text. */
@@ -28,7 +29,7 @@ export function applyStack(
 ): ConfigChange {
   let text = envText;
   const changes: string[] = [];
-  const profiles = (env.COMPOSE_PROFILES ?? "")
+  let profiles = (env.COMPOSE_PROFILES ?? "")
     .split(",")
     .map((profile) => profile.trim())
     .filter(Boolean);
@@ -45,17 +46,33 @@ export function applyStack(
       const endpoint = env.S3_ENDPOINT_URL ?? "";
       if (endpoint && !endpoint.includes("s3:8333"))
         throw new Error(`S3_ENDPOINT_URL points at ${endpoint}; change the S3_* values in .env yourself.`);
-      const next = profiles.filter((profile) => profile !== "s3");
-      if (to.storage === "s3") next.push("s3");
+      profiles = profiles.filter((profile) => profile !== "s3");
+      if (to.storage === "s3") profiles.push("s3");
       text = setEnvValues(text, {
         ...(to.storage === "s3" ? LOCAL_S3 : EMPTY_S3),
-        COMPOSE_PROFILES: next.join(","),
+        COMPOSE_PROFILES: profiles.join(","),
       });
       changes.push(
         to.storage === "s3"
           ? "Uploads go to the local S3 service (the s3 profile)."
           : "Uploads go to a Docker volume; the local S3 service is off.",
       );
+    }
+    if (key === "analytics") {
+      profiles = profiles.filter((profile) => profile !== "analytics");
+      if (to.analytics === "umami") {
+        profiles.push("analytics");
+        // Keep the website and secrets of an earlier Umami, so its numbers stay.
+        const fresh = umamiEnv(env.DATABASE_URL ?? "", generateProjectSecrets());
+        const kept = Object.fromEntries(
+          Object.entries(fresh).filter(([name]) => name === "UMAMI_URL" || !env[name]),
+        );
+        text = setEnvValues(text, { ...kept, COMPOSE_PROFILES: profiles.join(",") });
+        changes.push("Page analytics with Umami are on (the analytics profile).");
+      } else {
+        text = setEnvValues(text, { UMAMI_URL: "", COMPOSE_PROFILES: profiles.join(",") });
+        changes.push("Page analytics are off; Umami's data stays in the database.");
+      }
     }
   }
   return { env: text, changes };

@@ -28,7 +28,9 @@ to ``SITE_URL``), ``ALLOWED_HOSTS`` (extra hosts, comma separated),
 ``PREVIEW_SECRET``, ``REVALIDATE_URL``, ``REVALIDATE_SECRET``,
 ``NUM_PROXIES``, ``PROJECT_NAME``, and the backup variables ``BACKUP_DIR``,
 ``BACKUP_KEEP``, ``BACKUP_TIME``, ``BACKUP_MEDIA``, ``BACKUP_S3_BUCKET`` and
-``BACKUP_S3_PREFIX``.
+``BACKUP_S3_PREFIX``, and the analytics variables ``UMAMI_URL`` (the
+internal address of the bundled Umami), ``UMAMI_WEBSITE_ID`` and
+``UMAMI_ADMIN_PASSWORD``.
 """
 
 from __future__ import annotations
@@ -308,6 +310,11 @@ def configure(
                 "access_key": e.str("BACKUP_S3_ACCESS_KEY_ID", e.str("S3_ACCESS_KEY_ID")),
                 "secret_key": e.str("BACKUP_S3_SECRET_ACCESS_KEY", e.str("S3_SECRET_ACCESS_KEY")),
             },
+            # Page analytics from the bundled Umami; off without UMAMI_URL.
+            "UMAMI_URL": e.str("UMAMI_URL"),
+            "UMAMI_WEBSITE_ID": e.str("UMAMI_WEBSITE_ID"),
+            "UMAMI_USERNAME": "admin",
+            "UMAMI_PASSWORD": e.str("UMAMI_ADMIN_PASSWORD"),
         },
         namespace.get("DJANGO_STACK"),
     )

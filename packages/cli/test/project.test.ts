@@ -80,12 +80,22 @@ describe("readProject", () => {
 describe("projectStack", () => {
   it("reads the preset from package.json", () => {
     const dir = project();
-    const stack = { ...DEFAULT_STACK, storage: "s3" as const };
+    const stack = { ...DEFAULT_STACK, analytics: "off" as const, storage: "s3" as const };
     writeFileSync(
       join(dir, "package.json"),
       JSON.stringify({ "django-stack": { preset: encodePreset(stack) } }),
     );
     expect(projectStack(readProject(dir))).toEqual(stack);
+  });
+
+  it("takes analytics from the analytics profile", () => {
+    const dir = project("COMPOSE_PROFILES=dev,db,analytics\n");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ "django-stack": { preset: "a01" } }));
+    expect(projectStack(readProject(dir)).analytics).toBe("umami");
+    // The default preset from before Umami was generated, without the profile.
+    writeFileSync(join(dir, ".env"), "COMPOSE_PROFILES=dev,db\n");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ "django-stack": { preset: "a" } }));
+    expect(projectStack(readProject(dir)).analytics).toBe("off");
   });
 
   it("takes the storage from .env without a preset", () => {
@@ -117,6 +127,25 @@ describe("applyStack", () => {
     expect(off.COMPOSE_PROFILES).toBe("dev,db");
     expect(off.S3_ENDPOINT_URL).toBe("");
     expect(off.S3_CREATE_BUCKET).toBe("0");
+  });
+
+  it("turns analytics on and off, keeping Umami's website", () => {
+    const text = "COMPOSE_PROFILES=dev,db\nDATABASE_URL=postgres://app:pw@db:5432/app\nUMAMI_URL=\n";
+    const off = { ...DEFAULT_STACK, analytics: "off" as const };
+    const umami = { ...DEFAULT_STACK, analytics: "umami" as const };
+    const on = applyStack(text, parseEnv(text), off, umami);
+    const env = parseEnv(on.env);
+    expect(env.COMPOSE_PROFILES).toBe("dev,db,analytics");
+    expect(env.UMAMI_URL).toBe("http://umami:3000");
+    expect(env.UMAMI_WEBSITE_ID).toMatch(/^[0-9a-f-]{36}$/);
+    expect(env.UMAMI_DATABASE_URL).toBe("postgres://app:pw@db:5432/app?schema=umami");
+    expect(env.UMAMI_ADMIN_PASSWORD?.length).toBeGreaterThan(20);
+    const stopped = parseEnv(applyStack(on.env, env, umami, off).env);
+    expect(stopped.COMPOSE_PROFILES).toBe("dev,db");
+    expect(stopped.UMAMI_URL).toBe("");
+    const again = parseEnv(applyStack(applyStack(on.env, env, umami, off).env, stopped, off, umami).env);
+    expect(again.UMAMI_WEBSITE_ID).toBe(env.UMAMI_WEBSITE_ID);
+    expect(again.UMAMI_ADMIN_PASSWORD).toBe(env.UMAMI_ADMIN_PASSWORD);
   });
 
   it("changes nothing for the same stack", () => {

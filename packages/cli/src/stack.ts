@@ -60,7 +60,7 @@ export const STACK_OPTIONS = [
     message: "Analytics",
     description: "Page analytics",
     values: [
-      { value: "umami", label: "Umami", hint: "built in, private, no cookies", generated: false },
+      { value: "umami", label: "Umami", hint: "built in, private, no cookies", generated: true },
       { value: "off", label: "Off", generated: true },
     ],
   },

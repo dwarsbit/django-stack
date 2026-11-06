@@ -1,7 +1,8 @@
 # {{project_name}}: the reverse proxy of the prod profile.
 #
 # One domain: Django serves /admin, /api and /static; uploads on the server's
-# disk are served from /media; the frontend serves everything else. Caddy
+# disk are served from /media; Umami's tracker from /_a/; the frontend
+# serves everything else. Caddy
 # gets and renews the HTTPS certificate for SITE_URL by itself.
 #
 # Behind a platform's proxy (Coolify, Dokploy), CADDY_ADDRESS=:80 serves
@@ -33,6 +34,18 @@
 		header Content-Security-Policy "script-src 'none'; object-src 'none'"
 		header Cache-Control "public, max-age=604800"
 		file_server
+	}
+
+	# Page analytics: only Umami's tracker and its page views, never its
+	# interface or API. Without the analytics profile these answer 502.
+	handle_path /_a/* {
+		@tracker path /script.js /api/send
+		handle @tracker {
+			reverse_proxy umami:3000
+		}
+		handle {
+			respond 404
+		}
 	}
 
 	@django path /admin /admin/* /api /api/* /static/*

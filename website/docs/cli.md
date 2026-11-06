@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 8
 ---
 
 # ⌨️ CLI reference
@@ -80,7 +80,7 @@ the defaults it does not generate yet when it is done.
 |--------|--------|
 | `--frontend` | `astro`, `next`, `headless` (later, just the API and the admin), `templates` (later, Django templates), `nuxt`, `sveltekit` |
 | `--postgres` | `stable` (Postgres 17), `latest` (Postgres 18, later). Ignored with `--database-url`. |
-| `--analytics` | `umami` (later, built in), `off` |
+| `--analytics` | `umami` (Umami, see [Page analytics](./analytics.md)), `off` |
 | `--tasks` | `huey`, `off` (later) |
 | `--cache` | `database` (later), `valkey` (later), `off` (later) |
 | `--notifications` | `on` (later, in the admin and by email), `off` |
@@ -199,8 +199,9 @@ change, or takes the same flags as `init`, such as `--storage s3`. It
 updates `.env` and the preset in `package.json`, then asks you to restart.
 
 This release can switch `--storage` between `local` and `s3` in
-development. The other options can only be set by `init` until code
-generation for them lands; `config` refuses them with the reason.
+development, and `--analytics` between `umami` and `off` (see
+[Page analytics](./analytics.md#turn-analytics-off-or-on)). The other
+options can only be set by `init`; `config` refuses them with the reason.
 
 ## `production`
 

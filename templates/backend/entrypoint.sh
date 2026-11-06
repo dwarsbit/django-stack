@@ -5,7 +5,8 @@
 # first admin user and, with SEED_DEMO_CONTENT=1, add demo content to an
 # empty site. DJANGO_CHECK_DEPLOY=1 (production): stop when Django's deploy
 # checks find an error. S3_CREATE_BUCKET=1 (the development S3 service):
-# create the media bucket.
+# create the media bucket. UMAMI_URL set (the analytics profile): set up
+# Umami; when that fails the site still starts, without analytics.
 set -eu
 
 python manage.py wait_for_db
@@ -21,6 +22,9 @@ if [ "${DJANGO_MIGRATE:-0}" = "1" ]; then
   python manage.py create_admin
   if [ "${SEED_DEMO_CONTENT:-0}" = "1" ]; then
     python manage.py seed_content --if-empty
+  fi
+  if [ -n "${UMAMI_URL:-}" ]; then
+    python manage.py setup_umami || echo "Umami is not set up, so the admin shows no analytics. See the error above." >&2
   fi
 fi
 

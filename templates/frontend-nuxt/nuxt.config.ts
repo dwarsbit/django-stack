@@ -1,5 +1,7 @@
 // The Django backend: the frontend container reaches it on the Compose network.
 const backend = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000";
+// Umami, for page analytics: only its tracker and page views, under /_a/.
+const umami = process.env.UMAMI_URL || "http://umami:3000";
 
 export default defineNuxtConfig({
   compatibilityDate: "2026-11-01",
@@ -26,12 +28,16 @@ export default defineNuxtConfig({
   // In development, serve Django's paths from the same origin as the site,
   // like the reverse proxy does in production.
   $development: {
-    routeRules: Object.fromEntries(
-      ["/admin", "/api", "/media", "/static"].map((path) => [
-        `${path}/**`,
-        { proxy: `${backend}${path}/**` },
-      ]),
-    ),
+    routeRules: {
+      ...Object.fromEntries(
+        ["/admin", "/api", "/media", "/static"].map((path) => [
+          `${path}/**`,
+          { proxy: `${backend}${path}/**` },
+        ]),
+      ),
+      "/_a/script.js": { proxy: `${umami}/script.js` },
+      "/_a/api/send": { proxy: `${umami}/api/send` },
+    },
   },
   // Security headers, with a Content-Security-Policy on every page in
   // production: scripts and styles only from this site, with a nonce for
