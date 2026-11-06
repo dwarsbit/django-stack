@@ -9,8 +9,8 @@ ENV ASTRO_TELEMETRY_DISABLED=1
 FROM base AS deps
 COPY package.json package-lock.json* ./
 COPY vendor/ vendor/
-RUN --mount=type=cache,target=/root/.npm \
-    if [ -f package-lock.json ]; then npm ci; else npm install; fi
+# No BuildKit cache mounts: Railway rejects them, and the layer is cached anyway.
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 FROM deps AS dev
 EXPOSE 3000
