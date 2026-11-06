@@ -110,11 +110,12 @@ describe("pendingChoices", () => {
     const pending = pendingChoices({ ...DEFAULT_STACK, frontend: "headless" });
     expect(pending).toContainEqual({ key: "frontend", choice: "--frontend headless", isDefault: false });
     expect(pending).toContainEqual({
-      key: "notifications",
-      choice: "--notifications on",
+      key: "captcha",
+      choice: "--captcha on",
       isDefault: true,
     });
     expect(pending.map((item) => item.key)).not.toContain("cache");
+    expect(pending.map((item) => item.key)).not.toContain("notifications");
   });
 
   it("skips the package manager without a Node frontend", () => {

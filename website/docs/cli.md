@@ -105,7 +105,7 @@ the defaults it does not generate yet when it is done.
 | `--analytics` | `umami` (Umami, see [Page analytics](./analytics.md)), `off` |
 | `--tasks` | `huey` (a worker, with its queue where the cache is: Postgres, or Valkey with `--cache valkey`), `off` (tasks run in the request, no worker and no daily backups), `huey-valkey` (the queue in Valkey with any cache) |
 | `--cache` | `database` (a table in Postgres, nothing extra to run), `valkey` (the Valkey service), `off` (a cache per process) |
-| `--notifications` | `on` (later, in the admin and by email), `off` |
+| `--notifications` | `on` (in the admin and by email, see [Notifications](./notifications.md)), `off` |
 | `--captcha` | `on` (later, the built-in captcha), `off` |
 | `--storage` | `local`, `s3` (a local S3 service in development, the same code path as S3 in production; see [Media and database](./production/media-and-database.md#s3-in-development)) |
 | `--package-manager` | `pnpm` (later), `npm`, `bun` (later). Only for a Node frontend. |
@@ -227,8 +227,10 @@ updates `.env` and the preset in `package.json`, then asks you to restart.
 This release can switch `--storage` between `local` and `s3` in
 development, `--analytics` between `umami` and `off` (see
 [Page analytics](./analytics.md#turn-analytics-off-or-on)), `--media`
-between `server` and `s3`, which changes only the preset, and `--cache` and
-`--tasks`, which also turn the `valkey` profile on or off. Queued tasks and
+between `server` and `s3`, which changes only the preset, `--notifications`
+between `on` and `off`, which adds or removes the app in
+`backend/config/settings.py`, and `--cache` and `--tasks`, which also turn
+the `valkey` profile on or off. Queued tasks and
 cached values stay behind in the old place, so switch while the queue is
 empty. The other options can only be set by `init`; `config` refuses them
 with the reason.

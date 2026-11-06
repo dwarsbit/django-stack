@@ -5,6 +5,23 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.9.0 (unreleased)
+
+- **Notifications.** `init` now turns on Django Content Studio's
+  notifications unless you pass `--notifications off` (presets with
+  notifications on, such as the default, now get them). Editors get them in
+  the admin, and what they leave unread for an hour by email. The backend
+  gets `content_studio.notifications` in `INSTALLED_APPS` and a contact form
+  event in `backend/content/notifications.py`. `django_stack.tasks` runs
+  the email digest hourly and prunes old notifications nightly in the
+  worker, and `django_stack.settings` turns `NOTIFICATION_EMAIL_DIGEST` on.
+  To add them to an existing project, add the app to `INSTALLED_APPS` (or
+  run `dstack config --notifications on`), copy
+  `backend/content/notifications.py` and the `ready()` of
+  `backend/content/apps.py` from a new project, and run `migrate`.
+- **`dstack config --notifications`** adds or removes the app in
+  `backend/config/settings.py`.
+
 ## 0.8.1 (2026-11-06)
 
 ### Fixes

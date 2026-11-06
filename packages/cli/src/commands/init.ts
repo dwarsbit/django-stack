@@ -241,6 +241,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
       localS3: stack.storage === "s3",
       analytics: stack.analytics === "umami",
       cache: stack.cache,
+      notifications: stack.notifications === "on",
       tasks: stack.tasks,
       preset: encodePreset(stack),
       timeZone,

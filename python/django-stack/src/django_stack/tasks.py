@@ -1,5 +1,6 @@
 """
-The daily backup as a Huey periodic task, run by the worker.
+The periodic tasks of the worker: the daily backup and, with Content
+Studio's notifications app installed, the notification digest and pruning.
 
 The task runs every hour at the minute of ``BACKUP_TIME`` (UTC) and backs
 up when it is the hour of ``BACKUP_TIME``, or when the newest backup is
@@ -13,6 +14,8 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime, timedelta
 
+from django.apps import apps
+from django.core.management import call_command
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, lock_task, on_startup
 
@@ -74,6 +77,42 @@ def run_daily_backup(now: datetime | None = None) -> bool:
 @lock_task("django-stack-backup")
 def daily_backup():
     run_daily_backup()
+
+
+def notifications_installed() -> bool:
+    return apps.is_installed("content_studio.notifications")
+
+
+def send_notification_digest() -> bool:
+    """Email editors their unread notifications. Returns whether it ran."""
+    if not notifications_installed():
+        return False
+    from content_studio.notifications.digest import digest_available
+
+    if not digest_available():
+        return False
+    call_command("content_studio_send_notification_digest", verbosity=0)
+    return True
+
+
+def prune_notifications() -> bool:
+    """Delete old notifications (NOTIFICATION_RETENTION). Returns whether it ran."""
+    if not notifications_installed():
+        return False
+    call_command("content_studio_prune_notifications", verbosity=0)
+    return True
+
+
+@db_periodic_task(crontab(minute="10"))
+@lock_task("django-stack-notification-digest")
+def notification_digest():
+    send_notification_digest()
+
+
+@db_periodic_task(crontab(hour="4", minute="30"))
+@lock_task("django-stack-prune-notifications")
+def notification_pruning():
+    prune_notifications()
 
 
 @on_startup("django-stack-backup-catch-up")

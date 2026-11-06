@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "content_studio",
     "content_studio.media_library",
     "content_studio.contrib.password_reset",
+    "content_studio.notifications",  # notifications in the admin and by email
     "django_stack",
     "content",
     # Last: builds the API routes once every model is exposed.

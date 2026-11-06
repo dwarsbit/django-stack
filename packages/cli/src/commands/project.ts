@@ -21,6 +21,7 @@ import {
   readProject,
   runningServices,
 } from "../project";
+import { setNotificationsApp } from "../scaffold";
 import { encodePreset, PROMPT_ORDER, type Stack, stackOption } from "../stack";
 import { dockerNotRunning, dockerRunning } from "../tools";
 import { command, fail, has, intro, isInteractive, logCheck, secret, unwrap, url } from "../ui";
@@ -406,6 +407,17 @@ export async function config(options: ConfigOptions) {
       fail("compose.yaml has no umami service. Add it as the analytics docs describe, then run this again.");
   }
 
+  const settingsPath = join(project.directory, "backend", "config", "settings.py");
+  let settingsText: string | undefined;
+  if (next.notifications !== current.notifications) {
+    if (!existsSync(settingsPath)) fail("This project has no backend/config/settings.py.");
+    try {
+      settingsText = setNotificationsApp(readFileSync(settingsPath, "utf8"), next.notifications === "on");
+    } catch (error) {
+      fail((error as Error).message);
+    }
+  }
+
   const envPath = join(project.directory, ".env");
   let result: ReturnType<typeof applyStack>;
   try {
@@ -419,6 +431,7 @@ export async function config(options: ConfigOptions) {
   }
   const envText = readFileSync(envPath, "utf8");
   if (result.env !== envText) writeFileSync(envPath, result.env, { mode: 0o600 });
+  if (settingsText !== undefined) writeFileSync(settingsPath, settingsText);
   const manifestPath = join(project.directory, "package.json");
   if (existsSync(manifestPath))
     writeFileSync(
@@ -426,6 +439,6 @@ export async function config(options: ConfigOptions) {
       setManifestPreset(readFileSync(manifestPath, "utf8"), encodePreset(next as Stack)),
     );
   for (const change of result.changes) p.log.success(change);
-  if (result.env === envText) p.outro(pc.green("Done"));
+  if (result.env === envText && settingsText === undefined) p.outro(pc.green("Done"));
   else p.outro(`Restart to apply it: ${command("dstack stop")}, then ${command("dstack dev")}`);
 }
