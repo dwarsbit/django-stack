@@ -152,12 +152,16 @@ function Logo({ logo }) {
 
 export default function Home() {
   const { siteConfig } = useDocusaurusContext();
+  const { version, releaseUrl } = siteConfig.customFields;
 
   return (
     <Layout title="Developer-first Django tooling" description={siteConfig.tagline}>
       <header className="hero-dst">
         <div className="container">
           <div>
+            <Link className="hero-release" href={releaseUrl}>
+              <b>v{version}</b> What’s new →
+            </Link>
             <h1>Developer-first Django tooling</h1>
             <p className="tagline">{siteConfig.tagline}</p>
             <p className="hero-intro">

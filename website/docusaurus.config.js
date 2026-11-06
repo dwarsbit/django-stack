@@ -1,4 +1,9 @@
 // @ts-check
+// Every package shares one version (see CHANGELOG.md); the CLI's is the one
+// on npm. The Release workflow redeploys the docs after a release.
+const { version } = require("../packages/cli/package.json");
+const releaseUrl = `https://github.com/dwarsbit/django-stack/releases/tag/v${version}`;
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "DjangoStack",
@@ -17,6 +22,7 @@ const config = {
     },
   },
   trailingSlash: false,
+  customFields: { version, releaseUrl },
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
@@ -28,6 +34,11 @@ const config = {
         title: "DjangoStack",
         logo: { alt: "DjangoStack", src: "img/logo.svg" },
         items: [
+          {
+            type: "html",
+            position: "left",
+            value: `<a class="dst-version" href="${releaseUrl}" title="Release notes for v${version}">v${version}</a>`,
+          },
           { label: "Docs", position: "left", to: "docs/intro" },
           { href: "https://djangoheadless.org", label: "Django Headless", position: "right" },
           { href: "https://djangocontentstudio.org", label: "Django Content Studio", position: "right" },
