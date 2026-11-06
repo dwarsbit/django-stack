@@ -122,7 +122,8 @@ dependencies in `backend/uv.lock`.
 
 These commands run in a project created by `init`, from its directory or
 any directory below it. `-C <directory>` (`--dir`) points them at another
-project. They need Docker Compose v2.
+project. They need Docker Compose v2. When Docker is not running, they
+stop with `Docker not running.` and how to start it.
 
 | Command | What it does |
 |---------|--------------|

@@ -17,6 +17,13 @@ the unreleased version; the release workflow releases it.
   before it prints the next steps, and the next steps say `dstack dev`
   when `dstack` is installed, `docker compose up` otherwise.
 
+### Fixes
+
+- Fixed: the project commands, such as `dstack dev`, and `dstack deploy`
+  to Bunny printed Docker's `failed to connect to the docker API` error
+  when Docker was not running; they now stop with `Docker not running.`
+  and how to start it.
+
 ## 0.6.0 (2026-11-06)
 
 - **Page analytics with Umami.** `init` now runs Umami for page analytics

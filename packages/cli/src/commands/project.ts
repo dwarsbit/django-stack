@@ -20,6 +20,7 @@ import {
   runningServices,
 } from "../project";
 import { encodePreset, STACK_OPTIONS, type Stack, type StackKey, type StackValue } from "../stack";
+import { dockerNotRunning, dockerRunning } from "../tools";
 import { command, fail, has, intro, isInteractive, logCheck, secret, unwrap, url } from "../ui";
 
 export interface DirectoryOptions {
@@ -29,6 +30,7 @@ export interface DirectoryOptions {
 function open(options: DirectoryOptions): Project {
   if (!has("docker", ["compose", "version"]))
     fail("Docker Compose v2 was not found. Install Docker: https://docs.docker.com/get-docker/");
+  if (!dockerRunning()) fail(dockerNotRunning());
   try {
     return readProject(options.dir ?? ".");
   } catch (error) {

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { atLeast, checkDevTools, checkDocker, parseVersion, type Run } from "../src/tools";
+import {
+  atLeast,
+  checkDevTools,
+  checkDocker,
+  dockerNotRunning,
+  dockerRunning,
+  isDockerDown,
+  parseVersion,
+  type Run,
+} from "../src/tools";
 
 /** A command runner that answers from a table of `cmd args` to output. */
 function runner(outputs: Record<string, string>): Run {
@@ -81,5 +90,32 @@ describe("checkDevTools", () => {
       run: runner({ "python3 --version": "Python 3.10.12", "uv --version": "uv 0.5.0" }),
     });
     expect(old?.help).toEqual(["Install it with uv: uv python install 3.13"]);
+  });
+});
+
+describe("Docker not running", () => {
+  it("recognizes the daemon errors of each platform", () => {
+    expect(
+      isDockerDown(
+        "failed to connect to the docker API at unix:///Users/leon/.docker/run/docker.sock; check if the path is correct and if the daemon is running",
+      ),
+    ).toBe(true);
+    expect(isDockerDown("Cannot connect to the Docker daemon at unix:///var/run/docker.sock.")).toBe(true);
+    expect(isDockerDown("error during connect: Get http://%2F%2F.%2Fpipe%2Fdocker_engine/v1.47/info")).toBe(
+      true,
+    );
+    expect(isDockerDown("Bind for 127.0.0.1:3000 failed: port is already allocated")).toBe(false);
+  });
+
+  it("asks the daemon for its version", () => {
+    expect(dockerRunning(runner({ "docker version --format {{.Server.Version}}": "27.3.1" }))).toBe(true);
+    expect(dockerRunning(runner({}))).toBe(false);
+  });
+
+  it("says so in one line with how to start it", () => {
+    expect(dockerNotRunning("darwin")).toBe(
+      "Docker not running. Open Docker Desktop and wait until it says it is running.",
+    );
+    expect(dockerNotRunning("linux")).toBe("Docker not running. Start it: sudo systemctl start docker");
   });
 });
