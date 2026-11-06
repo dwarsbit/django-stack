@@ -89,7 +89,8 @@ echo "ok the edit shows on the site"
 
 # Page analytics: the site loads Umami's tracker, only the tracker and the
 # page views pass through /_a/, and the admin reads the page view back.
-curl -s http://localhost:3000/ | grep -q '/_a/script.js' || fail "the site does not load the analytics tracker"
+home="$(curl -s http://localhost:3000/)"
+grep -q '/_a/script.js' <<<"$home" || fail "the site does not load the analytics tracker"
 echo "ok the site loads the analytics tracker"
 expect 200 http://localhost:3000/_a/script.js
 expect 404 http://localhost:3000/_a/api/websites
