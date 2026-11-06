@@ -84,7 +84,8 @@ page_id="$(curl -s -H "X-Secret-Key: $read_key" 'http://localhost:3000/api/conte
   | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"][0]["id"])')"
 expect 200 -X PATCH -H "Authorization: Bearer $token" -H "Content-Type: application/json" \
   -d '{"title":"Edited by the end-to-end test"}' "http://localhost:3000/admin/api/content/content.page/$page_id"
-curl -s http://localhost:3000/about | grep -q "Edited by the end-to-end test" || fail "the edit does not show on the site"
+about="$(curl -s http://localhost:3000/about)"
+grep -q "Edited by the end-to-end test" <<<"$about" || fail "the edit does not show on the site"
 echo "ok the edit shows on the site"
 
 # Page analytics: the site loads Umami's tracker, only the tracker and the
