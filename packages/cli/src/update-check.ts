@@ -1,8 +1,11 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { installation } from "./global-install";
+import { PACKAGE_NAME } from "./version";
 
-export const PACKAGE_NAME = "@django-stack/cli";
+export { PACKAGE_NAME };
+
 const REGISTRY_URL = `https://registry.npmjs.org/${PACKAGE_NAME}/latest`;
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -76,6 +79,20 @@ function writeCache(path: string, cache: Cache) {
   } catch {}
 }
 
+/** The latest version on npm. Throws when the registry can't be reached. */
+export async function fetchLatestVersion(
+  options: Pick<UpdateCheckOptions, "fetch" | "timeout"> = {},
+): Promise<string> {
+  const response = await (options.fetch ?? fetch)(REGISTRY_URL, {
+    headers: { accept: "application/json" },
+    signal: AbortSignal.timeout(options.timeout ?? 1500),
+  });
+  if (!response.ok) throw new Error(`The npm registry answered ${response.status}.`);
+  const { version } = (await response.json()) as { version?: unknown };
+  if (typeof version !== "string") throw new Error("The npm registry sent no version.");
+  return version;
+}
+
 /**
  * The latest version on npm when it is newer than `current`, otherwise
  * undefined. Uses a cached result for a day; never throws.
@@ -87,14 +104,7 @@ export async function checkForUpdate(options: UpdateCheckOptions): Promise<strin
   let latest = readCache(cachePath);
   if (!latest || now() - latest.checkedAt > maxAge || latest.checkedAt > now()) {
     try {
-      const response = await (options.fetch ?? fetch)(REGISTRY_URL, {
-        headers: { accept: "application/json" },
-        signal: AbortSignal.timeout(options.timeout ?? 1500),
-      });
-      if (!response.ok) return undefined;
-      const { version } = (await response.json()) as { version?: unknown };
-      if (typeof version !== "string") return undefined;
-      latest = { checkedAt: now(), latest: version };
+      latest = { checkedAt: now(), latest: await fetchLatestVersion(options) };
       writeCache(cachePath, latest);
     } catch {
       return undefined;
@@ -103,17 +113,20 @@ export async function checkForUpdate(options: UpdateCheckOptions): Promise<strin
   return isNewer(latest.latest, options.current) ? latest.latest : undefined;
 }
 
-/** The command that runs or installs the latest version, depending on how this one was started. */
+/**
+ * The command that gets the latest version: through the runner for npx,
+ * pnpm dlx and bunx, otherwise `dstack self-update`.
+ */
 export function updateCommand(
   location: string = import.meta.url,
   env: NodeJS.ProcessEnv = process.env,
 ): string {
-  const path = decodeURIComponent(location).replaceAll("\\", "/");
-  if (path.includes("/_npx/")) return `npx ${PACKAGE_NAME}@latest`;
-  if (path.includes("/dlx/") || path.includes("/dlx-")) return `pnpm dlx ${PACKAGE_NAME}@latest`;
-  if (path.includes("/bunx-")) return `bunx ${PACKAGE_NAME}@latest`;
-  if (path.includes("/pnpm/global/")) return `pnpm add -g ${PACKAGE_NAME}@latest`;
-  if (path.includes("/.bun/install/global/")) return `bun add -g ${PACKAGE_NAME}@latest`;
-  if (env.npm_config_user_agent?.startsWith("pnpm")) return `pnpm add -g ${PACKAGE_NAME}@latest`;
-  return `npm i -g ${PACKAGE_NAME}@latest`;
+  const install = installation(location, env);
+  if (install.kind === "temporary") {
+    if (install.runner === "pnpm") return `pnpm dlx ${PACKAGE_NAME}@latest`;
+    if (install.runner === "bun") return `bunx ${PACKAGE_NAME}@latest`;
+    return `npx ${PACKAGE_NAME}@latest`;
+  }
+  if (install.kind === "checkout") return "git pull";
+  return "dstack self-update";
 }

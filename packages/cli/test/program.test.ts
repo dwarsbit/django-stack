@@ -37,6 +37,7 @@ describe("program", () => {
       "production",
       "settings",
       "doctor",
+      "self-update",
       "secret",
       "completion",
     ])

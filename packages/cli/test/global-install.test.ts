@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   explainFailure,
+  installation,
   installCommand,
   isOnPath,
   readInstallAnswer,
@@ -38,6 +39,34 @@ describe("temporaryRunner", () => {
   });
 });
 
+describe("installation", () => {
+  it("finds the package manager that installed the CLI", () => {
+    expect(installation(NPX, {})).toEqual({ kind: "temporary", runner: "npm" });
+    expect(installation(GLOBAL, {})).toEqual({ kind: "installed", runner: "npm" });
+    expect(
+      installation(
+        "file:///home/me/.local/share/pnpm/global/5/.pnpm/@django-stack+cli@0.7.0/node_modules/@django-stack/cli/dist/bin.js",
+        {},
+      ),
+    ).toEqual({ kind: "installed", runner: "pnpm" });
+    expect(
+      installation(
+        "file:///C:/Users/me/AppData/Local/pnpm/global/5/node_modules/@django-stack/cli/dist/bin.js",
+        {},
+      ),
+    ).toEqual({ kind: "installed", runner: "pnpm" });
+    expect(
+      installation("file:///home/me/.bun/install/global/node_modules/@django-stack/cli/dist/bin.js", {}),
+    ).toEqual({ kind: "installed", runner: "bun" });
+    expect(
+      installation("file:///home/me/.config/yarn/global/node_modules/@django-stack/cli/dist/bin.js", {}),
+    ).toEqual({ kind: "installed", runner: "yarn" });
+    expect(installation("file:///home/me/django-stack/packages/cli/dist/bin.js", {})).toEqual({
+      kind: "checkout",
+    });
+  });
+});
+
 describe("isOnPath", () => {
   it("finds dstack, but not in the directories npx adds", () => {
     const global = binDir("global/bin");
@@ -65,6 +94,7 @@ describe("installCommand", () => {
     expect(installCommand("npm").join(" ")).toBe("npm i -g @django-stack/cli@latest");
     expect(installCommand("pnpm").join(" ")).toBe("pnpm add --global @django-stack/cli@latest");
     expect(installCommand("bun").join(" ")).toBe("bun add --global @django-stack/cli@latest");
+    expect(installCommand("yarn").join(" ")).toBe("yarn global add @django-stack/cli@latest");
   });
 });
 

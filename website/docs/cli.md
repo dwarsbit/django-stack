@@ -37,6 +37,27 @@ npm's global directory belongs to root: give npm a
 [directory in your home](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally)
 instead of using `sudo`. With pnpm, run `pnpm setup` first.
 
+## `self-update`
+
+Updates `dstack` to the latest version on npm, with the package manager
+that installed it: npm, pnpm, Bun or Yarn.
+
+```bash
+dstack self-update
+```
+
+It runs `npm i -g @django-stack/cli@latest`, `pnpm add --global`, `bun add
+--global` or `yarn global add`, depending on where `dstack` is installed.
+For npm, it adds the `--prefix` of the current install, so it updates that
+copy also when another Node.js version comes first on your `PATH`. When
+you have the latest version already, it changes nothing. When the update
+fails, it exits with status 1 and prints the reason and the command to run
+yourself. When the `dstack` on your `PATH` is still an older version
+afterwards, another install comes first, and it warns you.
+
+With `npx`, `pnpm dlx` or `bunx` there is nothing to update: run
+`npx @django-stack/cli@latest` instead.
+
 ## `init`
 
 Creates a project in a new directory.
@@ -417,12 +438,13 @@ Add it to your shell's startup file:
 ## Update check
 
 Each command checks npm, at most once a day, for a newer version of the CLI
-and shows a notice with the command to update when there is one. The check
+and shows a notice with the command to update when there is one:
+`dstack self-update`, or `npx @django-stack/cli@latest` with `npx`. The check
 runs while the command runs and never makes it fail. It is cached in
 `~/.cache/django-stack/update-check.json` (or under `$XDG_CACHE_HOME`).
 
-It is skipped in CI, when the output is not a terminal, and for `secret` and
-`completion`. Turn it off with `--no-update-check` or by setting
+It is skipped in CI, when the output is not a terminal, and for `secret`,
+`completion` and `self-update`. Turn it off with `--no-update-check` or by setting
 `DJANGO_STACK_NO_UPDATE_CHECK=1` (`NO_UPDATE_NOTIFIER=1` works too).
 
 With `npx`, ask for the latest version to skip a cached older copy:

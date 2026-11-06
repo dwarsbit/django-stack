@@ -5,6 +5,14 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.8.0 (unreleased)
+
+- **`dstack self-update`.** Updates `dstack` to the latest version on npm
+  with the package manager that installed it: npm, pnpm, Bun or Yarn. It
+  changes nothing when you have the latest version, and warns when another
+  install of `dstack` comes first on your `PATH`. The update notice now
+  says `dstack self-update` for an installed `dstack`.
+
 ## 0.7.0 (2026-11-06)
 
 - **The cache and the task queue in Postgres.** New projects keep the
