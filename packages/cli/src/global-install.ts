@@ -4,12 +4,12 @@ import { homedir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
 import * as p from "@clack/prompts";
 import { command, has } from "./ui";
-import { PACKAGE_NAME } from "./update-check";
+import { PACKAGE_NAME } from "./version";
 
 /** The name of the installed command. */
 export const BIN = "dstack";
 
-export type Runner = "npm" | "pnpm" | "bun";
+export type Runner = "npm" | "pnpm" | "bun" | "yarn";
 
 const normalize = (value: string) => decodeURIComponent(value).replaceAll("\\", "/");
 
@@ -32,6 +32,33 @@ export function temporaryRunner(location: string = import.meta.url): Runner | un
   return undefined;
 }
 
+/** How this copy of the CLI runs. */
+export type Installation =
+  /** Through npx, pnpm dlx or bunx, from their cache. */
+  | { kind: "temporary"; runner: Runner }
+  /** Installed with a package manager. */
+  | { kind: "installed"; runner: Runner }
+  /** From a DjangoStack checkout, such as with `npm link`. */
+  | { kind: "checkout" };
+
+/** How this copy runs, and with which package manager, from where its files are. */
+export function installation(
+  location: string = import.meta.url,
+  env: NodeJS.ProcessEnv = process.env,
+): Installation {
+  const temporary = temporaryRunner(location);
+  if (temporary) return { kind: "temporary", runner: temporary };
+  const path = normalize(location);
+  if (!path.includes("/node_modules/")) return { kind: "checkout" };
+  const lower = path.toLowerCase();
+  if (lower.includes("/pnpm/global/")) return { kind: "installed", runner: "pnpm" };
+  if (lower.includes("/.bun/install/global/")) return { kind: "installed", runner: "bun" };
+  if (lower.includes("/yarn/global/") || lower.includes("/yarn/data/global/"))
+    return { kind: "installed", runner: "yarn" };
+  if (env.npm_config_user_agent?.startsWith("pnpm")) return { kind: "installed", runner: "pnpm" };
+  return { kind: "installed", runner: "npm" };
+}
+
 /** Whether `dstack` is on the `PATH`, leaving out the temporary directories npx and friends add. */
 export function isOnPath(env: NodeJS.ProcessEnv = process.env, platform = process.platform): boolean {
   const names = platform === "win32" ? [`${BIN}.cmd`, `${BIN}.exe`, `${BIN}.ps1`, BIN] : [BIN];
@@ -46,6 +73,7 @@ export function isOnPath(env: NodeJS.ProcessEnv = process.env, platform = proces
 export function installCommand(runner: Runner = "npm"): string[] {
   if (runner === "pnpm") return ["pnpm", "add", "--global", `${PACKAGE_NAME}@latest`];
   if (runner === "bun") return ["bun", "add", "--global", `${PACKAGE_NAME}@latest`];
+  if (runner === "yarn") return ["yarn", "global", "add", `${PACKAGE_NAME}@latest`];
   return ["npm", "i", "-g", `${PACKAGE_NAME}@latest`];
 }
 
@@ -119,7 +147,7 @@ export function explainFailure(runner: Runner, output: string): string {
   return `${last ? `${last} ` : ""}Run ${manual} to try again.`;
 }
 
-function run(args: string[]): Promise<{ ok: boolean; output: string }> {
+export function runInstall(args: string[]): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolve) => {
     const [cmd, ...rest] = args as [string, ...string[]];
     let output = "";
@@ -173,7 +201,7 @@ export async function offerGlobalInstall(): Promise<boolean> {
 
   const spinner = p.spinner();
   spinner.start(`Installing with ${command(args.join(" "))}`);
-  const result = await run(args);
+  const result = await runInstall(args);
   if (!result.ok) {
     saveInstallAnswer("failed");
     spinner.error(`Couldn't install ${BIN}`);

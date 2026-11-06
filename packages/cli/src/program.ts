@@ -30,6 +30,7 @@ import {
   types,
   update as updateProject,
 } from "./commands/project";
+import { selfUpdate } from "./commands/self-update";
 import { settings } from "./commands/settings";
 import { DEFAULT_PROVIDER, PROVIDERS } from "./deploy";
 import { BIN, offerGlobalInstall } from "./global-install";
@@ -38,8 +39,8 @@ import { NAMED_PRESETS, STACK_OPTIONS } from "./stack";
 import { checkForUpdate, updateCheckEnabled, updateCommand } from "./update-check";
 import { CLI_VERSION } from "./version";
 
-/** Commands that print machine-readable output, so no update notice. */
-const QUIET_COMMANDS = new Set(["secret", "complete", "completion"]);
+/** Commands that print machine-readable output or update the CLI, so no update notice. */
+const QUIET_COMMANDS = new Set(["secret", "complete", "completion", "self-update"]);
 
 /** A flag for each stack option, such as `--cache <cache>`. */
 function stackFlags(): Option[] {
@@ -336,6 +337,8 @@ export function createProgram(): Command {
     .description("Check a project and its services")
     .argument("[directory]", "The project directory", ".")
     .action(doctor);
+
+  program.command("self-update").description(`Update ${BIN} to the latest version on npm`).action(selfUpdate);
 
   program
     .command("secret")

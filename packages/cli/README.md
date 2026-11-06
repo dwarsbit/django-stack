@@ -14,6 +14,7 @@ docker compose up
 | `production [directory]` | Write `.env.production` for a server. Flags: `--domain`, `--email-url`, `--force`, `--yes` |
 | `preset [preset]` | Print the preset code of a stack, or the stack of a code |
 | `doctor [directory]` | Check a project and its running services |
+| `self-update` | Update `dstack` to the latest version, with the package manager that installed it |
 | `secret [bytes]` | Print a random secret |
 | `completion <shell>` | Print a Tab completion script for zsh, bash, fish or PowerShell |
 

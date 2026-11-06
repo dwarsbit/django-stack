@@ -2,7 +2,13 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import { checkForUpdate, isNewer, updateCheckEnabled, updateCommand } from "../src/update-check";
+import {
+  checkForUpdate,
+  fetchLatestVersion,
+  isNewer,
+  updateCheckEnabled,
+  updateCommand,
+} from "../src/update-check";
 
 const root = mkdtempSync(join(tmpdir(), "django-stack-update-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -94,17 +100,25 @@ describe("updateCommand", () => {
     expect(
       updateCommand("file:///home/me/.cache/pnpm/dlx/abc/node_modules/@django-stack/cli/dist/bin.js", {}),
     ).toBe("pnpm dlx @django-stack/cli@latest");
-    expect(updateCommand("file:///home/me/.local/share/pnpm/global/5/node_modules/x.js", {})).toBe(
-      "pnpm add -g @django-stack/cli@latest",
-    );
     expect(
       updateCommand("file:///tmp/bunx-1000-@django-stack/cli@latest/node_modules/@django-stack/cli/x.js", {}),
     ).toBe("bunx @django-stack/cli@latest");
-    expect(updateCommand("file:///home/me/.bun/install/global/node_modules/@django-stack/cli/x.js", {})).toBe(
-      "bun add -g @django-stack/cli@latest",
+    expect(updateCommand("file:///home/me/.local/share/pnpm/global/5/node_modules/x.js", {})).toBe(
+      "dstack self-update",
     );
     expect(updateCommand("file:///usr/local/lib/node_modules/@django-stack/cli/dist/bin.js", {})).toBe(
-      "npm i -g @django-stack/cli@latest",
+      "dstack self-update",
     );
+    expect(updateCommand("file:///home/me/django-stack/packages/cli/dist/bin.js", {})).toBe("git pull");
+  });
+});
+
+describe("fetchLatestVersion", () => {
+  it("returns the version and throws when the registry fails", async () => {
+    const answer = (status: number, body: unknown) =>
+      (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+    expect(await fetchLatestVersion({ fetch: answer(200, { version: "1.2.3" }) })).toBe("1.2.3");
+    await expect(fetchLatestVersion({ fetch: answer(503, {}) })).rejects.toThrow(/503/);
+    await expect(fetchLatestVersion({ fetch: answer(200, {}) })).rejects.toThrow(/no version/);
   });
 });
