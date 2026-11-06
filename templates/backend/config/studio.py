@@ -19,7 +19,9 @@ class SiteStudio(ContentStudioSite):
     ]
 
     # Page analytics from the bundled Umami when UMAMI_URL is set (see
-    # .env): an Analytics page in the main menu.
+    # .env): an Analytics page in the main menu. content/admin.py shows the
+    # numbers of each page and post. See
+    # https://djangocontentstudio.org/docs/analytics.
     if UmamiProvider.is_configured():
         extensions += [AnalyticsExtension(provider=UmamiProvider()), AnalyticsPage(), AnalyticsLink()]
 

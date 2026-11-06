@@ -19,6 +19,12 @@ the unreleased version; the release workflow releases it.
   writes `UMAMI_URL`, `UMAMI_WEBSITE_ID`, `UMAMI_ADMIN_PASSWORD`,
   `UMAMI_APP_SECRET` and `UMAMI_DATABASE_URL` to `.env`, and `production`
   gives the server new secrets.
+- **Analytics of each page and post.** The page and post edit forms in the
+  admin show the visitors, page views and top sources of that page, with
+  Django Content Studio's `Analytics` component in
+  `backend/content/admin.py`. It is hidden while analytics are off. To add
+  it to an existing project, copy `PAGE_ANALYTICS` and `POST_ANALYTICS`
+  and their places in `edit_sidebar` from a new project.
 - **`dstack config --analytics`.** Turns analytics on or off in a project
   that has the `umami` service, keeping Umami's website and data.
 - **`django_stack.analytics.UmamiProvider`** connects Django Content

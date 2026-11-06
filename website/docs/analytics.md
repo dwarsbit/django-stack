@@ -49,9 +49,15 @@ API.
       extensions += [AnalyticsExtension(provider=UmamiProvider()), AnalyticsPage(), AnalyticsLink()]
   ```
 
-  Django Content Studio also has dashboard widgets and an analytics panel
-  for a page's edit form that read from the same provider; see its
-  [documentation](https://djangocontentstudio.org/docs/extensions).
+- **The numbers of each page and post.** `backend/content/admin.py` puts
+  Django Content Studio's `Analytics` component in the sidebar of the page
+  and post edit forms: the visitors, page views, a chart and the top
+  sources of that page on the site. It finds the page from the `path` of a
+  page and `/blog/` plus the `slug` of a post, so change those when you
+  change the frontend's URLs. It is hidden while analytics are off.
+
+  Django Content Studio also has dashboard widgets that read from the same
+  provider; see its [analytics documentation](https://djangocontentstudio.org/docs/analytics).
 
 ## Variables
 
