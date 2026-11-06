@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "@django-headless/client": "^1.1.1",
-    "@django-stack/svelte": "^0.8.0",
-    "@django-stack/utils": "^0.8.0"
+    "@django-stack/svelte": "^0.8.1",
+    "@django-stack/utils": "^0.8.1"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^6.0.1",
