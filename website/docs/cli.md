@@ -16,7 +16,8 @@ CI.
 ## Install `dstack`
 
 The first time you run the CLI with `npx`, `pnpm dlx` or `bunx`, it asks
-when the command is done whether to install `dstack` globally, with the
+when the command is done (`init`: before its next steps) whether to install
+`dstack` globally, with the
 package manager you ran it with. After that, `dstack init` does the same as
 `npx @django-stack/cli init`. You can also install it yourself:
 
@@ -87,19 +88,22 @@ the defaults it does not generate yet when it is done.
 | `--captcha` | `on` (later, the built-in captcha), `off` |
 | `--storage` | `local`, `s3` (a local S3 service in development, the same code path as S3 in production; see [Media and database](./production/media-and-database.md#s3-in-development)) |
 | `--package-manager` | `pnpm` (later), `npm`, `bun` (later). Only for a Node frontend. |
+| `--media` | `server` (uploads in a volume on the server), `s3` (uploads in S3 in production; [`settings`](#settings) asks for the credentials). Asked before `--storage`, which then suggests `s3`. See [Media in S3](./production/media-and-database.md#media-in-s3). |
 
 ### Presets
 
 A preset sets every stack option at once, so you can share a stack or
 create the same one again. When `init` is done, it prints the preset of the
-project:
+project, a code of six letters and digits. This one is Next.js without
+analytics:
 
 ```bash
-npx @django-stack/cli init my-site --preset a201
+npx @django-stack/cli init my-site --preset b7mWME
 ```
 
-Flags win over the preset, so `--preset a201 --storage s3` changes only the
-storage. There are named presets too:
+Flags win over the preset, so `--preset b7mWME --storage s3` changes only the
+storage. Shorter codes that start with `a` still work. There are named
+presets too:
 
 | Name | Stack |
 |------|-------|
@@ -108,8 +112,8 @@ storage. There are named presets too:
 | `minimal` | Astro with analytics, tasks, cache, notifications and captcha off. |
 
 `dstack preset` asks for the stack options and prints the code, and
-`dstack preset <code>` shows the stack of a code. A code from a newer
-CLI fails with a request to update.
+`dstack preset <code>` shows the stack of a code. A mistyped code, or one
+from a newer CLI, fails with a request to check it or to update.
 
 The command refuses a directory that is not empty. When
 [uv](https://docs.astral.sh/uv/) is installed, it also locks the backend's
@@ -119,11 +123,12 @@ dependencies in `backend/uv.lock`.
 
 These commands run in a project created by `init`, from its directory or
 any directory below it. `-C <directory>` (`--dir`) points them at another
-project. They need Docker Compose v2.
+project. They need Docker Compose v2. When Docker is not running, they
+stop with `Docker not running.` and how to start it.
 
 | Command | What it does |
 |---------|--------------|
-| `dstack dev` | Starts the development servers in the foreground, with hot reload. Ctrl+C stops them. |
+| `dstack dev` | Starts the development servers in the foreground, with hot reload. Ctrl+C stops them. A port in use moves to the next free one, saved in `.env`. |
 | `dstack run` | Starts the production setup in the background and waits until it is healthy. |
 | `dstack stop` | Stops the containers. The database, uploads and backups stay in their volumes. |
 | `dstack logs [service...]` | Follows the logs. `--no-follow` prints them and exits, `-n <lines>` shows only the last lines. |
@@ -199,8 +204,9 @@ change, or takes the same flags as `init`, such as `--storage s3`. It
 updates `.env` and the preset in `package.json`, then asks you to restart.
 
 This release can switch `--storage` between `local` and `s3` in
-development, and `--analytics` between `umami` and `off` (see
-[Page analytics](./analytics.md#turn-analytics-off-or-on)). The other
+development, `--analytics` between `umami` and `off` (see
+[Page analytics](./analytics.md#turn-analytics-off-or-on)), and `--media`
+between `server` and `s3`, which changes only the preset. The other
 options can only be set by `init`; `config` refuses them with the reason.
 
 ## `production`
@@ -225,6 +231,45 @@ secrets for everything, including the admin password and the bundled
 database's password. The local S3 service's values are cleared. It then
 prints what is left to fill in and the admin password. The file is readable
 only by you. See [Deploy to a server](./production/server.md).
+
+In a terminal, it then offers to ask for the missing settings, as
+[`settings`](#settings) does.
+
+## `settings`
+
+Asks for the production settings and credentials that are missing in
+`.env.production`, one at a time, and saves them there.
+
+```bash
+dstack settings [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `-C`, `--dir <directory>` | The project directory (default: this one or a parent). |
+| `--file <file>` | The file to change. The default is `.env.production`, or `.env` when it runs the prod profile, as on a server. |
+| `--set <NAME=value>` | Set a value without asking. Repeat it for more values. |
+| `--all` | Ask for every setting, also the ones that are set. Each answer starts with the current value; an empty secret keeps the current one. |
+| `-y`, `--yes` | Don't ask. With settings still missing, it lists them and exits 1. |
+
+It asks for:
+
+| Setting | When | Saved as |
+|---------|------|----------|
+| Your email address | `ADMIN_EMAIL` is empty or at `example.com` | `ADMIN_EMAIL` |
+| The SMTP server, port, user name and password | `EMAIL_URL` is empty, Mailpit or the placeholder | `EMAIL_URL`, such as `smtp+tls://user:password@smtp.example.com:587`: `smtps://` on port 465, `smtp://` on port 25 |
+| The S3 bucket, endpoint, region, access key and public URL | uploads go to S3 (`init --media s3`, or `S3_BUCKET` is set) and one of them is empty | `S3_BUCKET`, `S3_ENDPOINT_URL`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL` |
+
+```bash
+dstack settings --yes \
+  --set ADMIN_EMAIL=you@example.com \
+  --set EMAIL_URL=smtp+tls://user:password@smtp.example.com:587
+```
+
+Passwords are hidden as you type. A value with `$`, `#` or quotes is saved
+in single quotes, so Docker Compose reads it as it is. When the project is
+linked to a platform, push the new values with
+[`dstack deploy env push`](#deploy).
 
 ## `deploy`
 

@@ -5,6 +5,50 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.7.0 (unreleased)
+
+- **Six-character preset codes.** `init` and `dstack preset` now print
+  presets as six letters and digits, such as `b7mWME`, instead of one
+  character per option, so the default stack no longer has the code `a`.
+  A mistyped code is refused rather than read as another stack. The
+  shorter codes that start with `a` keep working, also in the
+  `package.json` of existing projects.
+- **`dstack dev` in the next steps.** `init` now offers to install `dstack`
+  before it prints the next steps, and the next steps say `dstack dev`
+  when `dstack` is installed, `docker compose up` otherwise.
+- **Free ports in development.** When port 3000, 8000, 8025 or 8333 is
+  in use, such as by another project, `init` and `dstack dev` take the next
+  free one and save it in `.env` as `SITE_PORT`, `BACKEND_PORT`,
+  `MAIL_PORT` or `S3_PORT`, with `SITE_URL`, `BACKEND_URL` and the local
+  `S3_PUBLIC_URL` to match. `compose.yaml` publishes the ports from these
+  variables. In an existing project, `dstack dev` only says which port is
+  in use; to have it move ports, change the `ports` of `frontend`,
+  `backend`, `mailpit` and `s3` in `compose.yaml` to
+  `"127.0.0.1:${SITE_PORT:-3000}:3000"`,
+  `"127.0.0.1:${BACKEND_PORT:-8000}:8000"`,
+  `"127.0.0.1:${MAIL_PORT:-8025}:8025"` and
+  `"127.0.0.1:${S3_PORT:-8333}:8333"`.
+- **Uploads in production.** `init` now asks whether uploads go to S3 in
+  production (`--media s3`) or stay on the server (`--media server`, the
+  default), before it asks about uploads in development, which then
+  suggests the local S3 service. It asks for no credentials: with S3,
+  `dstack production` and `dstack settings` ask for the `S3_*` variables.
+  `dstack config --media` changes it later.
+- **`dstack settings`.** Asks for the production settings and credentials
+  that are missing in `.env.production`, one at a time: `ADMIN_EMAIL`,
+  the SMTP server, port, user name and password for `EMAIL_URL`, and the
+  `S3_*` variables when uploads go to S3. `--set NAME=value` sets them
+  without asking, `--all` asks for every setting again, and `--yes` lists
+  what is missing and exits 1. `dstack production` offers to ask for them
+  right after it writes `.env.production`.
+
+### Fixes
+
+- Fixed: the project commands, such as `dstack dev`, and `dstack deploy`
+  to Bunny printed Docker's `failed to connect to the docker API` error
+  when Docker was not running; they now stop with `Docker not running.`
+  and how to start it.
+
 ## 0.6.0 (2026-11-06)
 
 - **Page analytics with Umami.** `init` now runs Umami for page analytics

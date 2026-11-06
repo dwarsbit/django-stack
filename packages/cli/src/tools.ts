@@ -59,7 +59,7 @@ function dockerHelp(platform: Platform): string[] {
   return ["Install Docker Engine and the Compose plugin: https://docs.docker.com/engine/install/"];
 }
 
-function dockerStartHelp(platform: Platform): string[] {
+export function dockerStartHelp(platform: Platform = process.platform): string[] {
   if (platform === "linux") return ["Start it: sudo systemctl start docker"];
   return ["Open Docker Desktop and wait until it says it is running."];
 }
@@ -107,6 +107,23 @@ function pythonVersion(runCommand: Run): string | undefined {
 export interface ToolOptions {
   run?: Run;
   platform?: Platform;
+}
+
+/** The one-line error when the Docker daemon is not reachable. */
+export function dockerNotRunning(platform: Platform = process.platform): string {
+  return `Docker not running. ${dockerStartHelp(platform)[0]}`;
+}
+
+/** Whether Docker's output says the daemon is not reachable, such as `failed to connect to the docker API`. */
+export function isDockerDown(output: string): boolean {
+  return /failed to connect to the docker API|Cannot connect to the Docker daemon|Is the docker daemon running|error during connect|docker_engine: The system cannot find the file specified/i.test(
+    output,
+  );
+}
+
+/** Whether the Docker daemon answers. */
+export function dockerRunning(runCommand: Run = run): boolean {
+  return Boolean(runCommand("docker", ["version", "--format", "{{.Server.Version}}"]));
 }
 
 /** Docker and Docker Compose, which run the project. */

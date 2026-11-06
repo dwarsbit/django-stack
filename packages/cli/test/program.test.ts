@@ -35,6 +35,7 @@ describe("program", () => {
       "deploy",
       "preset",
       "production",
+      "settings",
       "doctor",
       "secret",
       "completion",

@@ -2,6 +2,7 @@ import { type SpawnSyncOptions, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { parseEnv } from "./env";
+import { envPorts } from "./ports";
 import { DEFAULT_STACK, decodePreset, type Stack } from "./stack";
 
 /** The `.env` of `dstack run` on a development machine: the prod profile at https://site.localhost. */
@@ -127,12 +128,14 @@ export function projectUrls(project: Project): { label: string; url: string }[] 
       { label: "Admin", url: `${site}/admin/` },
     ];
   }
+  const ports = envPorts(project.env);
+  const site = (project.env.SITE_URL || `http://localhost:${ports.SITE_PORT}`).replace(/\/$/, "");
   const urls = [
-    { label: "Site", url: "http://localhost:3000" },
-    { label: "Admin", url: "http://localhost:3000/admin/" },
-    { label: "Mail", url: "http://localhost:8025" },
+    { label: "Site", url: site },
+    { label: "Admin", url: `${site}/admin/` },
+    { label: "Mail", url: `http://localhost:${ports.MAIL_PORT}` },
   ];
-  if (project.profiles.includes("s3")) urls.push({ label: "S3", url: "http://localhost:8333" });
+  if (project.profiles.includes("s3")) urls.push({ label: "S3", url: `http://localhost:${ports.S3_PORT}` });
   return urls;
 }
 

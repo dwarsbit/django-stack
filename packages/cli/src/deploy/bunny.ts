@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseEnv } from "../env";
+import { dockerNotRunning, isDockerDown } from "../tools";
 import {
   type AppPlan,
   type ComposeProject,
@@ -445,6 +446,7 @@ export class BunnyClient implements ProviderClient {
   private async docker(args: string[], options: CommandOptions = {}): Promise<string> {
     const result = await this.run("docker", args, options);
     if (result.code === 0) return result.stdout;
+    if (isDockerDown(`${result.stderr}\n${result.stdout}`)) throw new Error(dockerNotRunning());
     const last = (result.stderr.trim() || result.stdout.trim()).split("\n").at(-1) ?? "";
     throw new Error(`docker ${args[0]} failed (exit ${result.code})${last ? `: ${last}` : "."}`);
   }

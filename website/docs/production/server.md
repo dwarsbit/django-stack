@@ -103,8 +103,11 @@ It writes `.env.production` from your `.env` with:
   bundled database, the database password,
 - your `EMAIL_URL` and a `DEFAULT_FROM_EMAIL` on the domain.
 
-It prints what is left to do, such as `ADMIN_EMAIL`, and the admin password.
-Keep the file out of git: it holds the secrets of the live site.
+It then offers to ask for the settings it cannot know: `ADMIN_EMAIL`, the
+SMTP server when you did not pass `--email-url`, and the `S3_*` variables
+when uploads go to S3. It prints what is left to do and the admin password.
+Run `dstack settings` to fill in or change these later. Keep the file out
+of git: it holds the secrets of the live site.
 
 ## 2. Copy the project to the server
 

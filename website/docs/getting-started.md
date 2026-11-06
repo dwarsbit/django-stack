@@ -37,9 +37,10 @@ Every prompt has a flag, so the command also runs in scripts:
 npx @django-stack/cli init my-site --yes --no-demo-content
 ```
 
-When it is done, the command offers to install `dstack` globally. The
-commands below use it; without it, run them as `npx @django-stack/cli dev`
-and so on. See the [CLI reference](./cli.md) for every option.
+Before it prints the next steps, the command offers to install `dstack`
+globally. The next steps then start the project with `dstack dev`, or with
+`docker compose up` when `dstack` is not installed. The commands below use
+`dstack`; without it, run them as `npx @django-stack/cli dev` and so on. See the [CLI reference](./cli.md) for every option.
 
 ## Start it
 
@@ -57,6 +58,11 @@ the demo content. Then open:
 | http://localhost:3000 | The site |
 | http://localhost:3000/admin/ | The admin, Django Content Studio |
 | http://localhost:8025 | Mailpit, which catches the mail the site sends |
+
+When a port is in use, for example by another project, `init` and
+`dstack dev` take the next free one, such as 3001, and save it in `.env` as
+`SITE_PORT`, `BACKEND_PORT`, `MAIL_PORT` or `S3_PORT`, with `SITE_URL` and
+`BACKEND_URL` to match. They print the port they took.
 
 Log in to the admin as `admin` with the password that `init` printed. It is
 also in `.env` as `ADMIN_PASSWORD`. Change it after you log in.
