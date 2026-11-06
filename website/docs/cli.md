@@ -110,6 +110,7 @@ the defaults it does not generate yet when it is done.
 | `--storage` | `local`, `s3` (a local S3 service in development, the same code path as S3 in production; see [Media and database](./production/media-and-database.md#s3-in-development)) |
 | `--package-manager` | `pnpm` (later), `npm`, `bun` (later). Only for a Node frontend. |
 | `--media` | `server` (uploads in a volume on the server), `s3` (uploads in S3 in production; [`settings`](#settings) asks for the credentials). Asked before `--storage`, which then suggests `s3`. See [Media in S3](./production/media-and-database.md#media-in-s3). |
+| `--errors` | `email` (each new error by email to the superusers and in the admin, see [Error reports](./production/logs.md#error-reports)), `sentry` (later), `off` (the logs only) |
 
 ### Presets
 

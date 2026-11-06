@@ -26,6 +26,13 @@ class DjangoStackConfig(AppConfig):
 
         post_migrate.connect(create_tables, sender=self, dispatch_uid="django_stack_create_tables")
 
+        from django.apps import apps
+
+        if apps.is_installed("content_studio.notifications"):
+            from .errors import register_event
+
+            register_event()
+
         try:
             from content_studio.signals import content_changed
         except ImportError:  # pragma: no cover - Content Studio is not installed

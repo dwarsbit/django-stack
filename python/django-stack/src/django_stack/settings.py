@@ -31,7 +31,8 @@ to ``SITE_URL``), ``ALLOWED_HOSTS`` (extra hosts, comma separated),
 ``BACKUP_S3_PREFIX`` and ``BACKUP_PING_URL``, and the analytics variables ``UMAMI_URL`` (the
 internal address of the bundled Umami), ``UMAMI_WEBSITE_ID`` and
 ``UMAMI_ADMIN_PASSWORD``, and the log variables ``LOG_FORMAT`` (``json``
-or ``plain``), ``LOG_LEVEL`` and ``LOG_ACCESS``.
+or ``plain``), ``LOG_LEVEL`` and ``LOG_ACCESS``, and the error report variables
+``ERRORS`` (``email`` or ``off``) and ``ERROR_EMAIL``.
 """
 
 from __future__ import annotations
@@ -355,6 +356,8 @@ def configure(
             # Pinged after each daily backup, for a dead man's switch
             # such as Healthchecks.io or Uptime Kuma's push monitor.
             "BACKUP_PING_URL": e.str("BACKUP_PING_URL"),
+            # Error reports go here; without it, to the superusers.
+            "ERROR_EMAIL": e.list("ERROR_EMAIL"),
             "BACKUP_S3": {
                 "endpoint_url": e.str("BACKUP_S3_ENDPOINT_URL", e.str("S3_ENDPOINT_URL")),
                 "region_name": e.str("BACKUP_S3_REGION", e.str("S3_REGION")),
@@ -374,8 +377,15 @@ def configure(
     log_format = e.str("LOG_FORMAT", "plain" if debug else "json")
     if log_format not in ("json", "plain"):
         raise ImproperlyConfigured(f"LOG_FORMAT must be json or plain, not {log_format!r}.")
+    # Errors: reported by email and in the admin in production; see errors.py.
+    errors = e.str("ERRORS", "email")
+    if errors not in ("email", "off"):
+        raise ImproperlyConfigured(f"ERRORS must be email or off, not {errors!r}.")
     s["LOGGING"] = logging_settings(
-        log_format, e.str("LOG_LEVEL", "INFO"), access=e.bool("LOG_ACCESS", not debug)
+        log_format,
+        e.str("LOG_LEVEL", "INFO"),
+        access=e.bool("LOG_ACCESS", not debug),
+        errors=errors == "email" and not debug,
     )
 
     namespace.update(s)

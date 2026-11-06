@@ -58,6 +58,32 @@ docker compose logs backend-prod proxy | grep 8f0c2c3e9b8a4f0e9d7c6b5a4f3e2d1c
 The health checks at `/healthz` and `/readyz` run every few seconds, so
 the access log leaves them out unless they fail.
 
+## Error reports
+
+With `ERRORS=email` (the default of `dstack init`) and `DJANGO_DEBUG=0`,
+every line logged at `ERROR`, such as a server error (500), a task of the
+worker that failed or a failed backup, is reported to the superusers:
+
+- **By email**, with the traceback and the request ID, to the active
+  superusers with an email address, or to `ERROR_EMAIL` when you set it.
+  The mail goes out through `EMAIL_URL`.
+- **In the admin**, as a "Server errors" notification, when the
+  notifications app is installed (see [Notifications](../notifications.md)).
+
+The same error, from the same place, is reported once an hour at most, so
+an error on every request does not flood your inbox; its notification
+counts up instead. Requests for a host that is not allowed, which bots
+send, are never reported.
+
+```bash title=".env"
+ERRORS=email
+ERROR_EMAIL=ops@example.com,admin@example.com
+```
+
+`ERRORS=off` turns the reports off; errors are still in the logs. In
+development there are no reports: errors show on the page and in the
+terminal.
+
 ## Disk space
 
 Docker keeps at most five log files of 10 MB for each container, set by

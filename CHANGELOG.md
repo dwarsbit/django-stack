@@ -7,6 +7,16 @@ the unreleased version; the release workflow releases it.
 
 ## 0.9.0 (unreleased)
 
+- **Error reports by email.** In production, each new error of the
+  backend, the worker or a backup (anything logged at `ERROR`) is now
+  mailed to the active superusers with its traceback and request ID, and
+  shows as a "Server errors" notification in the admin when Content
+  Studio's notifications app is installed. The same error is reported once
+  an hour at most. `ERROR_EMAIL` sends the mail to other addresses instead,
+  and `ERRORS=off` turns the reports off. `init` has a new option,
+  `--errors email|off` (`sentry` comes later); `email` is the default.
+  Existing projects get the reports too after the update; add
+  `ERRORS=off` to `.env` to keep the logs only.
 - **Worker and backup health checks.** The worker now records a heartbeat
   in the cache every minute and the time of each daily backup. The new
   `/statusz` health check, `dstack status` and `dstack manage health`

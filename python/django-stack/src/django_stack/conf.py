@@ -24,6 +24,7 @@ DEFAULTS = {
     "BACKUP_MEDIA": True,
     "BACKUP_DAILY": False,
     "BACKUP_PING_URL": None,
+    "ERROR_EMAIL": [],
     "UMAMI_URL": None,
     "UMAMI_WEBSITE_ID": None,
     "UMAMI_USERNAME": "admin",
