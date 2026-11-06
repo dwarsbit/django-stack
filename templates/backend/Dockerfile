@@ -20,16 +20,15 @@ WORKDIR /app
 FROM base AS deps
 COPY pyproject.toml uv.lock* ./
 COPY vendor/ vendor/
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --no-install-project
+# No BuildKit cache mounts: Railway rejects them, and the layer is cached anyway.
+RUN uv sync --no-dev --no-install-project --no-cache
 
 # Development runs as root, so files the container writes into the mounted
 # source (such as new migrations) work on every host. Production does not.
 # The entrypoint runs with sh, so it works without the executable bit (the
 # mounted source keeps the host's file modes).
 FROM deps AS dev
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-install-project
+RUN uv sync --no-install-project --no-cache
 ENTRYPOINT ["sh", "/app/entrypoint.sh"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
