@@ -3,6 +3,7 @@ import { basename, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { isOnPath, offerGlobalInstall } from "../global-install";
+import { chooseFreePorts, describeMove } from "../ports";
 import {
   lockBackend,
   relativeDirectory,
@@ -208,6 +209,10 @@ export async function init(directoryArgument: string | undefined, options: InitO
     );
   }
 
+  // Free ports for the development services, from the usual ones up.
+  const ports = await chooseFreePorts({}, stack.storage === "s3" ? ["s3"] : []);
+  for (const move of ports.moves) p.log.info(describeMove(move));
+
   const spinner = p.spinner();
   spinner.start("Creating the project");
   let result: ReturnType<typeof scaffold>;
@@ -222,6 +227,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
       analytics: stack.analytics === "umami",
       preset: encodePreset(stack),
       timeZone,
+      ports: ports.ports,
       link: options.link,
     });
   } catch (error) {
@@ -259,9 +265,9 @@ export async function init(directoryArgument: string | undefined, options: InitO
       command(`cd ${relativeDirectory(target)}`),
       command(startCommand),
       "",
-      `${pc.bold("Site")}    ${url("http://localhost:3000")}`,
-      `${pc.bold("Admin")}   ${url("http://localhost:3000/admin/")}`,
-      `${pc.bold("Mail")}    ${url("http://localhost:8025")}`,
+      `${pc.bold("Site")}    ${url(`http://localhost:${ports.ports.SITE_PORT}`)}`,
+      `${pc.bold("Admin")}   ${url(`http://localhost:${ports.ports.SITE_PORT}/admin/`)}`,
+      `${pc.bold("Mail")}    ${url(`http://localhost:${ports.ports.MAIL_PORT}`)}`,
       "",
       `Admin user ${secret(result.adminUsername)}, password ${secret(result.adminPassword)}`,
       pc.dim("The password is in .env as ADMIN_PASSWORD. Change it after you sign in."),

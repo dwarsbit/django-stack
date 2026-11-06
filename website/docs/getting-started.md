@@ -59,6 +59,11 @@ the demo content. Then open:
 | http://localhost:3000/admin/ | The admin, Django Content Studio |
 | http://localhost:8025 | Mailpit, which catches the mail the site sends |
 
+When a port is in use, for example by another project, `init` and
+`dstack dev` take the next free one, such as 3001, and save it in `.env` as
+`SITE_PORT`, `BACKEND_PORT`, `MAIL_PORT` or `S3_PORT`, with `SITE_URL` and
+`BACKEND_URL` to match. They print the port they took.
+
 Log in to the admin as `admin` with the password that `init` printed. It is
 also in `.env` as `ADMIN_PASSWORD`. Change it after you log in.
 

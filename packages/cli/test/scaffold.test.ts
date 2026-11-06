@@ -173,6 +173,32 @@ describe("scaffold", () => {
     expect(env.S3_PUBLIC_URL).toBe("http://localhost:8333/media");
   });
 
+  it("publishes the development services on the given ports", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({
+      directory,
+      name: "site",
+      frontend: "astro",
+      demoContent: true,
+      localS3: true,
+      ports: { SITE_PORT: 3001, BACKEND_PORT: 8000, MAIL_PORT: 8026, S3_PORT: 8334 },
+    });
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env).toMatchObject({
+      SITE_PORT: "3001",
+      BACKEND_PORT: "8000",
+      MAIL_PORT: "8026",
+      SITE_URL: "http://localhost:3001",
+      BACKEND_URL: "http://localhost:3001",
+      S3_PUBLIC_URL: "http://localhost:8334/media",
+    });
+    const readme = readFileSync(join(directory, "README.md"), "utf8");
+    expect(readme).toContain("http://localhost:3001/admin/");
+    expect(readme).toContain("http://localhost:8026");
+    const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
+    expect(compose).toContain(`"127.0.0.1:\${SITE_PORT:-3000}:3000"`);
+  });
+
   it("runs Umami for page analytics", () => {
     const directory = join(tempDir(), "site");
     scaffold({ directory, name: "site", frontend: "astro", demoContent: true, analytics: true });

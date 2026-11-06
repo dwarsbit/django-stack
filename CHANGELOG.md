@@ -16,6 +16,18 @@ the unreleased version; the release workflow releases it.
 - **`dstack dev` in the next steps.** `init` now offers to install `dstack`
   before it prints the next steps, and the next steps say `dstack dev`
   when `dstack` is installed, `docker compose up` otherwise.
+- **Free ports in development.** When port 3000, 8000, 8025 or 8333 is
+  in use, such as by another project, `init` and `dstack dev` take the next
+  free one and save it in `.env` as `SITE_PORT`, `BACKEND_PORT`,
+  `MAIL_PORT` or `S3_PORT`, with `SITE_URL`, `BACKEND_URL` and the local
+  `S3_PUBLIC_URL` to match. `compose.yaml` publishes the ports from these
+  variables. In an existing project, `dstack dev` only says which port is
+  in use; to have it move ports, change the `ports` of `frontend`,
+  `backend`, `mailpit` and `s3` in `compose.yaml` to
+  `"127.0.0.1:${SITE_PORT:-3000}:3000"`,
+  `"127.0.0.1:${BACKEND_PORT:-8000}:8000"`,
+  `"127.0.0.1:${MAIL_PORT:-8025}:8025"` and
+  `"127.0.0.1:${S3_PORT:-8333}:8333"`.
 
 ### Fixes
 

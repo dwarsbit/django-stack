@@ -5,6 +5,8 @@ import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { applyStack, SWITCHABLE, setManifestPreset } from "../config";
 import { runDoctor } from "../doctor";
+import { setEnvValues } from "../env";
+import { chooseFreePorts, DEV_PORTS, describeMove, envPorts, portValues } from "../ports";
 import { productionEnv } from "../production";
 import {
   activeProject,
@@ -88,11 +90,40 @@ export async function run(options: DirectoryOptions & { build: boolean }) {
   p.outro(`Stop it with ${command("dstack stop")}, follow the logs with ${command("dstack logs")}`);
 }
 
+/**
+ * Moves the development services to free ports when theirs are in use, in
+ * `.env`, unless the project already runs. compose.yaml from before the
+ * *_PORT variables has fixed ports, so it can only say which one is in use.
+ */
+async function freeDevPorts(project: Project): Promise<Project> {
+  if (runningServices(project).length) return project;
+  const { ports, moves, stuck } = await chooseFreePorts(project.env, project.profiles);
+  const [blocked] = stuck;
+  if (blocked)
+    fail(`Port ${envPorts(project.env)[blocked.name]} of the ${blocked.label} is in use. Stop what uses it.`);
+  if (!moves.length) return project;
+  const composeText = readFileSync(join(project.directory, "compose.yaml"), "utf8");
+  for (const move of moves) {
+    const item = DEV_PORTS.find((candidate) => candidate.label === move.label);
+    if (item && !composeText.includes(`\${${item.name}`))
+      fail(
+        `Port ${move.from} of the ${move.label} is in use. Stop what uses it, or publish another port in compose.yaml.`,
+      );
+  }
+  const envPath = join(project.directory, ".env");
+  writeFileSync(envPath, setEnvValues(readFileSync(envPath, "utf8"), portValues(project.env, ports)), {
+    mode: 0o600,
+  });
+  for (const move of moves) p.log.info(`${describeMove(move)} Saved in .env.`);
+  return readProject(project.directory);
+}
+
 /** `dstack dev`: the dev profile in the foreground, with hot reload. */
 export async function dev(options: DirectoryOptions & { build: boolean }) {
-  const project = open(options);
+  let project = open(options);
   if (project.prod) fail(`This .env runs the prod profile. Use ${command("dstack run")}.`);
   intro("Develop");
+  project = await freeDevPorts(project);
   urlsNote(project, "Starting");
   p.log.message(pc.dim("Changes in backend/ and frontend/ reload. Press Ctrl+C to stop."));
   exitWith(compose(project, ["up", ...(options.build ? ["--build"] : [])]));

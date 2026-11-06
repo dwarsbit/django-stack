@@ -127,7 +127,7 @@ stop with `Docker not running.` and how to start it.
 
 | Command | What it does |
 |---------|--------------|
-| `dstack dev` | Starts the development servers in the foreground, with hot reload. Ctrl+C stops them. |
+| `dstack dev` | Starts the development servers in the foreground, with hot reload. Ctrl+C stops them. A port in use moves to the next free one, saved in `.env`. |
 | `dstack run` | Starts the production setup in the background and waits until it is healthy. |
 | `dstack stop` | Stops the containers. The database, uploads and backups stay in their volumes. |
 | `dstack logs [service...]` | Follows the logs. `--no-follow` prints them and exits, `-n <lines>` shows only the last lines. |

@@ -1,5 +1,6 @@
 import { setEnvValues } from "./env";
-import { LOCAL_S3, umamiEnv } from "./scaffold";
+import { envPorts } from "./ports";
+import { LOCAL_S3, localS3, umamiEnv } from "./scaffold";
 import { generateProjectSecrets } from "./secrets";
 import { STACK_OPTIONS, type Stack, type StackKey, type StackValue } from "./stack";
 
@@ -49,7 +50,7 @@ export function applyStack(
       profiles = profiles.filter((profile) => profile !== "s3");
       if (to.storage === "s3") profiles.push("s3");
       text = setEnvValues(text, {
-        ...(to.storage === "s3" ? LOCAL_S3 : EMPTY_S3),
+        ...(to.storage === "s3" ? localS3(envPorts(env).S3_PORT) : EMPTY_S3),
         COMPOSE_PROFILES: profiles.join(","),
       });
       changes.push(
