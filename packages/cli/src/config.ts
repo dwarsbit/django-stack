@@ -5,7 +5,14 @@ import { generateProjectSecrets } from "./secrets";
 import { STACK_OPTIONS, type Stack, type StackKey, type StackValue } from "./stack";
 
 /** The options `config` can switch in an existing project. The rest follow with code generation. */
-export const SWITCHABLE: readonly StackKey[] = ["storage", "analytics", "media", "cache", "tasks"];
+export const SWITCHABLE: readonly StackKey[] = [
+  "storage",
+  "analytics",
+  "media",
+  "cache",
+  "tasks",
+  "notifications",
+];
 
 export interface ConfigChange {
   /** The new `.env` text. */
@@ -100,6 +107,14 @@ export function applyStack(
         text = setEnvValues(text, { UMAMI_URL: "", COMPOSE_PROFILES: profiles.join(",") });
         changes.push("Page analytics are off; Umami's data stays in the database.");
       }
+    }
+    if (key === "notifications") {
+      // `config` adds or removes the app in backend/config/settings.py.
+      changes.push(
+        to.notifications === "on"
+          ? "Notifications are on: content_studio.notifications is in INSTALLED_APPS."
+          : "Notifications are off: content_studio.notifications is out of INSTALLED_APPS; its tables stay.",
+      );
     }
     if (key === "media") {
       // Only the preset changes: `dstack production` and `dstack settings` act on it.

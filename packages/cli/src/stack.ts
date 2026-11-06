@@ -111,7 +111,7 @@ export const STACK_OPTIONS = [
     description: "Notifications in the admin and by email",
     bits: 2,
     values: [
-      { value: "on", label: "On", hint: "in the admin and by email", generated: false },
+      { value: "on", label: "On", hint: "in the admin and by email", generated: true },
       { value: "off", label: "Off", generated: true },
     ],
   },

@@ -21,6 +21,7 @@ import {
   parseEnv,
   scaffold,
   setEnvValues,
+  setNotificationsApp,
   toProjectName,
   usesValkey,
   validateProjectName,
@@ -330,6 +331,22 @@ describe("scaffold", () => {
     scaffold({ directory, name: "site", frontend: "astro", demoContent: true, timeZone: "Europe/Amsterdam" });
     const settings = readFileSync(join(directory, "backend", "config", "settings.py"), "utf8");
     expect(settings).toContain('TIME_ZONE = "Europe/Amsterdam"');
+  });
+
+  it("installs the notifications app unless notifications are off", () => {
+    const settingsOf = (directory: string) =>
+      readFileSync(join(directory, "backend", "config", "settings.py"), "utf8");
+    const on = join(tempDir(), "on");
+    scaffold({ directory: on, name: "site", frontend: "astro", demoContent: true });
+    expect(settingsOf(on)).toContain('"content_studio.notifications",');
+    const off = join(tempDir(), "off");
+    scaffold({ directory: off, name: "site", frontend: "astro", demoContent: true, notifications: false });
+    expect(settingsOf(off)).not.toContain("content_studio.notifications");
+
+    // Back on, at the same place.
+    expect(setNotificationsApp(settingsOf(off), true)).toBe(settingsOf(on));
+    expect(setNotificationsApp(settingsOf(on), true)).toBe(settingsOf(on));
+    expect(() => setNotificationsApp("INSTALLED_APPS = []\n", true)).toThrow(/content_studio/);
   });
 
   it("refuses an unknown time zone", () => {

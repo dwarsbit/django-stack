@@ -47,3 +47,21 @@ def test_daily_backup_is_off_by_default(daily, settings):
     settings.DJANGO_STACK = {**settings.DJANGO_STACK, "BACKUP_DAILY": False}
     assert not tasks.run_daily_backup(NOW)
     assert daily == []
+
+
+def test_notification_tasks(db, monkeypatch):
+    commands = []
+    monkeypatch.setattr(tasks, "call_command", lambda name, **kwargs: commands.append(name))
+    assert tasks.send_notification_digest()
+    assert tasks.prune_notifications()
+    assert commands == ["content_studio_send_notification_digest", "content_studio_prune_notifications"]
+
+
+def test_notification_tasks_without_the_app(monkeypatch):
+    monkeypatch.setattr(tasks, "notifications_installed", lambda: False)
+    assert not tasks.send_notification_digest()
+    assert not tasks.prune_notifications()
+
+
+def test_the_digest_runs_for_real(db, mailoutbox):
+    assert tasks.send_notification_digest()

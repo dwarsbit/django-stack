@@ -322,6 +322,9 @@ def configure(
             "MEDIA_LIBRARY_MAX_UPLOAD_SIZE": e.int("MEDIA_MAX_UPLOAD_SIZE", 50 * 1024 * 1024),
             "IMAGE_SIZES": DEFAULT_IMAGE_SIZES,
             "ADMIN_URL": f"{backend_url}/admin/",
+            # With content_studio.notifications installed: mail editors what
+            # they left unread (the worker's notification_digest task).
+            "NOTIFICATION_EMAIL_DIGEST": True,
         },
         namespace.get("CONTENT_STUDIO"),
     )

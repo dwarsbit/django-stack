@@ -131,7 +131,11 @@ export function projectManifest(project: Project): { version?: string; frontend?
  */
 export function projectStack(project: Project): Stack {
   const analytics: Stack["analytics"] = project.profiles.includes("analytics") ? "umami" : "off";
-  const fromEnv = { analytics, ...(project.env.CACHE_URL === undefined ? {} : cacheStack(project.env)) };
+  const fromEnv = {
+    analytics,
+    ...(project.env.CACHE_URL === undefined ? {} : cacheStack(project.env)),
+    ...notificationsStack(project),
+  };
   const { preset } = projectManifest(project);
   if (preset) {
     try {
@@ -139,6 +143,17 @@ export function projectStack(project: Project): Stack {
     } catch {}
   }
   return { ...DEFAULT_STACK, ...fromEnv, storage: project.profiles.includes("s3") ? "s3" : "local" };
+}
+
+/** Notifications are on when the backend's INSTALLED_APPS has Content Studio's notifications app. */
+function notificationsStack(project: Project): Partial<Pick<Stack, "notifications">> {
+  const settings = join(project.directory, "backend", "config", "settings.py");
+  if (!existsSync(settings)) return {};
+  return {
+    notifications: /^ *["']content_studio\.notifications["'],/m.test(readFileSync(settings, "utf8"))
+      ? "on"
+      : "off",
+  };
 }
 
 const REDIS = /^(redis|rediss|valkey|valkeys):/;

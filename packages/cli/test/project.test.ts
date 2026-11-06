@@ -88,6 +88,16 @@ describe("readProject", () => {
 });
 
 describe("projectStack", () => {
+  it("takes the notifications from the backend's INSTALLED_APPS", () => {
+    const dir = project();
+    mkdirSync(join(dir, "backend", "config"), { recursive: true });
+    const settings = join(dir, "backend", "config", "settings.py");
+    writeFileSync(settings, 'INSTALLED_APPS = [\n    "content_studio.notifications",\n]\n');
+    expect(projectStack(readProject(dir)).notifications).toBe("on");
+    writeFileSync(settings, "INSTALLED_APPS = []\n");
+    expect(projectStack(readProject(dir)).notifications).toBe("off");
+  });
+
   it("reads the preset from package.json", () => {
     const dir = project();
     const stack = { ...DEFAULT_STACK, analytics: "off" as const, storage: "s3" as const };
