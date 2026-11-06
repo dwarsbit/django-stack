@@ -15,7 +15,7 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseEnv, setEnvValues } from "./env";
 import { generateProjectSecrets } from "./secrets";
-import { type Stack, stackOption } from "./stack";
+import { DEFAULT_STACK, encodePreset, type Stack, stackOption } from "./stack";
 import { CLI_VERSION } from "./version";
 
 /** A frontend option; its template is `templates/frontend-<name>`. */
@@ -192,7 +192,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     frontend_url: frontend.url,
     frontend_security: frontend.security,
     cli_version: CLI_VERSION,
-    preset: options.preset ?? "a",
+    preset: options.preset ?? encodePreset(DEFAULT_STACK),
   };
   const files = walk(target);
   for (const file of files) {

@@ -5,6 +5,15 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.7.0 (unreleased)
+
+- **Six-character preset codes.** `init` and `dstack preset` now print
+  presets as six letters and digits, such as `b7mWME`, instead of one
+  character per option, so the default stack no longer has the code `a`.
+  A mistyped code is refused rather than read as another stack. The
+  shorter codes that start with `a` keep working, also in the
+  `package.json` of existing projects.
+
 ## 0.6.0 (2026-11-06)
 
 - **Page analytics with Umami.** `init` now runs Umami for page analytics

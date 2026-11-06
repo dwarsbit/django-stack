@@ -92,14 +92,16 @@ the defaults it does not generate yet when it is done.
 
 A preset sets every stack option at once, so you can share a stack or
 create the same one again. When `init` is done, it prints the preset of the
-project:
+project, a code of six letters and digits. This one is Next.js without
+analytics:
 
 ```bash
-npx @django-stack/cli init my-site --preset a201
+npx @django-stack/cli init my-site --preset b7mWME
 ```
 
-Flags win over the preset, so `--preset a201 --storage s3` changes only the
-storage. There are named presets too:
+Flags win over the preset, so `--preset b7mWME --storage s3` changes only the
+storage. Shorter codes that start with `a` still work. There are named
+presets too:
 
 | Name | Stack |
 |------|-------|
@@ -108,8 +110,8 @@ storage. There are named presets too:
 | `minimal` | Astro with analytics, tasks, cache, notifications and captcha off. |
 
 `dstack preset` asks for the stack options and prints the code, and
-`dstack preset <code>` shows the stack of a code. A code from a newer
-CLI fails with a request to update.
+`dstack preset <code>` shows the stack of a code. A mistyped code, or one
+from a newer CLI, fails with a request to check it or to update.
 
 The command refuses a directory that is not empty. When
 [uv](https://docs.astral.sh/uv/) is installed, it also locks the backend's
