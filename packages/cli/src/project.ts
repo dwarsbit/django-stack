@@ -108,7 +108,7 @@ export function projectManifest(project: Project): { version?: string; frontend?
  * generated have the default in their preset without running it.
  */
 export function projectStack(project: Project): Stack {
-  const analytics = project.profiles.includes("analytics") ? "umami" : "off";
+  const analytics: Stack["analytics"] = project.profiles.includes("analytics") ? "umami" : "off";
   const fromEnv = { analytics, ...(project.env.CACHE_URL === undefined ? {} : cacheStack(project.env)) };
   const { preset } = projectManifest(project);
   if (preset) {

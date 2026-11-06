@@ -162,7 +162,9 @@ export const DEFAULT_STACK = Object.fromEntries(
  * append-only): the cache comes before the tasks, whose queue follows it.
  */
 export const PROMPT_ORDER: readonly StackKey[] = (() => {
-  const keys = STACK_OPTIONS.map((option) => option.key as StackKey).filter((key) => key !== "cache");
+  const keys: StackKey[] = STACK_OPTIONS.map((option) => option.key as StackKey).filter(
+    (key) => key !== "cache",
+  );
   keys.splice(keys.indexOf("tasks"), 0, "cache");
   return keys;
 })();
