@@ -159,6 +159,7 @@ describe("SshClient", () => {
     const client = new SshClient("deploy@example.com", fake.run);
     const ids = await client.setup({
       ask,
+      directory: ".",
       name: "My Site",
       branch: "main",
       domain: "example.com",
@@ -177,7 +178,15 @@ describe("SshClient", () => {
     const fake = fakeSsh({ stdout: "" }, { stdout: "/home/deploy" });
     const client = new SshClient("deploy@example.com", fake.run);
     await expect(
-      client.setup({ ask, name: "site", branch: "main", domain: "example.com", env: {}, options: {} }),
+      client.setup({
+        ask,
+        directory: ".",
+        name: "site",
+        branch: "main",
+        domain: "example.com",
+        env: {},
+        options: {},
+      }),
     ).rejects.toThrow(/sudo chown deploy \/srv\/site.*--path \/home\/deploy\/site/);
   });
 

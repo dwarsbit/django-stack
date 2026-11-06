@@ -32,6 +32,19 @@ the unreleased version; the release workflow releases it.
   `Caddyfile`, the `setup_umami` lines of `backend/entrypoint.sh`, the
   analytics lines of `backend/config/studio.py` and the frontend's tracker
   and `/_a/` proxy, then run `dstack config --analytics umami`.
+- **Deploy to Bunny Magic Containers.** `dstack deploy setup --provider
+  bunny` turns the production services of `compose.yaml` into one Magic
+  Containers app: it builds the images of the last commit for
+  `linux/amd64`, pushes them to Bunny Container Registry with the account
+  API key, creates a container per service in one pod (hosts such as
+  `db:5432` become `127.0.0.1`, the `Caddyfile` is copied into the proxy
+  image, Postgres gets the one volume) and adds the domain to the app's CDN
+  pull zone. `dstack deploy` pushes new images tagged with the commit and
+  changes the containers' tags; `dstack deploy rollback` goes back to an
+  earlier tag. Uploads must be in S3. Written from Bunny's API
+  documentation and not yet tested on a real account.
+- Providers can have a fixed target (no `--url`), print their own DNS
+  record, and get the project directory in `deploy setup` and in the link.
 
 ## 0.5.0 (2026-11-05)
 

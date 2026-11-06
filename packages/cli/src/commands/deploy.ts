@@ -209,7 +209,7 @@ export async function deploySetup(options: SetupCommandOptions) {
   }
   const provider = providerOrFail(providerId);
 
-  let instance = options.url;
+  let instance = options.url ?? provider.target.fixed;
   if (!instance) {
     if (!interactive) fail(`Pass --url, the address of your ${provider.name}.`);
     instance = unwrap(
@@ -264,6 +264,7 @@ export async function deploySetup(options: SetupCommandOptions) {
   const ids = await attempt(
     client.setup({
       ask: promptAsk(interactive),
+      directory: project.directory,
       name: project.name,
       repository,
       branch,
@@ -272,14 +273,18 @@ export async function deploySetup(options: SetupCommandOptions) {
       options: flags,
     }),
   );
-  const link: DeployLink = { provider: provider.id, url: instance, ...ids };
+  const link: DeployLink = { provider: provider.id, url: instance, ...ids, directory: project.directory };
   writeLink(project.directory, link);
   p.log.success(
     `Wrote ${pc.bold(LINK_FILE)}. It holds no secrets; commit it so others deploy to the same place.`,
   );
   p.note(
     [
-      `Point the DNS of ${pc.bold(domain)} at the ${provider.auth.kind === "ssh" ? "" : `${provider.name} `}server.`,
+      ...(provider.printsDns
+        ? []
+        : [
+            `Point the DNS of ${pc.bold(domain)} at the ${provider.auth.kind === "ssh" ? "" : `${provider.name} `}server.`,
+          ]),
       provider.auth.kind === "ssh"
         ? `To change variables, edit ${PRODUCTION_ENV} and run ${command("dstack deploy env push")}.`
         : `Change variables in ${provider.name}, or in ${PRODUCTION_ENV} and run ${command("dstack deploy env push")}.`,
@@ -550,7 +555,7 @@ async function loginTarget(
   } catch {}
   const provider = providerOrFail(options.provider ?? link?.provider ?? DEFAULT_PROVIDER.id);
   tokenAuth(provider);
-  let instance = options.url ?? link?.url;
+  let instance = options.url ?? link?.url ?? provider.target.fixed;
   if (!instance) {
     if (!interactive) fail(`Pass --url, the address of your ${provider.name}.`);
     instance = unwrap(

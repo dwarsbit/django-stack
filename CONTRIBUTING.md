@@ -72,13 +72,16 @@ provider declares:
 |-------|--------------|
 | `auth` | How the CLI gets in: `{ kind: "token" }` with the environment variable that overrides the saved API key and where to create one, or `{ kind: "ssh" }` for the user's own SSH keys and `~/.ssh/config`. `deploy login` and `deploy logout` work only for token providers. |
 | `source` | What a deploy builds: `"remote"`, the branch on the git remote, or `"local"`, the local commit, which the provider uploads. Before a deploy the CLI checks that the commit is pushed (`remote`) or that there are no uncommitted changes (`local`); `--no-push-check` skips the check. `deploy setup` reads the repository only for `remote`. |
-| `target` | What `--url` names: the prompt, a placeholder and a function that normalizes the value. `urlTarget()` builds it for a platform with a web address. |
+| `target` | What `--url` names: the prompt, a placeholder and a function that normalizes the value. `urlTarget()` builds it for a platform with a web address; `fixed` is the only target of a platform with one API, such as Bunny, and the CLI then does not ask for `--url`. |
 | `platformEnv` | Variables the platform needs on top of `.env.production`. |
 | `setupFlags` | The provider's own flags of `deploy setup`. |
 | `connect()` | Returns a `ProviderClient`, which sets up the application and starts, lists and reads deploys. |
+| `printsDns` | Setup prints the DNS record itself, so the CLI does not add its own hint. |
 
 `.dstack/deploy.json` holds the target and three provider-defined ids. It
-never holds secrets. Test a provider's client against a fake `fetch` or a
+never holds secrets. `readLink()` adds the project directory to the link
+(not saved), so a client can keep local files, as Bunny does for its deploy
+records. Test a provider's client against a fake `fetch` or a
 fake command runner, as `test/deploy.test.ts` does for Coolify.
 
 ## First publish (claiming the names)

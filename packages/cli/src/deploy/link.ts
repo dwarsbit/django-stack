@@ -18,7 +18,7 @@ export function readLink(directory: string): DeployLink | undefined {
   for (const key of ["provider", "url", "project", "environment", "application"] as const) {
     if (typeof link[key] !== "string" || !link[key]) throw new Error(`${LINK_FILE} has no ${key}.`);
   }
-  return link as DeployLink;
+  return { ...(link as DeployLink), directory };
 }
 
 export function writeLink(directory: string, link: DeployLink) {

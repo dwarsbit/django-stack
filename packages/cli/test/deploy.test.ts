@@ -68,8 +68,9 @@ describe("link file", () => {
   it("round-trips", () => {
     const directory = tempDir();
     expect(readLink(directory)).toBeUndefined();
-    writeLink(directory, link);
-    expect(readLink(directory)).toEqual(link);
+    writeLink(directory, { ...link, directory: "/elsewhere" });
+    // The directory is not saved; reading adds the one it was read from.
+    expect(readLink(directory)).toEqual({ ...link, directory });
   });
 
   it("refuses an incomplete file", () => {
@@ -189,7 +190,15 @@ describe("Coolify provider", () => {
     });
     const ask = { interactive: false } as Ask;
     await expect(
-      client.setup({ ask, name: "site", branch: "main", domain: "example.com", env: {}, options: {} }),
+      client.setup({
+        ask,
+        directory: ".",
+        name: "site",
+        branch: "main",
+        domain: "example.com",
+        env: {},
+        options: {},
+      }),
     ).rejects.toThrow(/--repository/);
   });
 });
@@ -299,6 +308,7 @@ describe("CoolifyClient", () => {
     );
     const ids = await client.setup({
       ask: quietAsk,
+      directory: ".",
       name: "site",
       repository: "https://github.com/owner/site",
       branch: "main",
@@ -344,6 +354,7 @@ describe("CoolifyClient", () => {
     );
     const ids = await client.setup({
       ask: quietAsk,
+      directory: ".",
       name: "site",
       repository: "https://github.com/owner/site",
       branch: "main",
@@ -379,6 +390,7 @@ describe("CoolifyClient", () => {
     await expect(
       client.setup({
         ask: quietAsk,
+        directory: ".",
         name: "site",
         repository: "r",
         branch: "main",

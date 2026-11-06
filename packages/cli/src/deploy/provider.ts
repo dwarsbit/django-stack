@@ -45,6 +45,8 @@ export interface DeployLink {
   project: string;
   environment: string;
   application: string;
+  /** The project directory, set when the link is read from it; not saved. */
+  directory?: string;
 }
 
 export interface Choice<T> {
@@ -65,6 +67,8 @@ export interface Ask {
 
 export interface SetupContext {
   ask: Ask;
+  /** The project directory. */
+  directory: string;
   /** The project name, from compose.yaml. */
   name: string;
   /** The https URL of the git repository; set for providers that build from the remote. */
@@ -120,6 +124,8 @@ export interface ProviderTarget {
   /** Such as "Coolify URL" or "Server". */
   label: string;
   placeholder: string;
+  /** The only target, for a platform with one API; the CLI does not ask for --url. */
+  fixed?: string;
   /** Returns the canonical form, or throws with a one-line reason. */
   normalize(value: string): string;
 }
@@ -138,6 +144,8 @@ export interface DeployProvider {
   platformEnv: Record<string, string>;
   /** The flags of `deploy setup` this provider reads. */
   setupFlags: ProviderFlag[];
+  /** Setup prints the DNS record to add itself. */
+  printsDns?: boolean;
   /** Connects to a target; token providers get the API key. */
   connect(target: string, token?: string): ProviderClient;
 }

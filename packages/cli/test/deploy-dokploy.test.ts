@@ -104,6 +104,7 @@ describe("DokployClient", () => {
     });
     const ids = await client.setup({
       ask,
+      directory: ".",
       name: "site",
       repository: "https://github.com/you/site",
       branch: "main",
@@ -140,7 +141,15 @@ describe("DokployClient", () => {
   it("needs a repository", async () => {
     const { client } = fakeDokploy({});
     await expect(
-      client.setup({ ask, name: "site", branch: "main", domain: "example.com", env: {}, options: {} }),
+      client.setup({
+        ask,
+        directory: ".",
+        name: "site",
+        branch: "main",
+        domain: "example.com",
+        env: {},
+        options: {},
+      }),
     ).rejects.toThrow(/--repository/);
   });
 
