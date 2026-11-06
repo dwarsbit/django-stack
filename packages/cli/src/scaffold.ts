@@ -15,6 +15,7 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseEnv, setEnvValues } from "./env";
 import { portValues } from "./ports";
+import { makeExecutable } from "./project";
 import { generateProjectSecrets } from "./secrets";
 import { DEFAULT_STACK, encodePreset, type Stack, stackOption, taskQueue } from "./stack";
 import { CLI_VERSION } from "./version";
@@ -215,6 +216,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   cpSync(join(templates, "backend"), join(target, "backend"), { recursive: true });
   cpSync(frontendTemplate, join(target, "frontend"), { recursive: true });
   renameSync(join(target, "gitignore"), join(target, ".gitignore"));
+  makeExecutable(target);
   // The frontend's name and links, for the project's README, AGENTS.md and SECURITY.md.
   const about = join(target, "frontend", "template.json");
   const frontend = JSON.parse(readFileSync(about, "utf8")) as FrontendTemplate;

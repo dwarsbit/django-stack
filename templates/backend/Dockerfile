@@ -25,10 +25,12 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Development runs as root, so files the container writes into the mounted
 # source (such as new migrations) work on every host. Production does not.
+# The entrypoint runs with sh, so it works without the executable bit (the
+# mounted source keeps the host's file modes).
 FROM deps AS dev
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-install-project
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 FROM base AS prod
@@ -41,5 +43,5 @@ USER app
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz', timeout=4)"
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
 CMD ["gunicorn", "config.asgi:application", "--worker-class", "uvicorn_worker.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "3", "--access-logfile", "-", "--no-control-socket"]

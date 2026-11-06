@@ -1,4 +1,14 @@
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -141,6 +151,26 @@ describe("scaffold", () => {
       'name = "my-site-backend"',
     );
   });
+
+  it.skipIf(process.platform === "win32")(
+    "makes the scripts executable when the package lost the executable bit",
+    () => {
+      // npm and pnpm pack non-bin files as 0644; copy the templates that way.
+      const templatesDir = join(tempDir(), "templates");
+      cpSync(fileURLToPath(new URL("../templates", import.meta.url)), templatesDir, { recursive: true });
+      for (const file of ["backend/entrypoint.sh", "backend/manage.py"]) {
+        chmodSync(join(templatesDir, file), 0o644);
+      }
+      const directory = join(tempDir(), "site");
+      scaffold({ directory, name: "site", frontend: "astro", demoContent: true, templatesDir });
+      for (const file of ["backend/entrypoint.sh", "backend/manage.py"]) {
+        expect(statSync(join(directory, file)).mode & 0o777, file).toBe(0o755);
+      }
+      expect(readFileSync(join(directory, "backend/Dockerfile"), "utf8")).toContain(
+        'ENTRYPOINT ["sh", "/app/entrypoint.sh"]',
+      );
+    },
+  );
 
   it("generates different secrets for each project", () => {
     const root = tempDir();

@@ -13,6 +13,18 @@ the unreleased version; the release workflow releases it.
   install of `dstack` comes first on your `PATH`. The update notice now
   says `dstack self-update` for an installed `dstack`.
 
+### Fixes
+
+- Fixed: a project created with the CLI from npm did not start, with
+  `exec /app/entrypoint.sh: permission denied`, because the npm package
+  lost the executable bit of `backend/entrypoint.sh`. `init` now makes
+  `entrypoint.sh` and `manage.py` executable, and the backend `Dockerfile`
+  runs the entrypoint with `sh`. Every `dstack` project command also
+  repairs the file mode, so `dstack dev` starts an existing project again.
+  Without `dstack`, run `chmod +x backend/entrypoint.sh backend/manage.py`
+  or change both `ENTRYPOINT` lines in `backend/Dockerfile` to
+  `ENTRYPOINT ["sh", "/app/entrypoint.sh"]`.
+
 ## 0.7.0 (2026-11-06)
 
 - **The cache and the task queue in Postgres.** New projects keep the
