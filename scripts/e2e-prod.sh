@@ -114,19 +114,22 @@ echo "ok read-only containers"
 
 echo "Backing up and restoring"
 # The worker backs up when it starts, as there is no backup yet.
+# The list is read into a variable first: grep -q stops reading at the first
+# match, and with pipefail the writer's broken pipe would fail the check.
+backups() { docker compose exec -T worker-prod python manage.py backup_database --list; }
 for _ in $(seq 1 60); do
-  docker compose exec -T worker-prod python manage.py backup_database --list | grep -q '^local .*\.dump$' && break
+  grep -q '^local .*\.dump$' <<<"$(backups)" && break
   sleep 2
 done
-docker compose exec -T worker-prod python manage.py backup_database --list | grep -q '^local .*\.dump$' \
+grep -q '^local .*\.dump$' <<<"$(backups)" \
   || fail "the worker made no backup when it started"
 echo "ok startup backup"
 docker compose exec -T worker-prod python manage.py backup_database
-backup="$(docker compose exec -T worker-prod python manage.py backup_database --list | awk '/^local/ && /\.dump$/ {print $2}' | tail -1)"
+backup="$(backups | awk '/^local/ && /\.dump$/ {print $2}' | tail -1)"
 [ -n "$backup" ] || fail "backup_database --list shows no backup"
-docker compose exec -T worker-prod python manage.py backup_database --list | grep -q "${backup%.dump}.media.tar.gz" \
+grep -qF "${backup%.dump}.media.tar.gz" <<<"$(backups)" \
   || fail "backup_database made no media archive"
-upload="$(docker compose exec -T worker-prod find /app/media -type f | head -1)"
+upload="$(docker compose exec -T worker-prod find /app/media -type f -print -quit)"
 [ -n "$upload" ] || fail "the media volume is empty"
 docker compose exec -T worker-prod rm "$upload"
 
