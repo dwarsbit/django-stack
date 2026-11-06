@@ -26,6 +26,7 @@ import {
   restore,
   run,
   shell,
+  status,
   stop,
   types,
   update as updateProject,
@@ -133,6 +134,12 @@ export function createProgram(): Command {
     .option("--no-follow", "Print the logs and exit")
     .option("-n, --tail <lines>", "Only the last lines of each service")
     .action(logs);
+
+  program
+    .command("status")
+    .description("Show the containers and whether the database, cache, worker and backups are healthy")
+    .addOption(dirOption())
+    .action(status);
 
   program
     .command("check")

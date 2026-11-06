@@ -2,7 +2,7 @@
 sidebar_position: 4.5
 ---
 
-# 📜 Logs
+# 📜 Logs and health checks
 
 Every service writes its logs to standard output, and Docker keeps them.
 `dstack logs <service>` or `docker compose logs --follow <service>` shows
@@ -64,3 +64,57 @@ Docker keeps at most five log files of 10 MB for each container, set by
 the `logging` entry of every service in `compose.yaml`. The logs of a
 container are deleted with it, so a deploy that recreates a container
 starts a new log.
+
+## Health checks
+
+Django answers three health checks. Caddy does not route them, so they
+are reachable only inside the Compose network:
+
+| Path | Answers 200 when | Used by |
+|------|------------------|---------|
+| `/healthz` | The process is up. | |
+| `/readyz` | The database and the cache are reachable. | The healthcheck of the backend, which the frontend, the worker and Caddy wait for. |
+| `/statusz` | As `/readyz`, and the worker and the daily backup are healthy. | `dstack status` |
+
+They answer JSON, `503` when a check fails:
+
+```json
+{"status": "ok", "checks": {"database": "ok", "cache": "ok", "worker": "ok", "backup": "ok"}}
+```
+
+Each check is `ok`, `error` or `off`:
+
+- **worker**: the worker runs a task every minute that records the time
+  in the cache. The check fails when the last one is more than three
+  minutes old. `off` without a worker (`TASKS_URL=immediate://`) or with a
+  cache per process (`CACHE_URL=locmem://`).
+- **backup**: the worker records the time of each daily backup. The check
+  fails when the last one is more than 26 hours old, and is `off` until the
+  first backup.
+
+The worker's own healthcheck in `compose.yaml` runs
+`python manage.py worker_alive`, which fails on the same rule, so
+`docker compose ps` shows a worker that stopped running tasks as
+`unhealthy`. Its task stays out of the logs.
+
+On the server, or after `dstack run`:
+
+```bash
+dstack status
+```
+
+It shows `docker compose ps`, then each check, and exits 1 when one
+fails. `dstack manage health` prints the checks only.
+
+### Alerts for missed backups
+
+To hear about a missed backup, create a check that expects a ping every
+day, with Healthchecks.io or a push monitor of Uptime Kuma, and set its URL
+in `.env` on the server:
+
+```bash title=".env"
+BACKUP_PING_URL=https://hc-ping.com/your-check-id
+```
+
+The worker requests the URL after each successful daily backup. When the
+pings stop, the service alerts you.

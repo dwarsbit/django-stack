@@ -28,7 +28,7 @@ to ``SITE_URL``), ``ALLOWED_HOSTS`` (extra hosts, comma separated),
 ``PREVIEW_SECRET``, ``REVALIDATE_URL``, ``REVALIDATE_SECRET``,
 ``NUM_PROXIES``, ``PROJECT_NAME``, and the backup variables ``BACKUP_DIR``,
 ``BACKUP_KEEP``, ``BACKUP_TIME``, ``BACKUP_MEDIA``, ``BACKUP_S3_BUCKET`` and
-``BACKUP_S3_PREFIX``, and the analytics variables ``UMAMI_URL`` (the
+``BACKUP_S3_PREFIX`` and ``BACKUP_PING_URL``, and the analytics variables ``UMAMI_URL`` (the
 internal address of the bundled Umami), ``UMAMI_WEBSITE_ID`` and
 ``UMAMI_ADMIN_PASSWORD``, and the log variables ``LOG_FORMAT`` (``json``
 or ``plain``), ``LOG_LEVEL`` and ``LOG_ACCESS``.
@@ -352,6 +352,9 @@ def configure(
             "BACKUP_S3_PREFIX": e.str("BACKUP_S3_PREFIX", "backups/"),
             "BACKUP_MEDIA": e.bool("BACKUP_MEDIA", True),
             "BACKUP_DAILY": e.bool("BACKUP_DAILY", False),
+            # Pinged after each daily backup, for a dead man's switch
+            # such as Healthchecks.io or Uptime Kuma's push monitor.
+            "BACKUP_PING_URL": e.str("BACKUP_PING_URL"),
             "BACKUP_S3": {
                 "endpoint_url": e.str("BACKUP_S3_ENDPOINT_URL", e.str("S3_ENDPOINT_URL")),
                 "region_name": e.str("BACKUP_S3_REGION", e.str("S3_REGION")),

@@ -7,6 +7,18 @@ the unreleased version; the release workflow releases it.
 
 ## 0.9.0 (unreleased)
 
+- **Worker and backup health checks.** The worker now records a heartbeat
+  in the cache every minute and the time of each daily backup. The new
+  `/statusz` health check, `dstack status` and `dstack manage health`
+  report the database, the cache, the worker (failing after three minutes
+  without a heartbeat) and the backup (failing when the last one is more
+  than 26 hours old). The worker's healthcheck in `compose.yaml` runs
+  `python manage.py worker_alive`, so a worker that stopped running tasks
+  shows as `unhealthy`. Set `BACKUP_PING_URL` to a Healthchecks.io check or
+  an Uptime Kuma push monitor to get an alert when daily backups stop. In
+  an existing project, give the `worker` and `worker-prod` services
+  `healthcheck: {test: ["CMD", "python", "manage.py", "worker_alive"], interval: 30s, timeout: 20s, start_period: 120s, retries: 3}`
+  (in `worker-prod`, in place of `disable: true`).
 - **JSON logs and request IDs.** In production (`DJANGO_DEBUG=0`) Django,
   the worker and Caddy now write one JSON object per line; development
   keeps plain text. `LOG_FORMAT=json` or `plain` picks the format, and

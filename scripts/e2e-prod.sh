@@ -79,6 +79,7 @@ expect 200 "$site/static/admin/css/base.css"
 expect 401 "$site/api/content.page"
 expect 200 -H "X-Secret-Key: $read_key" "$site/api/content.page"
 expect 404 "$site/readyz"
+expect 404 "$site/statusz"
 
 image="$(c "$site/blog" | grep -o 'src="[^"]*/media/[^"]*"' | head -1 | cut -d'"' -f2)"
 [ -n "$image" ] || fail "the blog shows no images"
@@ -107,6 +108,10 @@ echo "ok the admin reads the page view from Umami"
 
 echo "Checking the deployment"
 docker compose exec -T backend-prod python manage.py check --deploy --fail-level WARNING
+docker compose exec -T backend-prod python manage.py health
+docker compose logs --no-log-prefix backend-prod | grep -q '"logger": "django_stack.access"' \
+  || fail "the backend wrote no JSON access log"
+docker compose logs --no-log-prefix proxy | grep -q '"request_id"' || fail "Caddy logged no request IDs"
 if docker compose exec -T backend-prod touch /app/written 2>/dev/null; then
   fail "the backend can write to its code"
 fi

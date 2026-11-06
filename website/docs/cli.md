@@ -153,6 +153,7 @@ stop with `Docker not running.` and how to start it.
 | `dstack run` | Starts the production setup in the background and waits until it is healthy. |
 | `dstack stop` | Stops the containers. The database, uploads and backups stay in their volumes. |
 | `dstack logs [service...]` | Follows the logs. `--no-follow` prints them and exits, `-n <lines>` shows only the last lines. |
+| `dstack status` | Shows the containers, then whether the database, the cache, the worker and the daily backup are healthy. Exits 1 when one is not. See [Health checks](./production/logs.md#health-checks). |
 | `dstack check` | Checks the project. See [`check`](#check). |
 | `dstack update` | Updates the images and the DjangoStack packages. See [`update`](#update). |
 | `dstack config` | Changes the stack options. See [`config`](#config). |

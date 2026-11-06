@@ -68,6 +68,14 @@ x-backend-health: &backend-health
   start_period: 60s
   retries: 30
 
+# The worker stamps a heartbeat every minute; unhealthy when it stopped.
+x-worker-health: &worker-health
+  test: ["CMD", "python", "manage.py", "worker_alive"]
+  interval: 30s
+  timeout: 20s
+  start_period: 120s
+  retries: 3
+
 services:
   # Development ------------------------------------------------------------
 
@@ -105,6 +113,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck: *worker-health
     logging: *logging
     restart: unless-stopped
 
@@ -199,8 +208,7 @@ services:
     depends_on:
       backend-prod:
         condition: service_healthy
-    healthcheck:
-      disable: true
+    healthcheck: *worker-health
     deploy:
       replicas: ${TASK_WORKERS:-1}
       resources:

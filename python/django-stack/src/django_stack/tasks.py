@@ -1,17 +1,22 @@
 """
-The periodic tasks of the worker: the daily backup and, with Content
+The periodic tasks of the worker: the daily backup, a heartbeat and, with Content
 Studio's notifications app installed, the notification digest and pruning.
 
 The task runs every hour at the minute of ``BACKUP_TIME`` (UTC) and backs
 up when it is the hour of ``BACKUP_TIME``, or when the newest backup is
 older than a day: that catches up a backup missed while the server or the
 worker was down. The worker also checks once when it starts. It only runs where
-``BACKUP_DAILY`` is on, which the production worker sets.
+``BACKUP_DAILY`` is on, which the production worker sets. After a backup the
+worker records its time for ``/statusz`` and pings ``BACKUP_PING_URL``.
+
+The worker also stamps a heartbeat in the cache every minute, which
+``manage.py worker_alive`` and ``/statusz`` read.
 """
 
 from __future__ import annotations
 
 import logging
+import urllib.request
 from datetime import UTC, datetime, timedelta
 
 from django.apps import apps
@@ -19,7 +24,7 @@ from django.core.management import call_command
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, lock_task, on_startup
 
-from . import backup, conf
+from . import backup, conf, health
 
 logger = logging.getLogger("django_stack.backup")
 
@@ -70,13 +75,41 @@ def run_daily_backup(now: datetime | None = None) -> bool:
     if backup.media_backups_enabled():
         media = backup.create_media_backup(result.name)
         logger.info("Backed up the media to %s%s", media.path, " and the bucket" if media.uploaded else "")
+    health.stamp(health.BACKUP_KEY)
+    ping_backup()
     return True
+
+
+def ping_backup() -> None:
+    """GET ``BACKUP_PING_URL`` after a backup, so a monitor notices when backups stop."""
+    url = conf.get("BACKUP_PING_URL")
+    if not url:
+        return
+    if not url.startswith(("https://", "http://")):
+        logger.error("BACKUP_PING_URL must start with https:// or http://.")
+        return
+    try:
+        with urllib.request.urlopen(url, timeout=10):  # noqa: S310 (checked above)
+            pass
+    except OSError as error:
+        logger.warning("Could not ping BACKUP_PING_URL: %s", error)
 
 
 @db_periodic_task(crontab(minute=str(_backup_time()[1])), retries=3, retry_delay=600)
 @lock_task("django-stack-backup")
 def daily_backup():
     run_daily_backup()
+
+
+@db_periodic_task(crontab(minute="*"), expires=60)
+def heartbeat():
+    """Tells the backend the worker runs; see ``django_stack.health``."""
+    health.stamp(health.HEARTBEAT_KEY)
+
+
+@on_startup("django-stack-heartbeat")
+def first_heartbeat():
+    health.stamp(health.HEARTBEAT_KEY)
 
 
 def notifications_installed() -> bool:
