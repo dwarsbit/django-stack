@@ -19,7 +19,7 @@
 </p>
 
 DjangoStack creates a website project with a Django backend, a frontend,
-Postgres, Valkey and Umami analytics, run by Docker Compose.
+Postgres and Umami analytics (Valkey if you want it), run by Docker Compose.
 [Django Headless](https://djangoheadless.org) serves the content API and
 [Django Content Studio](https://djangocontentstudio.org) is the admin. The
 `dstack` command takes the project from development to deploy.

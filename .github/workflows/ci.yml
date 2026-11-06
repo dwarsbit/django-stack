@@ -85,6 +85,12 @@ jobs:
           - profile: prod
             script: scripts/e2e-prod.sh
             project: prod-site
+          # The cache and the task queue in Valkey instead of Postgres.
+          - frontend: astro
+            profile: dev-valkey
+            script: scripts/e2e.sh
+            project: e2e-site
+            cache: valkey
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v5
@@ -101,6 +107,7 @@ jobs:
         env:
           FRONTEND: ${{ matrix.frontend }}
           LOCAL_S3: ${{ matrix.profile == 'dev' && '1' || '' }}
+          CACHE: ${{ matrix.cache || '' }}
       - name: Logs
         if: failure()
         run: docker compose --project-directory "$RUNNER_TEMP/${{ matrix.project }}" logs --tail 200

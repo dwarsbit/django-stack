@@ -10,6 +10,7 @@ import {
   resolvePreset,
   STACK_OPTIONS,
   type Stack,
+  taskQueue,
 } from "../src/stack";
 
 /** Every combination of every option's values. */
@@ -108,7 +109,12 @@ describe("pendingChoices", () => {
   it("lists what is not generated yet, and which of it are defaults", () => {
     const pending = pendingChoices({ ...DEFAULT_STACK, frontend: "headless" });
     expect(pending).toContainEqual({ key: "frontend", choice: "--frontend headless", isDefault: false });
-    expect(pending).toContainEqual({ key: "cache", choice: "--cache database", isDefault: true });
+    expect(pending).toContainEqual({
+      key: "notifications",
+      choice: "--notifications on",
+      isDefault: true,
+    });
+    expect(pending.map((item) => item.key)).not.toContain("cache");
   });
 
   it("skips the package manager without a Node frontend", () => {
@@ -119,5 +125,26 @@ describe("pendingChoices", () => {
   it("asks for the package manager with every Node frontend", () => {
     for (const frontend of ["astro", "next", "nuxt", "sveltekit"] as const)
       expect(applies("packageManager", { frontend })).toBe(true);
+  });
+});
+
+describe("tasks and cache", () => {
+  it("asks for the cache before the tasks, keeping every option", () => {
+    expect(PROMPT_ORDER.indexOf("cache")).toBe(PROMPT_ORDER.indexOf("tasks") - 1);
+    expect([...PROMPT_ORDER].sort()).toEqual(STACK_OPTIONS.map((option) => option.key).sort());
+  });
+
+  it("keeps the task queue where the cache is, unless Valkey is asked for", () => {
+    expect(taskQueue({ cache: "database", tasks: "huey" })).toBe("database");
+    expect(taskQueue({ cache: "off", tasks: "huey" })).toBe("database");
+    expect(taskQueue({ cache: "valkey", tasks: "huey" })).toBe("valkey");
+    expect(taskQueue({ cache: "database", tasks: "huey-valkey" })).toBe("valkey");
+    expect(taskQueue({ cache: "valkey", tasks: "off" })).toBe("none");
+  });
+
+  it("appends Huey on Valkey to the tasks", () => {
+    const stack = { ...DEFAULT_STACK, tasks: "huey-valkey" as const };
+    expect(decodePreset(encodePreset(stack))).toEqual(stack);
+    expect(decodePreset("a0002").tasks).toBe("huey-valkey");
   });
 });

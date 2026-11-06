@@ -21,9 +21,10 @@ import {
   readProject,
   runningServices,
 } from "../project";
-import { encodePreset, STACK_OPTIONS, type Stack, type StackKey, type StackValue } from "../stack";
+import { encodePreset, PROMPT_ORDER, type Stack, stackOption } from "../stack";
 import { dockerNotRunning, dockerRunning } from "../tools";
 import { command, fail, has, intro, isInteractive, logCheck, secret, unwrap, url } from "../ui";
+import { choices } from "./init";
 
 export interface DirectoryOptions {
   dir?: string;
@@ -167,29 +168,32 @@ export async function shell(options: DirectoryOptions) {
 }
 
 /**
- * The project and the service that run the backups: the prod worker, on a
+ * The project and how to run a backup command: in the prod worker, on a
  * server or the local run, or the `backup` service of projects from 0.1.
+ * Without a running worker (tasks off, TASK_WORKERS=0) in a one-off worker
+ * container, while the backend runs.
  */
-function backupProject(options: DirectoryOptions): { project: Project; service: string } {
+function backupProject(options: DirectoryOptions): { project: Project; run: string[] } {
   const project = activeProject(open(options));
   if (!project.prod)
     fail(`Backups run in the prod profile: on the server, or locally after ${command("dstack run")}.`);
   const running = runningServices(project);
   const service = ["backup", project.services.worker].find((name) => running.includes(name));
-  if (!service)
-    fail(
-      `The ${project.services.worker} service is not running. Start the project with ${command("dstack run")}.`,
-    );
-  return { project, service };
+  if (service) return { project, run: ["exec", service] };
+  if (project.env.TASK_WORKERS === "0" && running.includes(project.services.backend))
+    return { project, run: ["run", "--rm", "--no-deps", project.services.worker] };
+  fail(
+    `The ${project.services.worker} service is not running. Start the project with ${command("dstack run")}.`,
+  );
 }
 
 /** `dstack backup`: back up the database and the media now, or list the backups. */
 export async function backup(options: DirectoryOptions & { list?: boolean; media: boolean }) {
-  const { project, service } = backupProject(options);
+  const { project, run } = backupProject(options);
   const args = ["python", "manage.py", "backup_database"];
   if (options.list) args.push("--list");
   else if (!options.media) args.push("--no-media");
-  exitWith(compose(project, ["exec", "-T", service, ...args]));
+  exitWith(compose(project, [run[0] as string, "-T", ...run.slice(1), ...args]));
 }
 
 /** The management command and its options for `dstack restore`. */
@@ -201,10 +205,10 @@ export function restoreArgs(name: string, options: { yes?: boolean; media?: bool
 
 /** `dstack restore <backup>`: restore a database dump, with --media its media too, or a media archive. */
 export async function restore(name: string, options: DirectoryOptions & { yes?: boolean; media?: boolean }) {
-  const { project, service } = backupProject(options);
+  const { project, run } = backupProject(options);
   const args = restoreArgs(name, options);
   if (!options.yes && !tty()) fail("Pass --yes to restore without a terminal.");
-  exitWith(compose(project, ["exec", ...(options.yes ? ["-T"] : []), service, ...args]));
+  exitWith(compose(project, [run[0] as string, ...(options.yes ? ["-T"] : []), ...run.slice(1), ...args]));
 }
 
 /** `dstack types`: the OpenAPI schema from the backend, and the frontend's types from it. */
@@ -383,20 +387,14 @@ export async function config(options: ConfigOptions) {
   const current = projectStack(project);
   const next = { ...current } as Record<string, string>;
 
-  for (const option of STACK_OPTIONS) {
-    const key = option.key as StackKey;
+  for (const key of PROMPT_ORDER) {
     if (options.fromCli(key)) next[key] = options[key] as string;
     else if (interactive && SWITCHABLE.includes(key)) {
       next[key] = unwrap(
         await p.select<string>({
-          message: option.message,
+          message: stackOption(key).message,
           initialValue: current[key],
-          options: (option.values as readonly StackValue[]).map((value) => ({
-            value: value.value,
-            label: value.label,
-            hint: value.generated ? value.hint : "coming soon",
-            disabled: !value.generated && value.value !== current[key],
-          })),
+          options: choices(key, next as Partial<Stack>),
         }),
       );
     }

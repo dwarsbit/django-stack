@@ -5,7 +5,8 @@
 #
 #   pnpm build && scripts/e2e.sh [directory]
 #
-# With LOCAL_S3=1 the project stores media in the local S3 service.
+# With LOCAL_S3=1 the project stores media in the local S3 service, with
+# CACHE=valkey the cache and the task queue are in Valkey.
 # FRONTEND picks the frontend (astro by default); every frontend must pass
 # the same tests.
 # Needs Docker, uv and pnpm. Leaves the project running with KEEP=1.
@@ -25,7 +26,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND:-astro}" ${LOCAL_S3:+--storage s3}
+node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND:-astro}" ${LOCAL_S3:+--storage s3} ${CACHE:+--cache "$CACHE"}
 cd "$project"
 
 docker compose build

@@ -6,6 +6,7 @@ import { checkSteps, restoreArgs } from "../src/commands/project";
 import { applyStack, setManifestPreset } from "../src/config";
 import { parseEnv } from "../src/env";
 import {
+  cacheStack,
   compose,
   findProjectDirectory,
   projectStack,
@@ -112,6 +113,28 @@ describe("projectStack", () => {
   });
 });
 
+describe("cacheStack", () => {
+  it("reads the cache and the tasks from .env", () => {
+    expect(cacheStack({ CACHE_URL: "db://", TASKS_URL: "db://" })).toEqual({
+      cache: "database",
+      tasks: "huey",
+    });
+    expect(cacheStack({ CACHE_URL: "db://", TASKS_URL: "redis://cache:6379/1" })).toEqual({
+      cache: "database",
+      tasks: "huey-valkey",
+    });
+    expect(cacheStack({ CACHE_URL: "locmem://", TASKS_URL: "immediate://" })).toEqual({
+      cache: "off",
+      tasks: "off",
+    });
+  });
+
+  it("reads projects from before TASKS_URL", () => {
+    expect(cacheStack({ CACHE_URL: "redis://cache:6379/0" })).toEqual({ cache: "valkey", tasks: "huey" });
+    expect(cacheStack({})).toEqual({ cache: "off", tasks: "off" });
+  });
+});
+
 describe("applyStack", () => {
   const dev = "COMPOSE_PROFILES=dev,db\nS3_BUCKET=\n";
   const local = { ...DEFAULT_STACK, storage: "local" as const };
@@ -146,6 +169,35 @@ describe("applyStack", () => {
     const again = parseEnv(applyStack(applyStack(on.env, env, umami, off).env, stopped, off, umami).env);
     expect(again.UMAMI_WEBSITE_ID).toBe(env.UMAMI_WEBSITE_ID);
     expect(again.UMAMI_ADMIN_PASSWORD).toBe(env.UMAMI_ADMIN_PASSWORD);
+  });
+
+  it("switches the cache and the tasks, with Valkey only when used", () => {
+    const text = "COMPOSE_PROFILES=dev,db\nCACHE_URL=db://\nTASKS_URL=db://\nTASK_WORKERS=1\n";
+    const valkey = { ...DEFAULT_STACK, cache: "valkey" as const };
+    const on = applyStack(text, parseEnv(text), DEFAULT_STACK, valkey);
+    expect(parseEnv(on.env)).toMatchObject({
+      COMPOSE_PROFILES: "dev,db,valkey",
+      CACHE_URL: "redis://cache:6379/0",
+      TASKS_URL: "redis://cache:6379/1",
+    });
+    expect(on.changes).toHaveLength(2);
+
+    const off = { ...valkey, tasks: "off" as const };
+    const stopped = parseEnv(applyStack(on.env, parseEnv(on.env), valkey, off).env);
+    expect(stopped).toMatchObject({ TASKS_URL: "immediate://", TASK_WORKERS: "0" });
+    expect(stopped.COMPOSE_PROFILES).toBe("dev,db,valkey");
+
+    const back = parseEnv(applyStack(on.env, parseEnv(on.env), valkey, DEFAULT_STACK).env);
+    expect(back).toMatchObject({ COMPOSE_PROFILES: "dev,db", CACHE_URL: "db://", TASKS_URL: "db://" });
+  });
+
+  it("leaves the cache alone when only the tasks change", () => {
+    const old = "COMPOSE_PROFILES=dev,db\nCACHE_URL=redis://cache:6379/0\n";
+    const env = parseEnv(
+      applyStack(old, parseEnv(old), DEFAULT_STACK, { ...DEFAULT_STACK, tasks: "off" }).env,
+    );
+    expect(env).toMatchObject({ CACHE_URL: "redis://cache:6379/0", TASKS_URL: "immediate://" });
+    expect(env.COMPOSE_PROFILES).toBe("dev,db,valkey");
   });
 
   it("switches uploads in production in the preset only", () => {

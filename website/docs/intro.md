@@ -12,8 +12,8 @@ open-source project you can read, change or remove.
 - **Django Content Studio** is the admin where editors write and publish.
 - **Astro** renders the site by default; Next.js, SvelteKit and Nuxt are the
   alternatives.
-- **Postgres** stores the content, and **Valkey** is the shared cache and
-  task queue.
+- **Postgres** stores the content, and also the shared cache and the task
+  queue, unless you pick **Valkey** for them.
 
 DjangoStack is the glue between them. It is not a CMS of its own: the content
 models live in your project, and features of the API or the admin belong in

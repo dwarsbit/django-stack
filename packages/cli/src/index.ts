@@ -2,6 +2,7 @@ export { type Check, runDoctor } from "./doctor";
 export { parseEnv, setEnvValues } from "./env";
 export { type ProductionEnv, type ProductionOptions, productionEnv, validateDomain } from "./production";
 export {
+  cacheEnv,
   FRONTENDS,
   type Frontend,
   normalizeDatabaseUrl,
@@ -9,6 +10,7 @@ export {
   type ScaffoldResult,
   scaffold,
   toProjectName,
+  usesValkey,
   validateProjectName,
 } from "./scaffold";
 export { generateProjectSecrets, generateSecret } from "./secrets";

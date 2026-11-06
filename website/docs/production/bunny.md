@@ -30,11 +30,11 @@ for the domain.
 | `proxy` | Caddy with the project's `Caddyfile` copied into the image, the app's only public endpoint |
 | `backend-prod`, `worker-prod`, `frontend-prod` | The production images, built for `linux/amd64` and pushed to Bunny Container Registry |
 | `db` | Postgres from Docker Hub with the `pgdata` volume |
-| `cache` | Valkey from Docker Hub, without a volume |
+| `cache` | Valkey from Docker Hub, without a volume, with the `valkey` profile only |
 
 Bunny differs from a server in these ways:
 
-- **One instance in one region.** Postgres and Valkey run in the pod, so
+- **One instance in one region.** Postgres (and Valkey, if used) run in the pod, so
   the app is not replicated. Use an external Postgres through
   `DATABASE_URL` to keep the database out of the pod.
 - **A short outage on each deploy.** A pod with a volume stops before the

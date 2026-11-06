@@ -109,14 +109,29 @@ export function projectManifest(project: Project): { version?: string; frontend?
  * generated have the default in their preset without running it.
  */
 export function projectStack(project: Project): Stack {
-  const analytics = project.profiles.includes("analytics") ? "umami" : "off";
+  const analytics: Stack["analytics"] = project.profiles.includes("analytics") ? "umami" : "off";
+  const fromEnv = { analytics, ...(project.env.CACHE_URL === undefined ? {} : cacheStack(project.env)) };
   const { preset } = projectManifest(project);
   if (preset) {
     try {
-      return { ...decodePreset(preset), analytics };
+      return { ...decodePreset(preset), ...fromEnv };
     } catch {}
   }
-  return { ...DEFAULT_STACK, analytics, storage: project.profiles.includes("s3") ? "s3" : "local" };
+  return { ...DEFAULT_STACK, ...fromEnv, storage: project.profiles.includes("s3") ? "s3" : "local" };
+}
+
+const REDIS = /^(redis|rediss|valkey|valkeys):/;
+
+/**
+ * The cache and the tasks a project's `.env` runs. Projects from before 0.7
+ * have no TASKS_URL: their tasks follow a Redis cache, like the backend does.
+ */
+export function cacheStack(env: Record<string, string>): Pick<Stack, "cache" | "tasks"> {
+  const cacheUrl = env.CACHE_URL ?? "";
+  const cache = cacheUrl.startsWith("db:") ? "database" : REDIS.test(cacheUrl) ? "valkey" : "off";
+  const tasksUrl = env.TASKS_URL || (cache === "valkey" ? cacheUrl : "immediate://");
+  if (tasksUrl.startsWith("immediate:")) return { cache, tasks: "off" };
+  return { cache, tasks: REDIS.test(tasksUrl) && cache !== "valkey" ? "huey-valkey" : "huey" };
 }
 
 /** The URLs of a running project. */

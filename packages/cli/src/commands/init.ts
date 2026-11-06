@@ -47,15 +47,24 @@ export interface InitOptions {
   fromCli: (option: string) => boolean;
 }
 
-/** The prompt choices of an option; values this version does not generate yet are shown but disabled. */
-function choices(key: StackKey) {
+/**
+ * The prompt choices of an option; values this version does not generate yet
+ * are shown but disabled. The tasks follow the cache chosen before them: Huey
+ * keeps its queue in the database, or in Valkey with the Valkey cache.
+ */
+export function choices(key: StackKey, stack: Partial<Stack> = {}) {
   const option = stackOption(key);
-  return option.values.map((value: StackValue, index) => ({
-    value: value.value,
-    label: value.label,
-    hint: value.generated || index === 0 ? value.hint : "coming soon",
-    disabled: !value.generated && index > 0,
-  }));
+  return option.values.flatMap((value: StackValue, index) => {
+    let hint = value.generated || index === 0 ? value.hint : "coming soon";
+    if (key === "tasks" && value.value === "huey") {
+      hint =
+        stack.cache === "valkey"
+          ? "a worker container, the queue in Valkey"
+          : "a worker container, the queue in Postgres";
+    }
+    if (key === "tasks" && value.value === "huey-valkey" && stack.cache === "valkey") return [];
+    return [{ value: value.value, label: value.label, hint, disabled: !value.generated && index > 0 }];
+  });
 }
 
 /**
@@ -93,7 +102,11 @@ export async function chooseStack(
       // With S3 in production, suggest the local S3 service in development: the same code path.
       const initialValue = key === "storage" && stack.media === "s3" ? "s3" : stack[key];
       stack[key] = unwrap(
-        await p.select<string>({ message: option.message, options: choices(key), initialValue }),
+        await p.select<string>({
+          message: option.message,
+          options: choices(key, stack as Partial<Stack>),
+          initialValue,
+        }),
       );
     }
   }
@@ -227,6 +240,8 @@ export async function init(directoryArgument: string | undefined, options: InitO
       databaseUrl,
       localS3: stack.storage === "s3",
       analytics: stack.analytics === "umami",
+      cache: stack.cache,
+      tasks: stack.tasks,
       preset: encodePreset(stack),
       timeZone,
       ports: ports.ports,

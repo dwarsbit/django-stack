@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { parseEnv, setEnvValues } from "./env";
 import { portValues } from "./ports";
 import { generateProjectSecrets } from "./secrets";
-import { DEFAULT_STACK, encodePreset, type Stack, stackOption } from "./stack";
+import { DEFAULT_STACK, encodePreset, type Stack, stackOption, taskQueue } from "./stack";
 import { CLI_VERSION } from "./version";
 
 /** A frontend option; its template is `templates/frontend-<name>`. */
@@ -49,6 +49,10 @@ export interface ScaffoldOptions {
   localS3?: boolean;
   /** Page analytics with the bundled Umami (the `analytics` profile). */
   analytics?: boolean;
+  /** The cache backend; the database by default. */
+  cache?: Stack["cache"];
+  /** The task queue; Huey where the cache is by default. */
+  tasks?: Stack["tasks"];
   /** A DjangoStack monorepo to take the packages from instead of the registries (for development). */
   link?: string;
   /** The time zone of the backend, such as Europe/Amsterdam. UTC by default. */
@@ -84,6 +88,30 @@ export function umamiEnv(databaseUrl: string, secrets: Record<string, string>): 
     UMAMI_APP_SECRET: secrets.umami_app ?? "",
     UMAMI_DATABASE_URL: umamiDatabaseUrl(databaseUrl),
   };
+}
+
+const CACHE_URLS: Record<Stack["cache"], string> = {
+  database: "db://",
+  valkey: "redis://cache:6379/0",
+  off: "locmem://",
+};
+
+const TASK_ENV: Record<ReturnType<typeof taskQueue>, Record<string, string>> = {
+  database: { TASKS_URL: "db://", TASK_WORKERS: "1" },
+  valkey: { TASKS_URL: "redis://cache:6379/1", TASK_WORKERS: "1" },
+  none: { TASKS_URL: "immediate://", TASK_WORKERS: "0" },
+};
+
+/** The `.env` values of a cache and a task queue: CACHE_URL, TASKS_URL and TASK_WORKERS. */
+export function cacheEnv(stack: Pick<Stack, "cache" | "tasks">): Record<string, string> {
+  return { CACHE_URL: CACHE_URLS[stack.cache], ...TASK_ENV[taskQueue(stack)] };
+}
+
+/** Whether `.env` values use the Valkey service (the `valkey` profile). */
+export function usesValkey(env: Record<string, string | undefined>): boolean {
+  return [env.CACHE_URL, env.TASKS_URL].some((url) =>
+    /^(redis|rediss|valkey|valkeys):\/\/cache[:/]/.test(url ?? ""),
+  );
 }
 
 /** The local S3 service of the `s3` profile, published on `port`. It accepts any credentials. */
@@ -239,6 +267,9 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     profiles.push("analytics");
     env = setEnvValues(env, umamiEnv(parseEnv(env).DATABASE_URL ?? "", secrets));
   }
+  const cache = cacheEnv({ cache: options.cache ?? "database", tasks: options.tasks ?? "huey" });
+  env = setEnvValues(env, cache);
+  if (usesValkey(cache)) profiles.push("valkey");
   env = setEnvValues(env, { COMPOSE_PROFILES: profiles.join(",") });
   if (options.ports) env = setEnvValues(env, portValues(parseEnv(env), options.ports));
   if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });
