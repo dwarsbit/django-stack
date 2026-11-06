@@ -5,6 +5,25 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.9.0 (unreleased)
+
+- **Railway deploys.** `dstack deploy setup --provider railway` creates a
+  Railway project with one service per production service of
+  `compose.yaml`: Railway builds the backend, the worker and the frontend
+  from their directories in the GitHub repository and deploys them on
+  every push, Postgres runs Railway's own Postgres image with a volume, and
+  the `proxy` service gets the domain, with the `Caddyfile` in a variable.
+  Uploads must be in S3. `dstack deploy`, `status`, `logs`, `rollback` and
+  `env push` work on all the built services together. Create a token at
+  railway.com/account/tokens, or set `DSTACK_RAILWAY_TOKEN`. New
+  `deploy setup` flag: `--workspace`.
+- **No BuildKit cache mounts in the Dockerfiles.** Railway rejects
+  `RUN --mount=type=cache`, so new projects install their Python and npm
+  packages without them; Docker still caches the layer until the lock file
+  changes. To deploy an existing project to Railway, remove
+  `--mount=type=cache,target=/root/.cache/uv` from `backend/Dockerfile`
+  and `--mount=type=cache,target=/root/.npm` from `frontend/Dockerfile`.
+
 ## 0.8.1 (2026-11-06)
 
 ### Fixes

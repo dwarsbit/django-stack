@@ -156,7 +156,7 @@ admonitions or the README.
   Caddy, Mailpit, Docker Compose): freely, since the reader works with them.
   Link to their documentation for their concepts rather than explaining
   them again.
-- **Hosting platforms** (Coolify, Dokploy, Bunny, a VPS provider): only on the
+- **Hosting platforms** (Coolify, Dokploy, Bunny, Railway, a VPS provider): only on the
   pages that deploy to them, factually.
 - **Other tools** (WordPress, other CMSs and starters): only on a single
   comparison page, factually and without judging them. Nowhere else.

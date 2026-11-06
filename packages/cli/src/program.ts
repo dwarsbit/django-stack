@@ -205,7 +205,7 @@ export function createProgram(): Command {
 
   const deployCommand = program
     .command("deploy")
-    .description("Deploy to Coolify, Dokploy, Bunny or a server over SSH, and show the status");
+    .description("Deploy to Coolify, Dokploy, Bunny, Railway or a server over SSH, and show the status");
 
   deployCommand
     .command("start", { isDefault: true })

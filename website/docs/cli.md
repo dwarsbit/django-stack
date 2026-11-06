@@ -298,7 +298,7 @@ linked to a platform, push the new values with
 ## `deploy`
 
 Puts the project on a hosting platform or a server, deploys it and shows
-its status. There are three kinds of providers:
+its status. There are four kinds of providers:
 
 - **Coolify** (`--provider coolify`, the default) and **Dokploy**
   (`--provider dokploy`) build the project on their server from the git
@@ -311,6 +311,9 @@ its status. There are three kinds of providers:
   last commit built on your machine and pushed to Bunny Container Registry,
   so commit before you deploy. See
   [Bunny Magic Containers](./production/bunny.md).
+- **Railway** (`--provider railway`) builds the backend and the frontend
+  from the GitHub repository and deploys again on every push, so push your
+  commits before you deploy. See [Railway](./production/railway.md).
 
 ```bash
 dstack production --domain example.com
@@ -324,13 +327,13 @@ dstack deploy
 | `dstack deploy` | Starts a deploy and follows it until it ends; on a failure it prints the end of the build log. `--force` rebuilds without the cache, `--no-wait` returns once the deploy started. `dstack deploy start` is the same command. |
 | `dstack deploy status` | Shows whether the site runs, its domain, and the last deploys. `--watch` follows a running deploy, `-n <count>` lists more deploys. |
 | `dstack deploy logs [deployment]` | Prints the build log of a deploy, the latest by default. |
-| `dstack deploy rollback [deployment]` | Starts an earlier release again: the one before the running one, or the deploy you name. Servers over SSH and Bunny only. `--no-wait` returns once it started. |
+| `dstack deploy rollback [deployment]` | Starts an earlier release again: the one before the running one, or the deploy you name. Servers over SSH, Bunny and Railway only. `--no-wait` returns once it started. |
 | `dstack deploy env push` | Replaces the platform's variables with `.env.production`. |
 | `dstack deploy login` | Checks an API key and saves it. `setup` asks for one when there is none. Not used for servers over SSH. |
 | `dstack deploy logout` | Removes a saved API key. |
 
 `dstack deploy` refuses when the deploy would not include your work: for
-Coolify and Dokploy, when your last commit is not on the branch it deploys (push it);
+Coolify, Dokploy and Railway, when your last commit is not on the branch it deploys (push it);
 for a server over SSH and Bunny, when you have uncommitted changes (commit them).
 `--no-push-check` deploys anyway.
 
@@ -338,13 +341,14 @@ for a server over SSH and Bunny, when you have uncommitted changes (commit them)
 
 | Option | Description |
 |--------|-------------|
-| `--provider <provider>` | `coolify`, `dokploy`, `ssh` or `bunny`. Asked for when it is not given; with `--yes`, `coolify`. |
+| `--provider <provider>` | `coolify`, `dokploy`, `ssh`, `bunny` or `railway`. Asked for when it is not given; with `--yes`, `coolify`. |
 | `--url <url>` | The platform's address, such as `https://coolify.example.com`, or the server, such as `deploy@example.com` or `deploy@example.com:2222`. |
 | `--repository <url>` | The git repository the platform builds. Default: the `origin` remote, as an `https` URL. |
 | `--branch <branch>` | The branch to deploy. Default: the current branch. |
 | `--server <server>` | The Coolify or Dokploy server, by name or id. Asked for when there are several. For Dokploy, `dokploy` is its own server, the default. |
-| `--project <project>` | The Coolify or Dokploy project, by name or id. Default: a new project named after the project. |
-| `--environment <name>` | The Coolify or Dokploy environment. Default: `production`, created when it does not exist. |
+| `--project <project>` | The Coolify, Dokploy or Railway project, by name or id. Default: a new project named after the project. |
+| `--environment <name>` | The Coolify, Dokploy or Railway environment. Default: `production`, created when it does not exist. |
+| `--workspace <workspace>` | The Railway workspace, by name or id. Asked for when there are several. |
 | `--github-app <app>` | The Coolify GitHub App that reads a private repository, or `public`. Asked for when Coolify has GitHub Apps. |
 | `--path <path>` | The project directory on a server over SSH. Default: `/srv/<project>`. |
 | `--region <region>` | The Bunny region, such as `DE`. Default: the closest. |
@@ -363,7 +367,9 @@ service the domain. For a server over SSH, it checks Docker and
 the Compose plugin, creates the project directory and uploads the
 variables as `shared/.env`. For Bunny, it builds and pushes the images,
 creates one Magic Containers app with a container per service and adds the
-domain to its CDN; Bunny has a fixed API, so there is no `--url`.
+domain to its CDN; Bunny has a fixed API, so there is no `--url`. For
+Railway, it creates a project with one service per production service and
+gives the `proxy` service the domain; Railway also has a fixed API.
 
 It then writes `.dstack/deploy.json`: the platform's address and the ids of
 the project, environment and application, or the server, its directory
@@ -380,13 +386,14 @@ address, and never in the project. Where there is no keychain, such as on a
 server without a desktop, it saves the key in
 `~/.config/dstack/credentials.json`, readable only by you, and says so.
 
-In CI, set `DSTACK_COOLIFY_TOKEN`, `DSTACK_DOKPLOY_TOKEN` or
-`DSTACK_BUNNY_TOKEN`: it overrides a
+In CI, set `DSTACK_COOLIFY_TOKEN`, `DSTACK_DOKPLOY_TOKEN`,
+`DSTACK_BUNNY_TOKEN` or `DSTACK_RAILWAY_TOKEN`: it overrides a
 saved key and nothing is written. Create a Coolify key under
 **Keys & Tokens** with the `read`, `write` and `deploy` permissions; the
 API must be on under **Settings** › **Advanced**. Create a Dokploy key
 under **Settings** › **Profile** › **API/CLI**. Bunny uses the account
-API key from **Account** › **API key**. Servers over SSH use your
+API key from **Account** › **API key**. Railway uses an account or
+workspace token from **Account Settings** › **Tokens**. Servers over SSH use your
 SSH keys and need no API key.
 
 ## `doctor`

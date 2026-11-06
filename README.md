@@ -46,7 +46,7 @@ Postgres and Umami analytics (Valkey if you want it), run by Docker Compose.
 - **Production on your server**: the same `compose.yaml` runs behind Caddy
   with HTTPS, read-only containers without privileges and daily backups.
 - **Deploy with one command**: `dstack deploy` puts the project on
-  Coolify, Dokploy, Bunny Magic Containers or a server over SSH.
+  Coolify, Dokploy, Bunny Magic Containers, Railway or a server over SSH.
 - **Open pieces**: Django, Django Headless, Django Content Studio, Postgres,
   Valkey and Umami are open-source projects you can read, change or remove.
 
