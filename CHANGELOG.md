@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.6.0 (unreleased)
+## 0.6.0 (2026-11-06)
 
 - **Page analytics with Umami.** `init` now runs Umami for page analytics
   unless you pass `--analytics off` (presets with analytics on, such as the
