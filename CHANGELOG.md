@@ -5,6 +5,19 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.8.1 (unreleased)
+
+### Fixes
+
+- Fixed: the Astro frontend of `dstack dev` did not start again after the
+  project stopped, with "Another astro dev server is already running".
+  Astro's lock file `frontend/.astro/dev.json` stays behind in the mounted
+  folder, and the new container reuses the old process IDs. The dev
+  container now removes the lock file before it starts Astro. In an
+  existing project, delete `frontend/.astro/dev.json`, or change the `CMD`
+  of the `dev` target in `frontend/Dockerfile` to
+  `CMD ["sh", "-c", "rm -f .astro/dev.json && exec npm run dev"]`.
+
 ## 0.8.0 (2026-11-06)
 
 - **`dstack self-update`.** Updates `dstack` to the latest version on npm
