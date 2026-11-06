@@ -14,7 +14,10 @@ RUN --mount=type=cache,target=/root/.npm \
 
 FROM deps AS dev
 EXPOSE 3000
-CMD ["npm", "run", "dev"]
+# A container runs one dev server, so a lock file in the mounted .astro/ is
+# always stale: from a stopped container, whose process IDs the new one reuses,
+# or from `npm run dev` on the host. Astro would refuse to start next to it.
+CMD ["sh", "-c", "rm -f .astro/dev.json && exec npm run dev"]
 
 FROM deps AS build
 COPY . .
