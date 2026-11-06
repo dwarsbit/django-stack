@@ -26,6 +26,14 @@ x-hardened: &hardened
   cap_drop:
     - ALL
 
+# Every service: Docker keeps at most 5 log files of 10 MB, so logs never
+# fill the disk.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
 x-frontend-env: &frontend-env
   SITE_URL: ${SITE_URL}
   API_URL: http://backend:8000/api
@@ -78,6 +86,7 @@ services:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     depends_on: *backend-depends
     healthcheck: *backend-health
+    logging: *logging
     restart: unless-stopped
 
   worker:
@@ -96,6 +105,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    logging: *logging
     restart: unless-stopped
 
   frontend:
@@ -112,6 +122,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    logging: *logging
     restart: unless-stopped
 
   mailpit:
@@ -119,6 +130,7 @@ services:
     image: axllent/mailpit:v1.27
     ports:
       - "127.0.0.1:${MAIL_PORT:-8025}:8025"
+    logging: *logging
     restart: unless-stopped
 
   # A local S3 service, so development runs the same storage code as
@@ -132,6 +144,7 @@ services:
       - s3data:/data
     ports:
       - "127.0.0.1:${S3_PORT:-8333}:8333"
+    logging: *logging
     restart: unless-stopped
 
   # Production -------------------------------------------------------------
@@ -160,6 +173,7 @@ services:
       resources:
         limits:
           memory: 768M
+    logging: *logging
     restart: unless-stopped
 
   worker-prod:
@@ -192,6 +206,7 @@ services:
       resources:
         limits:
           memory: 512M
+    logging: *logging
     restart: unless-stopped
 
   frontend-prod:
@@ -212,6 +227,7 @@ services:
       resources:
         limits:
           memory: 512M
+    logging: *logging
     restart: unless-stopped
 
   # The only service with public ports: HTTPS for SITE_URL with a
@@ -244,6 +260,7 @@ services:
       resources:
         limits:
           memory: 256M
+    logging: *logging
     restart: unless-stopped
 
   # Shared -----------------------------------------------------------------
@@ -276,6 +293,7 @@ services:
       resources:
         limits:
           memory: 512M
+    logging: *logging
     restart: unless-stopped
 
   db:
@@ -298,6 +316,7 @@ services:
       resources:
         limits:
           memory: 1G
+    logging: *logging
     restart: unless-stopped
 
   # Valkey (the valkey profile), for CACHE_URL or TASKS_URL redis://cache.
@@ -318,6 +337,7 @@ services:
       resources:
         limits:
           memory: 256M
+    logging: *logging
     restart: unless-stopped
 
 volumes:

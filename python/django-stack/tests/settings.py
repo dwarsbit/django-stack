@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "headless.rest",
 ]
 MIDDLEWARE = [
+    "django_stack.logs.RequestIdMiddleware",  # request IDs and the access log
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

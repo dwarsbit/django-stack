@@ -30,7 +30,8 @@ to ``SITE_URL``), ``ALLOWED_HOSTS`` (extra hosts, comma separated),
 ``BACKUP_KEEP``, ``BACKUP_TIME``, ``BACKUP_MEDIA``, ``BACKUP_S3_BUCKET`` and
 ``BACKUP_S3_PREFIX``, and the analytics variables ``UMAMI_URL`` (the
 internal address of the bundled Umami), ``UMAMI_WEBSITE_ID`` and
-``UMAMI_ADMIN_PASSWORD``.
+``UMAMI_ADMIN_PASSWORD``, and the log variables ``LOG_FORMAT`` (``json``
+or ``plain``), ``LOG_LEVEL`` and ``LOG_ACCESS``.
 """
 
 from __future__ import annotations
@@ -44,6 +45,7 @@ from typing import Any
 from django.core.exceptions import ImproperlyConfigured
 
 from .env import Env, hostname, mail_settings, origin, parse_cache_url, parse_database_url, parse_email_url
+from .logs import logging_settings
 
 DEFAULT_IMAGE_SIZES = {
     "thumbnail": {"width": 400, "height": 400, "fit": "cover"},
@@ -362,14 +364,13 @@ def configure(
         namespace.get("DJANGO_STACK"),
     )
 
-    s["LOGGING"] = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {"plain": {"format": "{levelname} {name} {message}", "style": "{"}},
-        "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "plain"}},
-        "root": {"handlers": ["console"], "level": e.str("LOG_LEVEL", "INFO")},
-        "loggers": {"django": {"handlers": ["console"], "level": "INFO", "propagate": False}},
-    }
+    # Logs: JSON lines in production, plain text in development; see logs.py.
+    log_format = e.str("LOG_FORMAT", "plain" if debug else "json")
+    if log_format not in ("json", "plain"):
+        raise ImproperlyConfigured(f"LOG_FORMAT must be json or plain, not {log_format!r}.")
+    s["LOGGING"] = logging_settings(
+        log_format, e.str("LOG_LEVEL", "INFO"), access=e.bool("LOG_ACCESS", not debug)
+    )
 
     namespace.update(s)
     return namespace
