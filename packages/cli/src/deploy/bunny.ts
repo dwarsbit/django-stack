@@ -114,6 +114,35 @@ export const systemRunner: CommandRunner = (command, args, options = {}) =>
     child.stdin.end(options.input);
   });
 
+/** The production Compose project, resolved with the variables, as JSON. */
+export async function resolveCompose(
+  run: CommandRunner,
+  directory: string,
+  env: Record<string, string>,
+): Promise<ComposeProject> {
+  const folder = mkdtempSync(join(tmpdir(), "dstack-env-"));
+  const file = join(folder, ".env");
+  writeFileSync(
+    file,
+    `${Object.entries(env)
+      .map(([key, value]) => `${key}=${envValue(value)}`)
+      .join("\n")}\n`,
+    { mode: 0o600 },
+  );
+  const args = ["compose", "--env-file", file, "config", "--format", "json"];
+  try {
+    const result = await run("docker", args, { cwd: directory, env: { ...env, ENV_FILE: file } });
+    if (result.code !== 0) {
+      if (isDockerDown(`${result.stderr}\n${result.stdout}`)) throw new Error(dockerNotRunning());
+      const last = (result.stderr.trim() || result.stdout.trim()).split("\n").at(-1) ?? "";
+      throw new Error(`docker compose failed (exit ${result.code})${last ? `: ${last}` : "."}`);
+    }
+    return JSON.parse(result.stdout) as ComposeProject;
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+}
+
 export class BunnyError extends Error {
   constructor(
     message: string,
@@ -489,24 +518,7 @@ export class BunnyClient implements ProviderClient {
 
   /** The production Compose project, resolved with the variables, as JSON. */
   async composeConfig(directory: string, env: Record<string, string>): Promise<ComposeProject> {
-    const folder = mkdtempSync(join(tmpdir(), "dstack-env-"));
-    const file = join(folder, ".env");
-    writeFileSync(
-      file,
-      `${Object.entries(env)
-        .map(([key, value]) => `${key}=${envValue(value)}`)
-        .join("\n")}\n`,
-      { mode: 0o600 },
-    );
-    try {
-      const output = await this.docker(["compose", "--env-file", file, "config", "--format", "json"], {
-        cwd: directory,
-        env: { ...env, ENV_FILE: file },
-      });
-      return JSON.parse(output) as ComposeProject;
-    } finally {
-      rmSync(folder, { recursive: true, force: true });
-    }
+    return resolveCompose(this.run, directory, env);
   }
 
   async plan(directory: string, env: Record<string, string>): Promise<AppPlan> {
