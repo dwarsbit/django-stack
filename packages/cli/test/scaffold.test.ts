@@ -189,6 +189,14 @@ describe("scaffold", () => {
     expect(parseEnv(readFileSync(join(directory, ".env"), "utf8")).ERRORS).toBe("off");
   });
 
+  it("reports errors to Sentry", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true, errors: "sentry" });
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.ERRORS).toBe("sentry");
+    expect(env.SENTRY_DSN).toBe("");
+  });
+
   it("uses an external database and no demo content", () => {
     const directory = join(tempDir(), "site");
     scaffold({

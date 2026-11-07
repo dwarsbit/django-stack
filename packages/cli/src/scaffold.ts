@@ -309,7 +309,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   env = setEnvValues(env, { COMPOSE_PROFILES: profiles.join(",") });
   if (options.ports) env = setEnvValues(env, portValues(parseEnv(env), options.ports));
   if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });
-  if (options.errors === "off") env = setEnvValues(env, { ERRORS: "off" });
+  if (options.errors && options.errors !== "email") env = setEnvValues(env, { ERRORS: options.errors });
   writeFileSync(join(target, ".env"), env, { mode: 0o600 });
   writeFileSync(join(target, ".env.example"), envExample);
   rmSync(join(target, "env.example"));

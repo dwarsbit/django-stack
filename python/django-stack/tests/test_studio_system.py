@@ -12,7 +12,8 @@ def request_for(**flags):
     return SimpleNamespace(user=SimpleNamespace(**{"is_active": True, "is_superuser": False, **flags}))
 
 
-def test_system_page_is_for_superusers_only():
+def test_system_page_is_for_superusers_only(settings):
+    settings.DJANGO_STACK = {**settings.DJANGO_STACK, "ERRORS": "email"}
     page, link = SystemPage(), SystemLink()
     assert page.path == "system/"
     assert link.url == "/system/"
@@ -57,3 +58,8 @@ def test_recent_errors_widget(django_capture_on_commit_callbacks):
     assert row["title"] == "ValueError: boom"
     assert row["description"] == "django.request"
     assert row["status"] == "2×"
+
+
+def test_no_recent_errors_with_sentry(settings):
+    settings.DJANGO_STACK = {**settings.DJANGO_STACK, "ERRORS": "sentry"}
+    assert len(SystemPage().dashboard.widgets) == 1

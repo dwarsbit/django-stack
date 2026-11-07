@@ -32,7 +32,9 @@ to ``SITE_URL``), ``ALLOWED_HOSTS`` (extra hosts, comma separated),
 internal address of the bundled Umami), ``UMAMI_WEBSITE_ID`` and
 ``UMAMI_ADMIN_PASSWORD``, and the log variables ``LOG_FORMAT`` (``json``
 or ``plain``), ``LOG_LEVEL`` and ``LOG_ACCESS``, and the error report variables
-``ERRORS`` (``email`` or ``off``) and ``ERROR_EMAIL``.
+``ERRORS`` (``email``, ``sentry`` or ``off``) and ``ERROR_EMAIL``, and for
+Sentry ``SENTRY_DSN``, ``SENTRY_ENVIRONMENT``, ``SENTRY_RELEASE`` and
+``SENTRY_TRACES_SAMPLE_RATE``.
 """
 
 from __future__ import annotations
@@ -155,6 +157,11 @@ def configure(
     s: dict[str, Any] = {}
 
     debug = e.bool("DJANGO_DEBUG", False)
+    # Errors: reported by email and in the admin (errors.py) or to Sentry
+    # (sentry.py), in production only.
+    errors = e.str("ERRORS", "email")
+    if errors not in ("email", "sentry", "off"):
+        raise ImproperlyConfigured(f"ERRORS must be email, sentry or off, not {errors!r}.")
     project_name = e.str("PROJECT_NAME", "django-stack")
     site_url = (e.str("SITE_URL", "http://localhost:3000") or "").rstrip("/")
     backend_url = (e.str("BACKEND_URL", site_url) or "").rstrip("/")
@@ -358,6 +365,7 @@ def configure(
             "BACKUP_PING_URL": e.str("BACKUP_PING_URL"),
             # Error reports go here; without it, to the superusers.
             "ERROR_EMAIL": e.list("ERROR_EMAIL"),
+            "ERRORS": errors,
             "BACKUP_S3": {
                 "endpoint_url": e.str("BACKUP_S3_ENDPOINT_URL", e.str("S3_ENDPOINT_URL")),
                 "region_name": e.str("BACKUP_S3_REGION", e.str("S3_REGION")),
@@ -377,16 +385,16 @@ def configure(
     log_format = e.str("LOG_FORMAT", "plain" if debug else "json")
     if log_format not in ("json", "plain"):
         raise ImproperlyConfigured(f"LOG_FORMAT must be json or plain, not {log_format!r}.")
-    # Errors: reported by email and in the admin in production; see errors.py.
-    errors = e.str("ERRORS", "email")
-    if errors not in ("email", "off"):
-        raise ImproperlyConfigured(f"ERRORS must be email or off, not {errors!r}.")
     s["LOGGING"] = logging_settings(
         log_format,
         e.str("LOG_LEVEL", "INFO"),
         access=e.bool("LOG_ACCESS", not debug),
         errors=errors == "email" and not debug,
     )
+    if errors == "sentry" and not debug:
+        from .sentry import init_sentry
+
+        init_sentry(e, project_name)
 
     namespace.update(s)
     return namespace

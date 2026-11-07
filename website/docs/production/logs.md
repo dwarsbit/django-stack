@@ -84,6 +84,27 @@ ERROR_EMAIL=ops@example.com,admin@example.com
 development there are no reports: errors show on the page and in the
 terminal.
 
+### Sentry
+
+To send errors to [Sentry](https://sentry.io) instead, create a Django
+project there, then set its DSN in `.env` on the server, or pass
+`--errors sentry` to `dstack init`:
+
+```bash title=".env"
+ERRORS=sentry
+SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
+SENTRY_ENVIRONMENT=production
+SENTRY_TRACES_SAMPLE_RATE=0
+```
+
+With `DJANGO_DEBUG=0`, the backend and the worker send their errors, and
+every line logged at `ERROR`, to that project, each tagged with its
+`request_id`. No personal data is sent: no user details, cookies or
+request bodies. `SENTRY_TRACES_SAMPLE_RATE`, from `0` to `1`, also sends
+that share of requests as performance traces. Without `SENTRY_DSN` the
+errors are only logged. The superusers get no emails and the admin's
+System page shows no error reports: Sentry has them.
+
 ## Disk space
 
 Docker keeps at most five log files of 10 MB for each container, set by
