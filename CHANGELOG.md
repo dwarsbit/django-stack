@@ -7,6 +7,13 @@ the unreleased version; the release workflow releases it.
 
 ## 0.9.0 (unreleased)
 
+- **System page in the admin.** Superusers get **System** in the user
+  menu: a page with the database, cache, worker and backup checks, when
+  the worker and the last backup ran, and the latest error reports. It is
+  `django_stack.studio.SystemPage` with `SystemLink`, built from Django
+  Content Studio's dashboard widgets. To add it to an existing project,
+  import both from `django_stack.studio` in `backend/config/studio.py`
+  and add `SystemPage()` and `SystemLink()` to `extensions`.
 - **Error reports by email.** In production, each new error of the
   backend, the worker or a backup (anything logged at `ERROR`) is now
   mailed to the active superusers with its traceback and request ID, and

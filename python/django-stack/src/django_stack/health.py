@@ -10,7 +10,7 @@ can tell whether it runs and when it last backed up. Each check answers
 from __future__ import annotations
 
 import time
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 from django.conf import settings
 from django.core.cache import cache
@@ -40,6 +40,15 @@ def tasks_on_worker() -> bool:
 
 def stamp(key: str, now: float | None = None) -> None:
     cache.set(key, time.time() if now is None else now, STAMP_TIMEOUT)
+
+
+def stamped_at(key: str) -> datetime | None:
+    """When ``key`` was last stamped, or None."""
+    try:
+        value = cache.get(key)
+    except Exception:  # noqa: BLE001
+        return None
+    return None if value is None else datetime.fromtimestamp(float(value), UTC)
 
 
 def age(key: str, now: float | None = None) -> timedelta | None:

@@ -123,6 +123,11 @@ The worker's own healthcheck in `compose.yaml` runs
 `docker compose ps` shows a worker that stopped running tasks as
 `unhealthy`. Its task stays out of the logs.
 
+Superusers see the same checks in the admin: **System** in the user
+menu opens a page with each check, when the worker last checked in and
+when the last backup ran, and the latest error reports with how often
+each happened. The page reloads its data every minute.
+
 On the server, or after `dstack run`:
 
 ```bash

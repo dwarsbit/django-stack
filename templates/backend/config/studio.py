@@ -10,12 +10,16 @@ from content_studio.contrib.huey import HueyAdapter
 from content_studio.dashboard.tasks import TaskDashboard
 from content_studio.extensions import UserMenuLink
 from django_stack.analytics import UmamiProvider
+from django_stack.studio import SystemLink, SystemPage
 
 
 class SiteStudio(ContentStudioSite):
     extensions = [
         TaskDashboard(adapter=HueyAdapter()),
         UserMenuLink(url="/tasks/", label="Tasks", icon="ph-bold ph-queue"),
+        # Superusers only: the health checks and the latest error reports.
+        SystemPage(),
+        SystemLink(),
     ]
 
     # Page analytics from the bundled Umami when UMAMI_URL is set (see
