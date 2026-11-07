@@ -56,7 +56,7 @@ export const STACK_OPTIONS = [
     bits: 2,
     values: [
       { value: "stable", label: "Stable", hint: "Postgres 17", generated: true },
-      { value: "latest", label: "Latest", hint: "Postgres 18", generated: false },
+      { value: "latest", label: "Latest", hint: "Postgres 18", generated: true },
     ],
   },
   {

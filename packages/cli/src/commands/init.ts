@@ -240,6 +240,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
       frontend: stack.frontend,
       demoContent,
       databaseUrl,
+      postgres: stack.postgres,
       localS3: stack.storage === "s3",
       analytics: stack.analytics === "umami",
       cache: stack.cache,

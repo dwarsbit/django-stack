@@ -101,6 +101,33 @@ docker compose restart backend-prod worker-prod frontend-prod
    `.media.tar.gz` into the new server's `backups` volume.
 3. Restore there with `dstack restore <name> --media`.
 
+## Upgrade Postgres
+
+A new major version of Postgres can't read the old one's files, so the
+data moves with a backup and a restore. To go from 17 to 18:
+
+1. Back up with `dstack backup`, then stop with `dstack stop`.
+2. In `compose.yaml`, give the `db` service `image: postgres:18-alpine` and
+   a new volume at the path that version uses, keeping the old volume as it
+   is in case you need to go back:
+
+   ```yaml
+       volumes:
+         - pgdata18:/var/lib/postgresql
+   ```
+
+   and add `pgdata18:` under the top-level `volumes`. Postgres 18 keeps its
+   files in a directory per version under `/var/lib/postgresql`; 17 used
+   `/var/lib/postgresql/data`.
+3. In `backend/Dockerfile`, set `ARG POSTGRES_VERSION=18`, so the backups
+   use the matching `pg_dump`.
+4. Start with `dstack run`; the backend creates the tables in the empty
+   database. Then restore with `dstack restore <name> --media`.
+
+When the site works, remove the old volume with
+`docker volume rm <project>_pgdata`. In development, do the same with
+`dstack dev` instead of `dstack run`, or start over with the new volume.
+
 ## Projects from 0.1
 
 Projects created with 0.1 have a separate `backup` service that runs
@@ -115,6 +142,7 @@ and the volume `backups:/app/backups`, as in a new project.
 `backup_database` and `restore_database` work with any Postgres in
 `DATABASE_URL`, including a managed one, as long as `pg_dump` and
 `pg_restore` (the Postgres client) are installed. The backend image has
-them for Postgres 17; `pg_dump` refuses a server of a newer major version,
-so for Postgres 18 install its client in `backend/Dockerfile`. Your provider's own backups are still the first line for a
+the client of `ARG POSTGRES_VERSION` in `backend/Dockerfile`, the bundled
+Postgres's version; `pg_dump` refuses a server of a newer major version, so
+set it to your server's. Your provider's own backups are still the first line for a
 managed database; these are a copy you control.

@@ -103,6 +103,13 @@ jobs:
             script: scripts/e2e-prod.sh
             project: prod-site
             package-manager: bun
+          # Postgres 18 with its client in the backend image, and a
+          # backup with a restore.
+          - frontend: astro
+            profile: prod-postgres18
+            script: scripts/e2e-prod.sh
+            project: prod-site
+            postgres: latest
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v5
@@ -121,6 +128,7 @@ jobs:
           LOCAL_S3: ${{ matrix.profile == 'dev' && '1' || '' }}
           CACHE: ${{ matrix.cache || '' }}
           PACKAGE_MANAGER: ${{ matrix.package-manager || '' }}
+          POSTGRES: ${{ matrix.postgres || '' }}
       - name: Logs
         if: failure()
         run: docker compose --project-directory "$RUNNER_TEMP/${{ matrix.project }}" logs --tail 200

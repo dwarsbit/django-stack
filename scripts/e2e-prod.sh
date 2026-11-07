@@ -28,7 +28,7 @@ cleanup() {
 trap cleanup EXIT
 
 node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND:-astro}" \
-  ${PACKAGE_MANAGER:+--package-manager "$PACKAGE_MANAGER"}
+  ${PACKAGE_MANAGER:+--package-manager "$PACKAGE_MANAGER"} ${POSTGRES:+--postgres "$POSTGRES"}
 cd "$project"
 node "$cli" production . --domain site.localhost --email-url smtp://mail.invalid:25 --yes
 mv .env .env.development

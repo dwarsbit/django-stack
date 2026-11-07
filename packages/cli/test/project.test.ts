@@ -257,6 +257,12 @@ describe("applyStack", () => {
     );
   });
 
+  it("refuses another Postgres version", () => {
+    expect(() => applyStack(dev, parseEnv(dev), local, { ...local, postgres: "latest" })).toThrow(
+      /needs a backup and a restore/,
+    );
+  });
+
   it("refuses the storage in production and with your own S3", () => {
     const prod = "COMPOSE_PROFILES=prod,db\n";
     expect(() => applyStack(prod, parseEnv(prod), local, s3)).toThrow(/prod profile/);

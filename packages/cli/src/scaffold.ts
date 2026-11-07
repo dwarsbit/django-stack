@@ -46,6 +46,8 @@ export interface ScaffoldOptions {
   demoContent: boolean;
   /** An external Postgres URL; the bundled Postgres when not set. */
   databaseUrl?: string;
+  /** The bundled Postgres's version, and the backend's Postgres client; stable by default. */
+  postgres?: Stack["postgres"];
   /** Store uploads in the local S3 service in development, like S3 in production. */
   localS3?: boolean;
   /** Page analytics with the bundled Umami (the `analytics` profile). */
@@ -72,6 +74,22 @@ export interface ScaffoldOptions {
   preset?: string;
   /** Where the templates are; the ones in the package by default. */
   templatesDir?: string;
+}
+
+/** The Postgres major version of each `--postgres` value. */
+export const POSTGRES_VERSIONS: Record<Stack["postgres"], string> = { stable: "17", latest: "18" };
+
+/**
+ * The template values of a Postgres version. From 18 the image keeps its data
+ * in a versioned directory under /var/lib/postgresql, so the volume is
+ * mounted there; before 18 at /var/lib/postgresql/data.
+ */
+export function postgresValues(postgres: Stack["postgres"]): Record<string, string> {
+  const version = POSTGRES_VERSIONS[postgres];
+  return {
+    postgres_version: version,
+    postgres_data: Number(version) >= 18 ? "/var/lib/postgresql" : "/var/lib/postgresql/data",
+  };
 }
 
 /** A package manager of the frontend. */
@@ -317,6 +335,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     site_port: String(options.ports?.SITE_PORT ?? 3000),
     mail_port: String(options.ports?.MAIL_PORT ?? 8025),
     ...packageManagerValues(packageManager),
+    ...postgresValues(options.postgres ?? DEFAULT_STACK.postgres),
   };
   const files = walk(target);
   for (const file of files) {
