@@ -1,6 +1,6 @@
 from rest_framework.filters import BaseFilterBackend
 
-from ..preview import has_preview_access
+from ..preview import has_preview_access, published
 
 
 class PublishedFilter(BaseFilterBackend):
@@ -12,11 +12,7 @@ class PublishedFilter(BaseFilterBackend):
     """
 
     def filter_queryset(self, request, queryset, view):
-        if not hasattr(queryset, "published"):
-            return queryset
-        if has_preview_access(request) or is_full_access(request):
-            return queryset
-        return queryset.published()
+        return published(queryset, drafts=has_preview_access(request) or is_full_access(request))
 
 
 def is_full_access(request) -> bool:

@@ -37,6 +37,18 @@ the unreleased version; the release workflow releases it.
   one. `init` also asks for the external server's Postgres version, for the
   local Postgres and the backups' client. Existing projects with
   `DATABASE_URL` set to an external Postgres keep working as before.
+- **`django_stack.contrib.site`**, for a site Django renders with
+  templates (the coming `--frontend templates`): the `/preview` and
+  `/preview/exit` routes with a preview cookie, `published(queryset,
+  request)` with the same rules as the content API, the `@site_page`
+  decorator (a page cache in Django's cache, emptied when content in the
+  `CONTENT_APPS` or the media library changes, and the site's
+  Content-Security-Policy), `RedirectMiddleware` for editor-managed
+  redirects, a context processor, and the `{% blocks %}`, `{% image %}`,
+  `{% seo %}`, `link_href` and `is_current` template tags.
+  `django_stack.contrib.captcha.forms.CaptchaField` adds the captcha to a
+  Django form, with the `@cap.js/widget` 0.1.58 script vendored as a
+  static file.
 
 ## 0.10.0 (2026-11-07)
 

@@ -1,3 +1,6 @@
 solver.wasm is cap_wasm_bg.wasm of @cap.js/wasm 0.0.8
 (https://github.com/tiagozip/cap), licensed under the Apache License 2.0:
 https://www.apache.org/licenses/LICENSE-2.0
+
+static/django_stack/captcha/cap.min.js is cap.min.js of @cap.js/widget 0.1.58
+(https://github.com/tiagozip/cap), licensed under the Apache License 2.0.

@@ -26,6 +26,15 @@ class Article(PublishableModel):
         return f"/blog/{self.slug}"
 
 
+class Redirect(models.Model):
+    old_path = models.CharField(max_length=500, unique=True)
+    new_path = models.CharField(max_length=500)
+    permanent = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.old_path
+
+
 @expose()
 class Message(models.Model):
     email = models.EmailField()
