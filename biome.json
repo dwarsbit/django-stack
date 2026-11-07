@@ -24,7 +24,10 @@
       "!**/*.json",
       "!**/*.md",
       "!**/*.mdx",
-      "!**/*.svg"
+      "!**/*.svg",
+      "!**/*.min.js",
+      "!python/**/templates/**/*.html",
+      "!templates/frontend-templates/**/*.html"
     ]
   },
   "formatter": {

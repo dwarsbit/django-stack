@@ -1,0 +1,6 @@
+<title>{{ title }}</title>
+{% if description %}<meta name="description" content="{{ description }}">
+{% endif %}<link rel="canonical" href="{{ canonical }}">
+{% for property, content in open_graph %}<meta property="{{ property }}" content="{{ content }}">
+{% endfor %}{% for name, content in twitter %}<meta name="{{ name }}" content="{{ content }}">
+{% endfor %}

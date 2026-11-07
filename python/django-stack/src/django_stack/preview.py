@@ -31,3 +31,15 @@ def preview_url(path: str) -> str:
     """
     site_url = getattr(settings, "SITE_URL", "").rstrip("/")
     return f"{site_url}/preview?{urlencode({'token': make_preview_token(), 'path': path})}"
+
+
+def published(queryset, *, drafts: bool = False):
+    """
+    The objects a visitor may see: the published ones, or all of them with
+    ``drafts`` (a preview). Querysets without a ``published()`` method are
+    returned as they are. The content API and ``django_stack.contrib.site``
+    both use it, so the API and a site rendered by Django show the same.
+    """
+    if drafts or not hasattr(queryset, "published"):
+        return queryset
+    return queryset.published()

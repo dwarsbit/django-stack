@@ -12,8 +12,13 @@ Projects created with `npx @django-stack/cli init` depend on it.
 - Preview tokens and signed revalidation requests to the frontend.
 - `django_stack.contrib.captcha`: the [Cap](https://capjs.js.org) captcha
   protocol, a proof of work for public forms, with `CaptchaField` and
-  `verify_captcha()`. Its `solver.wasm` is from `@cap.js/wasm`
-  (Apache-2.0); see its `NOTICE`.
+  `verify_captcha()`, and a `CaptchaField` for Django forms with the
+  `@cap.js/widget` web component. Its `solver.wasm` is from `@cap.js/wasm`
+  and its widget from `@cap.js/widget` (Apache-2.0); see its `NOTICE`.
+- `django_stack.contrib.site`: for a site Django renders with templates,
+  the preview routes, a page cache emptied when content changes, the
+  site's Content-Security-Policy, editor-managed redirects, and the
+  `{% blocks %}`, `{% image %}` and `{% seo %}` template tags.
 - `/healthz` and `/readyz`, system checks, and the management commands
   `create_admin`, `seed_content`, `export_content`, `import_content` and
   `wait_for_db`.
