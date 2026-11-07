@@ -1,5 +1,6 @@
+import { reportError } from "@django-stack/utils";
 import { redirect } from "@sveltejs/kit";
-import type { Handle } from "@sveltejs/kit/hooks";
+import type { Handle, HandleServerError } from "@sveltejs/kit/hooks";
 import { getContent, PREVIEW_COOKIE } from "#lib/server/api.ts";
 import { getCached, store } from "#lib/server/cache.ts";
 import { dev } from "$app/env";
@@ -67,4 +68,15 @@ export const handle: Handle = async ({ event, resolve }) => {
     response = await store(key, response);
   }
   return response;
+};
+
+/**
+ * Errors of the site's code are logged, as SvelteKit does by default, and
+ * go to Sentry with ERRORS=sentry. Errors such as a 404 are not.
+ */
+export const handleError: HandleServerError = async ({ kind, error, issues, event }) => {
+  if (kind === "validation") console.error("Remote function schema validation failed:", issues);
+  if (kind !== "unknown") return;
+  console.error(error instanceof Error ? error.stack : String(error));
+  await reportError(error, { request: event.request });
 };

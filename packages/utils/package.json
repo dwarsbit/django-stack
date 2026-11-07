@@ -1,7 +1,7 @@
 {
   "name": "@django-stack/utils",
   "version": "0.9.0",
-  "description": "Framework-agnostic helpers for DjangoStack frontends: the API client, content helpers, SEO, images and webhooks.",
+  "description": "Framework-agnostic helpers for DjangoStack frontends: the API client, content helpers, SEO, images, webhooks and error reports.",
   "license": "MIT",
   "author": "Leon van der Grient",
   "homepage": "https://github.com/dwarsbit/django-stack/tree/main/packages/utils#readme",

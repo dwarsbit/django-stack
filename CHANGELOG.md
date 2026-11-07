@@ -14,6 +14,22 @@ the unreleased version; the release workflow releases it.
   `SENTRY_ENVIRONMENT` names the environment (`production` by default)
   and `SENTRY_TRACES_SAMPLE_RATE` (0 to 1) also sends performance traces.
   The `server` extra of `django-stack` now includes `sentry-sdk`.
+- **Frontend errors to Sentry.** With `ERRORS=sentry`, the server errors
+  of the frontend (a page or route that fails with a 5xx) go to the same
+  Sentry project, tagged with the request ID. Nothing runs in the
+  browser. Each frontend calls the new `reportError()` of
+  `@django-stack/utils` from its error hook: the Astro middleware,
+  `src/instrumentation.ts` in Next.js, `server/plugins/errors.ts` in Nuxt
+  and `handleError` in `src/hooks.server.ts` in SvelteKit. To add it to an
+  existing project, copy that hook from the template and add these lines
+  to `x-frontend-env` in `compose.yaml`:
+
+  ```yaml
+  ERRORS: ${ERRORS:-email}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+  SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+  ```
 
 ## 0.9.0 (2026-11-07)
 

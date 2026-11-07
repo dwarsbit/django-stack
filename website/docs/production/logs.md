@@ -100,7 +100,23 @@ SENTRY_TRACES_SAMPLE_RATE=0
 With `DJANGO_DEBUG=0`, the backend and the worker send their errors, and
 every line logged at `ERROR`, to that project, each tagged with its
 `request_id`. No personal data is sent: no user details, cookies or
-request bodies. `SENTRY_TRACES_SAMPLE_RATE`, from `0` to `1`, also sends
+request bodies.
+
+The frontend's server sends its errors to the same project: a page or a
+route that fails with a 5xx, tagged with the same `request_id` as the
+backend's errors of that request. An error page that fails the same way
+is sent once. Nothing runs in the browser. The frontend's error hook calls
+`reportError()` of `@django-stack/utils`, which sends no headers, cookies,
+query strings or request bodies:
+
+| Frontend | Error hook |
+|----------|------------|
+| Astro | `src/middleware.ts` |
+| Next.js | `src/instrumentation.ts` |
+| Nuxt | `server/plugins/errors.ts` |
+| SvelteKit | `handleError` in `src/hooks.server.ts` |
+
+`SENTRY_RELEASE`, when set, names the release of both. `SENTRY_TRACES_SAMPLE_RATE`, from `0` to `1`, also sends
 that share of requests as performance traces. Without `SENTRY_DSN` the
 errors are only logged. The superusers get no emails and the admin's
 System page shows no error reports: Sentry has them.
