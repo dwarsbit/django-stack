@@ -72,12 +72,13 @@ export function choices(key: StackKey, stack: Partial<Stack> = {}) {
 /**
  * The stack from, in order of precedence, the flags, the preset, the prompts
  * and the defaults. `askDatabase` asks for the Postgres version together with
- * the external database choice; it returns the version, or a URL.
+ * the external database choice; it returns the version, and the URL for
+ * production when there is one.
  */
 export async function chooseStack(
   options: Pick<InitOptions, "preset" | "fromCli"> & Record<string, unknown>,
   interactive: boolean,
-  askDatabase?: (initial: string) => Promise<{ postgres: string } | { databaseUrl: string }>,
+  askDatabase?: (initial: string) => Promise<{ postgres: string; databaseUrl?: string }>,
 ): Promise<{ stack: Stack; databaseUrl?: string }> {
   let preset: Stack | undefined;
   if (options.preset) {
@@ -97,10 +98,9 @@ export async function chooseStack(
     else if (!interactive || !applies(key, stack as Stack)) continue;
     else if (key === "postgres" && askDatabase && !options.databaseUrl) {
       const answer = await askDatabase(stack[key] as string);
-      if ("databaseUrl" in answer) databaseUrl = answer.databaseUrl;
-      else stack[key] = answer.postgres;
-    } else if (key === "postgres" && options.databaseUrl) continue;
-    else {
+      if (answer.databaseUrl) databaseUrl = answer.databaseUrl;
+      stack[key] = answer.postgres;
+    } else {
       // With S3 in production, suggest the local S3 service in development: the same code path.
       const initialValue = key === "storage" && stack.media === "s3" ? "s3" : stack[key];
       stack[key] = unwrap(
@@ -175,20 +175,31 @@ export async function init(directoryArgument: string | undefined, options: InitO
             ...value,
             label: `Bundled Postgres, ${value.label.toLowerCase()}`,
           })),
-          { value: "external", label: "External Postgres", hint: "a URL to your own server" },
+          {
+            value: "external",
+            label: "External Postgres in production",
+            hint: "a URL to your server; development runs the bundled one",
+          },
         ],
       }),
     );
     if (choice !== "external") return { postgres: choice };
-    return {
-      databaseUrl: unwrap(
-        await p.text({
-          message: "Postgres URL",
-          placeholder: "postgres://user:password@host:5432/name",
-          validate: (value) => (value?.startsWith("postgres") ? undefined : "Enter a postgres:// URL."),
-        }),
-      ),
-    };
+    const databaseUrl = unwrap(
+      await p.text({
+        message: "Postgres URL for production",
+        placeholder: "postgres://user:password@host:5432/name",
+        validate: (value) => (value?.startsWith("postgres") ? undefined : "Enter a postgres:// URL."),
+      }),
+    );
+    // The bundled Postgres in development and the backups' client match the server.
+    const postgres = unwrap(
+      await p.select<string>({
+        message: "Its Postgres version",
+        initialValue: initial,
+        options: choices("postgres"),
+      }),
+    );
+    return { postgres, databaseUrl };
   });
   const stack = chosen.stack;
   const databaseUrl = options.databaseUrl ?? chosen.databaseUrl;

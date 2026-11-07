@@ -198,7 +198,7 @@ describe("scaffold", () => {
     expect(env.SENTRY_DSN).toBe("");
   });
 
-  it("uses an external database and no demo content", () => {
+  it("keeps the bundled database in development with an external one for production", () => {
     const directory = join(tempDir(), "site");
     scaffold({
       directory,
@@ -208,9 +208,12 @@ describe("scaffold", () => {
       databaseUrl: "postgres://u:p@db.example.com/app",
     });
     const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
-    expect(env.DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require");
-    expect(env.COMPOSE_PROFILES).toBe("dev");
+    expect(env.PRODUCTION_DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require");
+    expect(env.DATABASE_URL).toBe(`postgres://app:${env.POSTGRES_PASSWORD}@db:5432/app`);
+    expect(env.COMPOSE_PROFILES).toBe("dev,db");
     expect(env.SEED_DEMO_CONTENT).toBe("0");
+    const example = parseEnv(readFileSync(join(directory, ".env.example"), "utf8"));
+    expect(example.PRODUCTION_DATABASE_URL).toBe("");
   });
 
   it("uses the local S3 service", () => {
@@ -262,15 +265,6 @@ describe("scaffold", () => {
     expect(env.UMAMI_APP_SECRET?.length).toBeGreaterThan(40);
     const example = parseEnv(readFileSync(join(directory, ".env.example"), "utf8"));
     expect(example.UMAMI_ADMIN_PASSWORD).toBe("");
-  });
-
-  it("puts Umami's tables in a schema of an external database", () => {
-    const directory = join(tempDir(), "site");
-    const databaseUrl = "postgres://u:p@db.example.com/app";
-    scaffold({ directory, name: "site", frontend: "astro", demoContent: true, analytics: true, databaseUrl });
-    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
-    expect(env.COMPOSE_PROFILES).toBe("dev,analytics");
-    expect(env.UMAMI_DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require&schema=umami");
   });
 
   it("leaves analytics off by default", () => {

@@ -95,8 +95,8 @@ dstack production --domain example.com \
 
 It writes `.env.production` from your `.env` with:
 
-- `COMPOSE_PROFILES=prod,db`, or `prod` when `DATABASE_URL` points to an
-  external Postgres,
+- `COMPOSE_PROFILES=prod,db`, or `prod` with `DATABASE_URL` set to
+  `PRODUCTION_DATABASE_URL` when `.env` has an external Postgres,
 - `SITE_URL` and `BACKEND_URL` set to `https://example.com`,
 - debug off and new secrets for everything: the secret key, the API keys,
   the preview and revalidation secrets, the admin password and, for the

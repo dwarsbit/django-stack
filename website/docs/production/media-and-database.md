@@ -69,17 +69,23 @@ A managed Postgres (from your provider, Neon, Supabase, or another) is
 backed up and updated for you. Postgres 15 or newer works; 17 is the
 version DjangoStack tests with.
 
-1. Set `DATABASE_URL`, with `sslmode=require` for a server on another host:
+Development keeps the bundled Postgres, so your local data never touches
+the server's.
+
+1. Set `PRODUCTION_DATABASE_URL` in `.env`, with `sslmode=require` for a
+   server on another host (`init --database-url` sets it for you):
 
    ```bash
-   DATABASE_URL=postgres://user:password@db.example.com:5432/app?sslmode=require
+   PRODUCTION_DATABASE_URL=postgres://user:password@db.example.com:5432/app?sslmode=require
    ```
 
-2. Remove `db` from `COMPOSE_PROFILES`: `COMPOSE_PROFILES=prod`.
-3. Restart: `dstack run`. The backend migrates the new database.
+2. Run `dstack production`: `.env.production` gets it as `DATABASE_URL`,
+   without `db` in `COMPOSE_PROFILES`.
+3. Deploy. The backend migrates the new database.
 
-`init --database-url` and `production` set the profiles for you when the URL
-does not point to the bundled `db`.
+To switch a server that already runs, set `DATABASE_URL` in its `.env` and
+remove `db` from `COMPOSE_PROFILES` (`COMPOSE_PROFILES=prod`). `dstack run`
+on your machine keeps the bundled Postgres either way.
 
 To move existing content to the new database, back up the old one and
 restore the backup into the new one: see [Backups](./backups.md).

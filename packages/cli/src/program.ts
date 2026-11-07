@@ -90,7 +90,7 @@ export function createProgram(): Command {
       "--preset <preset>",
       `A preset code from a previous init, or ${Object.keys(NAMED_PRESETS).join(", ")}`,
     )
-    .option("--database-url <url>", "Use an external Postgres instead of the bundled one")
+    .option("--database-url <url>", "An external Postgres for production; development runs the bundled one")
     .option("--time-zone <zone>", "The time zone of the backend, such as Europe/Amsterdam (default: UTC)")
     .addOption(new Option("--local-s3", "Same as --storage s3").hideHelp())
     .option("--no-demo-content", "Start with an empty site")
