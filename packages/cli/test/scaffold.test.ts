@@ -27,6 +27,7 @@ import {
   validateProjectName,
 } from "../src";
 import { frontendPackageManager, packageManagerValues, selectBlocks } from "../src/scaffold";
+import { NODE_FRONTENDS } from "../src/stack";
 
 const dirs: string[] = [];
 function tempDir() {
@@ -87,21 +88,24 @@ describe("frontend templates", () => {
     for (const frontend of FRONTENDS) if (frontend !== "headless") expect(frontends).toContain(frontend);
   });
 
-  it.each(frontends)("%s meets the frontend contract", (frontend) => {
-    const directory = join(templates, `frontend-${frontend}`);
-    const about = JSON.parse(readFileSync(join(directory, "template.json"), "utf8"));
-    expect(Object.keys(about).sort()).toEqual(["label", "security", "url"]);
-    for (const file of ["AGENTS.md", "Dockerfile", ".dockerignore", "vendor/.gitkeep"])
-      expect(existsSync(join(directory, file)), file).toBe(true);
-    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
-    for (const script of ["dev", "build", "start", "check", "test", "generate:types"])
-      expect(manifest.scripts[script], script).toBeTruthy();
-    expect(manifest.scripts["generate:types"]).toContain("src/lib/headless.ts");
-    expect(existsSync(join(directory, "src/lib/headless.ts"))).toBe(true);
-    const dockerfile = readFileSync(join(directory, "Dockerfile"), "utf8");
-    for (const target of ["AS dev", "AS prod", "USER node", "HEALTHCHECK", "robots.txt"])
-      expect(dockerfile, target).toContain(target);
-  });
+  it.each(frontends.filter((frontend) => NODE_FRONTENDS.includes(frontend)))(
+    "%s meets the frontend contract",
+    (frontend) => {
+      const directory = join(templates, `frontend-${frontend}`);
+      const about = JSON.parse(readFileSync(join(directory, "template.json"), "utf8"));
+      expect(Object.keys(about).sort()).toEqual(["label", "security", "url"]);
+      for (const file of ["AGENTS.md", "Dockerfile", ".dockerignore", "vendor/.gitkeep"])
+        expect(existsSync(join(directory, file)), file).toBe(true);
+      const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
+      for (const script of ["dev", "build", "start", "check", "test", "generate:types"])
+        expect(manifest.scripts[script], script).toBeTruthy();
+      expect(manifest.scripts["generate:types"]).toContain("src/lib/headless.ts");
+      expect(existsSync(join(directory, "src/lib/headless.ts"))).toBe(true);
+      const dockerfile = readFileSync(join(directory, "Dockerfile"), "utf8");
+      for (const target of ["AS dev", "AS prod", "USER node", "HEALTHCHECK", "robots.txt"])
+        expect(dockerfile, target).toContain(target);
+    },
+  );
 
   it.each(frontends)("%s fills in the project's documents", (frontend) => {
     const directory = join(tempDir(), "site");
@@ -333,6 +337,59 @@ describe("scaffold", () => {
     }
   });
 
+  it("creates a Django templates project: the site in the backend, no frontend service", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "templates", demoContent: true, analytics: true });
+    expect(existsSync(join(directory, "frontend"))).toBe(false);
+    expect(existsSync(join(directory, "backend", "template.json"))).toBe(false);
+    for (const file of ["views.py", "urls.py", "templates/website/base.html", "static/website/global.css"])
+      expect(existsSync(join(directory, "backend", "website", file)), file).toBe(true);
+    const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
+    expect(compose).not.toMatch(/frontend(-prod|-env|_node_modules|:)/);
+    expect(compose).toContain('SITE_PORT:-3000}:8000"');
+    const caddy = readFileSync(join(directory, "Caddyfile"), "utf8");
+    expect(caddy).not.toMatch(/frontend:3000/);
+    expect(caddy).toContain("reverse_proxy umami:3000");
+    expect(caddy).toContain("reverse_proxy backend:8000");
+    const urls = readFileSync(join(directory, "backend", "config", "urls.py"), "utf8");
+    expect(urls).toContain('include("website.urls")');
+    expect(urls).toContain('handler404 = "website.views.not_found"');
+    expect(urls).not.toContain("django_stack.start");
+    const settings = readFileSync(join(directory, "backend", "config", "settings.py"), "utf8");
+    for (const line of [
+      '"django_stack.contrib.site",',
+      '"website",',
+      '"django_stack.contrib.site.middleware.RedirectMiddleware",',
+      '"website.context_processors.site",',
+    ])
+      expect(settings).toContain(line);
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.REVALIDATE_URL).toBe("");
+    expect(env.COMPOSE_PROFILES).toBe("dev,db,analytics");
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
+    expect(JSON.stringify(manifest.scripts)).not.toMatch(/frontend/);
+    expect(manifest["django-stack"].frontend).toBe("templates");
+    const readme = readFileSync(join(directory, "README.md"), "utf8");
+    expect(readme).toContain("backend/website/");
+    expect(readme).toContain("## Analytics");
+    for (const file of [
+      "README.md",
+      "AGENTS.md",
+      "SECURITY.md",
+      "compose.yaml",
+      "Caddyfile",
+      ".env.example",
+    ]) {
+      const text = readFileSync(join(directory, file), "utf8");
+      expect(text, file).not.toMatch(/\{\{[a-z_]+\}\}|@if|@end/);
+      expect(text, file).not.toMatch(/frontend\//);
+    }
+    // Django's own {{ }} survive: only {{name}} without spaces is the scaffold's.
+    expect(
+      readFileSync(join(directory, "backend", "website", "templates", "website", "base.html"), "utf8"),
+    ).toContain("{{ site.site_name }}");
+  });
+
   it("keeps a frontend project's blocks without the markers", () => {
     const directory = join(tempDir(), "site");
     scaffold({ directory, name: "site", frontend: "astro", demoContent: true });
@@ -448,7 +505,7 @@ describe("scaffold", () => {
 
   it("installs the frontend with the chosen package manager", () => {
     const read = (directory: string, file: string) => readFileSync(join(directory, "frontend", file), "utf8");
-    for (const frontend of FRONTENDS.filter((value) => value !== "headless")) {
+    for (const frontend of FRONTENDS.filter((value) => NODE_FRONTENDS.includes(value))) {
       const pnpm = join(tempDir(), `${frontend}-pnpm`);
       scaffold({ directory: pnpm, name: "site", frontend, demoContent: true });
       expect(read(pnpm, "Dockerfile")).toContain("RUN npm install --global pnpm@");

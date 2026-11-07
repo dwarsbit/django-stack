@@ -1,0 +1,11 @@
+{% if not posts %}<p class="muted">No posts yet.</p>{% endif %}
+<div class="grid">
+  {% for post in posts %}{% include "website/includes/post_card.html" %}{% endfor %}
+</div>
+{% if posts.paginator.num_pages > 1 %}
+  <nav class="pagination" aria-label="Pages">
+    {% if posts.has_previous %}<a href="{% if posts.previous_page_number == 1 %}{{ base }}{% else %}{{ base }}?page={{ posts.previous_page_number }}{% endif %}">← Newer</a>{% endif %}
+    <span class="muted">Page {{ posts.number }} of {{ posts.paginator.num_pages }}</span>
+    {% if posts.has_next %}<a href="{{ base }}?page={{ posts.next_page_number }}">Older →</a>{% endif %}
+  </nav>
+{% endif %}

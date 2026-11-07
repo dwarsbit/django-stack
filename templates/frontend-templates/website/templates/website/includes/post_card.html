@@ -1,0 +1,9 @@
+{% load stack %}<article class="card">
+  <a href="{{ post.get_absolute_url }}">{% image post.cover size="card" sizes="(min-width: 40rem) 22rem, 100vw" class_name="cover" %}</a>
+  <h3><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h3>
+  <p class="muted meta">
+    {% if post.published_at %}<time datetime="{{ post.published_at|date:'c' }}">{{ post.published_at|date:"M j, Y" }}</time>{% endif %}
+    {% if post.author %}<span> · {{ post.author.name }}</span>{% endif %}
+  </p>
+  {% if post.excerpt %}<p>{{ post.excerpt }}</p>{% endif %}
+</article>

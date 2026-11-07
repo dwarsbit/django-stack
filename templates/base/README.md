@@ -4,16 +4,25 @@
 A website with a Django backend and a frontend built with {{frontend_label}}, created with
 [DjangoStack](https://github.com/dwarsbit/django-stack).
 <!-- @end -->
-<!-- @if !frontend -->
+<!-- @if headless -->
 A content API and an admin with Django, created with
 [DjangoStack](https://github.com/dwarsbit/django-stack). It has no frontend:
 build your own against the API, with the read-only key.
+<!-- @end -->
+<!-- @if templates -->
+A website with Django, created with
+[DjangoStack](https://github.com/dwarsbit/django-stack): Django renders the
+pages with its templates, from the content the API also serves.
 <!-- @end -->
 
 - [Django Headless](https://djangoheadless.org) serves the content API.
 - [Django Content Studio](https://djangocontentstudio.org) is the admin.
 <!-- @if frontend -->
 - [{{frontend_label}}]({{frontend_url}}) renders the site.
+<!-- @end -->
+<!-- @if templates -->
+- [Django templates]({{frontend_url}}) render the site: the `website` app
+  in `backend/website/`.
 <!-- @end -->
 - Postgres stores the content, and by default also the cache and the task
   queue (`CACHE_URL` and `TASKS_URL` in `.env`); Valkey can take those over
@@ -27,10 +36,10 @@ You need Docker.
 docker compose up --build
 ```
 
-<!-- @if frontend -->
+<!-- @if site -->
 - Site: http://localhost:{{site_port}}
 <!-- @end -->
-<!-- @if !frontend -->
+<!-- @if headless -->
 - API: http://localhost:{{site_port}}/api/ (with the `X-Secret-Key` header set to `API_READ_KEY` in `.env`), its OpenAPI schema at `/api/schema`
 <!-- @end -->
 - Admin: http://localhost:{{site_port}}/admin/ (user `admin`, password `ADMIN_PASSWORD` in `.env`)
@@ -40,10 +49,10 @@ The ports are `SITE_PORT` and `MAIL_PORT` in `.env`. When you change
 `SITE_PORT`, change `SITE_URL` and `BACKEND_URL` with it.
 
 The first start migrates the database, creates the admin user and adds demo
-<!-- @if frontend -->
+<!-- @if site -->
 content. Edit a page in the admin, publish, and reload the site.
 <!-- @end -->
-<!-- @if !frontend -->
+<!-- @if headless -->
 content. Edit a page in the admin, publish, and read it from the API.
 <!-- @end -->
 
@@ -54,9 +63,15 @@ Both sides reload on save: the backend runs Django's development server and
 the frontend {{frontend_label}}'s, with the source mounted from `backend/` and
 `frontend/`. `AGENTS.md` lists the layout and the commands.
 <!-- @end -->
-<!-- @if !frontend -->
+<!-- @if headless -->
 The backend reloads on save: it runs Django's development server, with the
 source mounted from `backend/`. `AGENTS.md` lists the layout and the commands.
+<!-- @end -->
+<!-- @if templates -->
+The site reloads on save, templates and CSS included: the backend runs
+Django's development server, with the source mounted from `backend/`. The
+pages are in `backend/website/`; `AGENTS.md` lists the layout and the
+commands.
 <!-- @end -->
 
 | Task | Command |
@@ -87,14 +102,19 @@ site with drafts shown, for an hour.
 When an editor saves, Django tells the frontend (`REVALIDATE_URL`), which
 empties its page cache, so the change shows on the next visit.
 <!-- @end -->
-<!-- @if !frontend -->
+<!-- @if headless -->
 The button opens `/preview` on `SITE_URL`, which your frontend serves; set
 `REVALIDATE_URL` to the endpoint where your frontend empties its page cache,
 and Django calls it when an editor saves. See
 [Preview and revalidation](https://dwarsbit.github.io/django-stack/docs/preview-revalidation).
 <!-- @end -->
+<!-- @if templates -->
+The site keeps each page in Django's cache, and empties it when an editor
+saves, so the change shows on the next visit. In preview the cache is
+skipped.
+<!-- @end -->
 
-<!-- @if frontend -->
+<!-- @if site -->
 ## Analytics
 
 When `COMPOSE_PROFILES` in `.env` has `analytics`, the `umami` service
@@ -131,9 +151,16 @@ has every step.
 
 ## Security
 
+<!-- @if !templates -->
 - The API answers only requests with a key. The frontend holds the
   read-only key (`API_READ_KEY`) and uses it on the server only, never in
   the browser.
+<!-- @end -->
+<!-- @if templates -->
+- The API answers only requests with a key. The site reads the content
+  in Django and needs none; the read-only key (`API_READ_KEY`) is for other
+  apps, on their server, never in a browser.
+<!-- @end -->
 - `API_SECRET_KEY` can write: keep it for scripts and never give it to a
   frontend.
 - `.env` holds every secret. It is generated with random values and is not

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>{{ site_url }}/</loc></url>
+  <url><loc>{{ site_url }}/blog</loc></url>
+  {% for page in pages %}<url><loc>{{ site_url }}{{ page.get_absolute_url }}</loc>{% if page.published_at %}<lastmod>{{ page.published_at|date:"Y-m-d" }}</lastmod>{% endif %}</url>
+  {% endfor %}{% for post in posts %}<url><loc>{{ site_url }}{{ post.get_absolute_url }}</loc>{% if post.published_at %}<lastmod>{{ post.published_at|date:"Y-m-d" }}</lastmod>{% endif %}</url>
+  {% endfor %}
+</urlset>

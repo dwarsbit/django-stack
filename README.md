@@ -36,7 +36,8 @@ Postgres and Umami analytics (Valkey if you want it), run by Docker Compose.
 - **One command**: `init` asks for the frontend, the database and demo
   content, and writes a project with fresh secrets. Every prompt has a
   flag, so it also runs in scripts.
-- **Your choice of frontend**: Astro, Next.js, SvelteKit or Nuxt.
+- **Your choice of frontend**: Astro, Next.js, SvelteKit, Nuxt, Django
+  templates (no Node), or none (headless).
 - **Your content model**: pages, posts, menus and site settings as
   ordinary Django models in your project.
 - **An admin for editors**: Django Content Studio, with drafts, a media

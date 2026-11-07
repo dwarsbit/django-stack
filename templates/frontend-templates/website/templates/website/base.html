@@ -1,0 +1,44 @@
+{% load static stack %}<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{% static 'website/favicon.svg' %}" type="image/svg+xml">
+    <link rel="alternate" type="application/rss+xml" title="{{ site.site_name|default:'RSS' }}" href="/rss.xml">
+    <link rel="stylesheet" href="{% static 'website/global.css' %}">
+    {% block seo %}{% seo page site %}{% endblock %}
+    {% if analytics_website_id %}<script defer src="/_a/script.js" data-website-id="{{ analytics_website_id }}"></script>{% endif %}
+  </head>
+  <body>
+    {% if preview %}
+      <div class="preview-banner">Preview: drafts are shown. <a href="/preview/exit">Leave preview</a></div>
+    {% endif %}
+    <header class="site-header">
+      <div class="container bar">
+        <a class="brand" href="/">
+          {% if site.logo %}{% image site.logo size="thumbnail" alt=site.site_name eager=True %}{% else %}{{ site.site_name }}{% endif %}
+        </a>
+        <nav aria-label="Main">
+          {% for item in main_menu.items.blocks %}
+            {% with href=item|link_href %}
+              <a href="{{ href }}"{% if href|is_current:request.path %} aria-current="page"{% endif %}>{{ item.value.label }}</a>
+            {% endwith %}
+          {% endfor %}
+        </nav>
+      </div>
+    </header>
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="site-footer">
+      <div class="container bar muted">
+        {% if site.footer_text %}<div class="footer-text">{{ site.footer_text|safe }}</div>{% endif %}
+        <nav aria-label="Footer">
+          {% for item in footer_menu.items.blocks %}<a href="{{ item|link_href }}">{{ item.value.label }}</a>{% endfor %}
+          {% for name, url in site.social_links.items %}<a href="{{ url }}" rel="me">{{ name }}</a>{% endfor %}
+        </nav>
+      </div>
+    </footer>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

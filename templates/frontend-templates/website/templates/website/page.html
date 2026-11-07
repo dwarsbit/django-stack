@@ -1,0 +1,10 @@
+{% extends "website/base.html" %}
+{% load stack %}
+{% block content %}
+  <article class="narrow">
+    <h1>{{ page.title }}</h1>
+    {% blocks page.body %}
+    {% if form %}{% include "website/includes/contact_form.html" %}{% endif %}
+  </article>
+{% endblock %}
+{% block scripts %}{% if form %}{{ form.media }}{% endif %}{% endblock %}

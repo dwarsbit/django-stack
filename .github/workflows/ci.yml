@@ -75,7 +75,7 @@ jobs:
       matrix:
         # Every frontend passes the same tests, on every change; headless
         # the ones of the API and the admin.
-        frontend: [astro, next, sveltekit, nuxt, headless]
+        frontend: [astro, next, sveltekit, nuxt, headless, templates]
         profile: [dev, prod]
         include:
           # Development with the local S3 service.

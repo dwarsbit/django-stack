@@ -1,0 +1,21 @@
+{% comment %}
+  The contact form posts to its own page. The view saves a FormSubmission,
+  which the admin lists, after the captcha (unless CAPTCHA=off) and the
+  rate limit per IP address (PUBLIC_WRITE_THROTTLE_RATE).
+{% endcomment %}
+<form class="contact-form" method="post" action="{{ request.path }}">
+  {% csrf_token %}
+  {% if sent %}<p class="status" role="status">Thank you, your message was sent.</p>{% endif %}
+  {% for error in form.non_field_errors %}<p class="status error" role="alert">{{ error }}</p>{% endfor %}
+  {% for field in form %}
+    {% if field.name == "captcha" %}
+      {{ field }}
+      {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    {% else %}
+      <label>{{ field.label }} {{ field }}
+        {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
+      </label>
+    {% endif %}
+  {% endfor %}
+  <button class="button" type="submit">Send</button>
+</form>

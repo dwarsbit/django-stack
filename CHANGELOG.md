@@ -52,6 +52,16 @@ the unreleased version; the release workflow releases it.
   Django form, with the `@cap.js/widget` 0.1.58 script vendored as a
   static file.
 
+- **Django templates.** `init --frontend templates` now generates a
+  project where Django renders the site: a `website` app in
+  `backend/website/` with the pages, the blog, categories, tags, the RSS
+  feed, the sitemap, `robots.txt` and the contact form of the Astro
+  starter, with its stylesheet, and tests of every page. There is no
+  frontend service and no Node; the pages read the content with the ORM
+  and `django_stack.contrib.site`. Caddy sends every request but `/media`
+  and `/_a/` to the backend. The templates in `templates/` can now also
+  hold `@if headless`, `@if templates` and `@if site` blocks.
+
 ## 0.10.0 (2026-11-07)
 
 - **pnpm and Bun.** `init --package-manager` now generates `pnpm`, the

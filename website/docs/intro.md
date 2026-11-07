@@ -10,8 +10,8 @@ open-source project you can read, change or remove.
 
 - **Django Headless** serves your content models as a REST API.
 - **Django Content Studio** is the admin where editors write and publish.
-- **Astro** renders the site by default; Next.js, SvelteKit and Nuxt are the
-  alternatives.
+- **Astro** renders the site by default; Next.js, SvelteKit, Nuxt and
+  Django's own templates are the alternatives.
 - **Postgres** stores the content, and also the shared cache and the task
   queue, unless you pick **Valkey** for them.
 

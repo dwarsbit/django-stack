@@ -106,12 +106,9 @@ describe("presets", () => {
 });
 
 describe("pendingChoices", () => {
-  it("lists what is not generated yet, and which of it are defaults", () => {
-    const pending = pendingChoices({ ...DEFAULT_STACK, frontend: "templates" });
-    expect(pending).toContainEqual({ key: "frontend", choice: "--frontend templates", isDefault: false });
-    expect(pending.map((item) => item.key)).not.toContain("captcha");
-    expect(pending.map((item) => item.key)).not.toContain("cache");
-    expect(pending.map((item) => item.key)).not.toContain("notifications");
+  it("lists nothing now that every option is generated", () => {
+    for (const frontend of ["astro", "templates", "headless"] as const)
+      expect(pendingChoices({ ...DEFAULT_STACK, frontend })).toEqual([]);
   });
 
   it("skips the package manager without a Node frontend", () => {

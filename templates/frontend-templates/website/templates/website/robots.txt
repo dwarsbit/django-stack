@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /preview
+
+Sitemap: {{ site_url }}/sitemap.xml

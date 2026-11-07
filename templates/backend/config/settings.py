@@ -42,6 +42,10 @@ INSTALLED_APPS = [
     "django_stack",
     "django_stack.contrib.captcha",  # the captcha of the contact form (CAPTCHA=off turns it off)
     "content",
+    # @if templates
+    "django_stack.contrib.site",  # preview, the page cache, redirects and the template tags of the site
+    "website",  # the site's pages
+    # @end
     # Last: builds the API routes once every model is exposed.
     "headless.rest",
 ]
@@ -56,6 +60,10 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # @if templates
+    # The redirects editors manage in the admin, for paths that do not exist.
+    "django_stack.contrib.site.middleware.RedirectMiddleware",
+    # @end
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -72,6 +80,10 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                # @if templates
+                "django_stack.contrib.site.context_processors.site",  # preview, analytics_website_id
+                "website.context_processors.site",  # site, main_menu, footer_menu
+                # @end
             ],
         },
     },
