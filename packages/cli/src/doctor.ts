@@ -82,9 +82,10 @@ export async function runDoctor(directory: string): Promise<Check[]> {
   const services = running ? running.split("\n").filter(Boolean) : [];
   const backendService = prod ? "backend-prod" : "backend";
   const frontendService = prod ? "frontend-prod" : "frontend";
+  const frontend = existsSync(join(directory, "frontend", "package.json"));
   checks.push({
     name: "Services are running",
-    ok: services.includes(backendService) && services.includes(frontendService),
+    ok: services.includes(backendService) && (!frontend || services.includes(frontendService)),
     warning: services.length === 0,
     detail: services.length
       ? services.join(", ")
@@ -101,13 +102,14 @@ export async function runDoctor(directory: string): Promise<Check[]> {
       : `See \`docker compose logs ${backendService}\`.`,
   });
   const site = (env.SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  const frontend = await fetchStatus(site);
+  const status = await fetchStatus(site);
+  const logs = prod ? "proxy" : frontend ? frontendService : backendService;
   checks.push({
     name: "The site answers",
-    ok: frontend !== undefined && frontend < 500,
-    detail: frontend
-      ? `${site} answered ${frontend}`
-      : `No answer on ${site}. See \`docker compose logs ${prod ? "proxy" : frontendService}\`.`,
+    ok: status !== undefined && status < 500,
+    detail: status
+      ? `${site} answered ${status}`
+      : `No answer on ${site}. See \`docker compose logs ${logs}\`.`,
   });
   const api = await fetchStatus(`${site}/api/content.sitesettings`, {
     "X-Secret-Key": env.API_READ_KEY ?? "",

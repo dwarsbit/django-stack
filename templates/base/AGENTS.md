@@ -1,9 +1,16 @@
 # {{project_name}}: guide for AI agents
 
+<!-- @if frontend -->
 A website built with DjangoStack: a Django backend (Django Headless serves
 the content API, Django Content Studio is the admin) and a frontend built
 with {{frontend_label}} that renders the content, run with Docker Compose.
 `frontend/AGENTS.md` describes the frontend.
+<!-- @end -->
+<!-- @if !frontend -->
+A headless project built with DjangoStack: a Django backend (Django Headless
+serves the content API, Django Content Studio is the admin), run with Docker
+Compose. It has no frontend; other apps read the API with the read-only key.
+<!-- @end -->
 
 ## Layout
 
@@ -16,8 +23,10 @@ backend/                 Django project
   content/admin.py       how each model looks in the admin (studios)
   content/seed.py        demo content
   content/tests/         pytest tests of the API
+<!-- @if frontend -->
 frontend/                the {{frontend_label}} site; frontend/AGENTS.md lists its files
   src/lib/headless.ts    generated API types; do not edit, run `{{pm_run}} generate:types`
+<!-- @end -->
 compose.yaml             every service; COMPOSE_PROFILES in .env picks dev or prod
 Caddyfile                the prod profile's reverse proxy and HTTPS
 .github/workflows/deploy.yml  optional deploy to a server over SSH
@@ -33,16 +42,33 @@ Run them at the project root. They need Docker; Node is only needed for the `{{p
 | Start everything | `docker compose up --build` (or `{{pm_run}} dev`) |
 | Run a manage.py command | `docker compose exec backend python manage.py <command>` (or `{{pm_backend}} <command>`) |
 | Make migrations after a model change | `docker compose exec backend python manage.py makemigrations` |
+<!-- @if frontend -->
 | Regenerate the API types after a model change | `{{pm_run}} generate:types` |
+<!-- @end -->
+<!-- @if !frontend -->
+| Write the OpenAPI schema to `backend/openapi.json` | `{{pm_run}} generate:types` |
+<!-- @end -->
 | Run the tests | `{{pm_run}} test` |
+<!-- @if frontend -->
 | Lint and type-check | `{{pm_run}} lint` |
+<!-- @end -->
+<!-- @if !frontend -->
+| Lint | `{{pm_run}} lint` |
+<!-- @end -->
 | Logs | `docker compose logs --follow backend` |
 | Production settings for a server | `npx @django-stack/cli production --domain example.com` |
 
+<!-- @if frontend -->
 In production (`COMPOSE_PROFILES=prod,db`) the services are `backend-prod`,
 `worker-prod` (which also runs the daily backup), `frontend-prod` and
 `proxy`, with `umami` for page analytics when the `analytics` profile is on;
 their containers are
+<!-- @end -->
+<!-- @if !frontend -->
+In production (`COMPOSE_PROFILES=prod,db`) the services are `backend-prod`,
+`worker-prod` (which also runs the daily backup) and `proxy`; their
+containers are
+<!-- @end -->
 read-only, so a change goes through the code and a new image, never an edit
 in a running container.
 
@@ -54,15 +80,22 @@ in a running container.
    `ModelStudio`.
 3. Run `makemigrations`; the backend migrates on its next start, or run
    `migrate`.
+<!-- @if frontend -->
 4. Run `{{pm_run}} generate:types`, then read it in the frontend as
    `frontend/AGENTS.md` shows.
+<!-- @end -->
+<!-- @if !frontend -->
+4. Its routes are under `/api/`; `/api/schema` describes them.
+<!-- @end -->
 5. Add an API smoke test to `backend/content/tests/test_api.py`.
 
 ## How to add a block type
 
 1. Add a `Block` subclass in `backend/content/blocks.py` and add it to
    `BODY_BLOCKS`. Blocks need no migration.
+<!-- @if frontend -->
 2. Render it in the frontend as `frontend/AGENTS.md` shows.
+<!-- @end -->
 
 ## Rules
 
@@ -72,5 +105,7 @@ in a running container.
 - API routes are closed by default. Opening a model to anonymous writes goes
   through `DJANGO_STACK["PUBLIC_CREATE"]` in `config/settings.py`, and is
   rate limited.
+<!-- @if frontend -->
 - Django owns `/admin`, `/api`, `/media` and `/static`; frontend routes must
   not use these prefixes.
+<!-- @end -->

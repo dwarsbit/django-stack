@@ -193,6 +193,13 @@ export async function init(directoryArgument: string | undefined, options: InitO
   const stack = chosen.stack;
   const databaseUrl = options.databaseUrl ?? chosen.databaseUrl;
 
+  // Umami's tracker runs in the frontend's pages; a headless project has none.
+  if (!applies("analytics", stack) && stack.analytics !== "off") {
+    if (options.fromCli("analytics"))
+      fail("--analytics umami needs a frontend: a headless project has no pages to count.");
+    stack.analytics = "off";
+  }
+
   const pending = pendingChoices(stack);
   const unavailable = pending.filter((item) => !item.isDefault);
   if (unavailable.length) {
@@ -298,7 +305,9 @@ export async function init(directoryArgument: string | undefined, options: InitO
       command(`cd ${relativeDirectory(target)}`),
       command(startCommand),
       "",
-      `${pc.bold("Site")}    ${url(`http://localhost:${ports.ports.SITE_PORT}`)}`,
+      stack.frontend === "headless"
+        ? `${pc.bold("API")}     ${url(`http://localhost:${ports.ports.SITE_PORT}/api/`)}`
+        : `${pc.bold("Site")}    ${url(`http://localhost:${ports.ports.SITE_PORT}`)}`,
       `${pc.bold("Admin")}   ${url(`http://localhost:${ports.ports.SITE_PORT}/admin/`)}`,
       `${pc.bold("Mail")}    ${url(`http://localhost:${ports.ports.MAIL_PORT}`)}`,
       "",

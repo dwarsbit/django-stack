@@ -73,8 +73,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Every frontend passes the same tests, on every change.
-        frontend: [astro, next, sveltekit, nuxt]
+        # Every frontend passes the same tests, on every change; headless
+        # the ones of the API and the admin.
+        frontend: [astro, next, sveltekit, nuxt, headless]
         profile: [dev, prod]
         include:
           # Development with the local S3 service.

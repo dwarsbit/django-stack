@@ -8,7 +8,7 @@
 # With LOCAL_S3=1 the project stores media in the local S3 service, with
 # CACHE=valkey the cache and the task queue are in Valkey.
 # FRONTEND picks the frontend (astro by default); every frontend must pass
-# the same tests.
+# the same tests. FRONTEND=headless tests the API and the admin only.
 # Needs Docker, uv and pnpm. Leaves the project running with KEEP=1.
 set -euo pipefail
 
@@ -29,12 +29,21 @@ trap cleanup EXIT
 node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND:-astro}" ${LOCAL_S3:+--storage s3} ${CACHE:+--cache "$CACHE"} \
   ${PACKAGE_MANAGER:+--package-manager "$PACKAGE_MANAGER"}
 cd "$project"
+headless=""
+[ "${FRONTEND:-astro}" = "headless" ] && headless=1
+# Headless: the backend is the site, on the site's port.
+backend="http://localhost:8000"
+[ -n "$headless" ] && backend="http://localhost:3000"
 
 docker compose build
 docker compose up --detach --wait --wait-timeout 300 backend worker
-docker compose up --detach frontend mailpit
+if [ -n "$headless" ]; then
+  docker compose up --detach mailpit
+else
+  docker compose up --detach frontend mailpit
+fi
 
-echo "Waiting for the frontend"
+echo "Waiting for the site"
 for _ in $(seq 1 90); do
   [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/)" = "200" ] && break
   sleep 2
@@ -54,22 +63,31 @@ read_key="$(grep '^API_READ_KEY=' .env | cut -d= -f2)"
 password="$(grep '^ADMIN_PASSWORD=' .env | cut -d= -f2)"
 
 expect 200 http://localhost:3000/
-expect 200 http://localhost:3000/about
-expect 200 http://localhost:3000/about/team
-expect 200 http://localhost:3000/blog
-expect 200 http://localhost:3000/blog/hello-world
-expect 404 http://localhost:3000/does-not-exist
-# A permanent redirect: 301, or 308 from Next.js.
-case "$(status http://localhost:3000/old-about)" in
-  301|308) echo "ok permanent redirect http://localhost:3000/old-about" ;;
-  *) fail "http://localhost:3000/old-about is not a permanent redirect" ;;
-esac
-expect 200 http://localhost:3000/sitemap.xml
-expect 200 http://localhost:3000/rss.xml
+if [ -n "$headless" ]; then
+  # The start page links to the admin and the API schema.
+  start="$(curl -s http://localhost:3000/)"
+  grep -q 'href="/admin/"' <<<"$start" || fail "the start page does not link to the admin"
+  echo "ok the start page links to the admin"
+  expect 401 http://localhost:3000/api/schema
+  expect 200 -H "X-Secret-Key: $read_key" http://localhost:3000/api/schema
+else
+  expect 200 http://localhost:3000/about
+  expect 200 http://localhost:3000/about/team
+  expect 200 http://localhost:3000/blog
+  expect 200 http://localhost:3000/blog/hello-world
+  expect 404 http://localhost:3000/does-not-exist
+  # A permanent redirect: 301, or 308 from Next.js.
+  case "$(status http://localhost:3000/old-about)" in
+    301|308) echo "ok permanent redirect http://localhost:3000/old-about" ;;
+    *) fail "http://localhost:3000/old-about is not a permanent redirect" ;;
+  esac
+  expect 200 http://localhost:3000/sitemap.xml
+  expect 200 http://localhost:3000/rss.xml
+fi
 expect 200 http://localhost:3000/admin/
 expect 401 http://localhost:3000/api/content.page
 expect 200 -H "X-Secret-Key: $read_key" http://localhost:3000/api/content.page
-expect 200 http://localhost:8000/readyz
+expect 200 "$backend/readyz"
 # The contact form needs a captcha token: solve a challenge like the widget does.
 expect 400 -X POST -H "Content-Type: application/json" \
   -d '{"name":"E2E","email":"e2e@example.com","message":"Hello"}' \
@@ -89,8 +107,14 @@ expect 201 -X POST -H "Content-Type: application/json" \
   -d "{\"name\":\"E2E\",\"email\":\"e2e@example.com\",\"message\":\"Hello\",\"captcha\":\"$captcha\"}" \
   http://localhost:3000/api/content.formsubmission
 
-image="$(curl -s http://localhost:3000/blog | grep -o 'src="[^"]*/media/[^"]*"' | head -1 | cut -d'"' -f2)"
-[ -n "$image" ] || fail "the blog shows no images"
+if [ -n "$headless" ]; then
+  image="$(curl -s -H "X-Secret-Key: $read_key" http://localhost:3000/api/content.post \
+    | grep -o '"[^"]*/media/[^"]*"' | head -1 | tr -d '"')"
+  [ -n "$image" ] || fail "the posts in the API have no images"
+else
+  image="$(curl -s http://localhost:3000/blog | grep -o 'src="[^"]*/media/[^"]*"' | head -1 | cut -d'"' -f2)"
+  [ -n "$image" ] || fail "the blog shows no images"
+fi
 expect 200 "$image"
 
 # Sign in to the admin and edit a page: the site shows the change.
@@ -101,10 +125,17 @@ page_id="$(curl -s -H "X-Secret-Key: $read_key" 'http://localhost:3000/api/conte
   | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"][0]["id"])')"
 expect 200 -X PATCH -H "Authorization: Bearer $token" -H "Content-Type: application/json" \
   -d '{"title":"Edited by the end-to-end test"}' "http://localhost:3000/admin/api/content/content.page/$page_id"
-about="$(curl -s http://localhost:3000/about)"
-grep -q "Edited by the end-to-end test" <<<"$about" || fail "the edit does not show on the site"
-echo "ok the edit shows on the site"
+if [ -n "$headless" ]; then
+  about="$(curl -s -H "X-Secret-Key: $read_key" "http://localhost:3000/api/content.page/$page_id")"
+  grep -q "Edited by the end-to-end test" <<<"$about" || fail "the edit does not show in the API"
+  echo "ok the edit shows in the API"
+else
+  about="$(curl -s http://localhost:3000/about)"
+  grep -q "Edited by the end-to-end test" <<<"$about" || fail "the edit does not show on the site"
+  echo "ok the edit shows on the site"
+fi
 
+if [ -z "$headless" ]; then
 # Page analytics: the site loads Umami's tracker, only the tracker and the
 # page views pass through /_a/, and the admin reads the page view back.
 home="$(curl -s http://localhost:3000/)"
@@ -118,13 +149,16 @@ expect 200 -X POST -H "Content-Type: application/json" -A "Mozilla/5.0 (X11; Lin
   http://localhost:3000/_a/api/send
 docker compose exec -T backend python manage.py shell -c "from content_studio.analytics.ranges import get_query; from django_stack.analytics import UmamiProvider; views = UmamiProvider().get_summary(None, get_query('today'))['pageviews'].value; assert views >= 1, views"
 echo "ok the admin reads the page view from Umami"
+fi
 
 echo "Running the template tests"
 docker compose exec -T backend python manage.py check --fail-level WARNING
 docker compose exec -T backend python manage.py makemigrations --check --dry-run
 docker compose exec -T backend pytest -q
-docker compose exec -T frontend npm run check
-docker compose exec -T frontend npm test
+if [ -z "$headless" ]; then
+  docker compose exec -T frontend npm run check
+  docker compose exec -T frontend npm test
+fi
 
 node "$cli" doctor .
 node "$cli" check --tests

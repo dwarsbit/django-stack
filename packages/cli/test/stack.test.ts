@@ -107,8 +107,8 @@ describe("presets", () => {
 
 describe("pendingChoices", () => {
   it("lists what is not generated yet, and which of it are defaults", () => {
-    const pending = pendingChoices({ ...DEFAULT_STACK, frontend: "headless" });
-    expect(pending).toContainEqual({ key: "frontend", choice: "--frontend headless", isDefault: false });
+    const pending = pendingChoices({ ...DEFAULT_STACK, frontend: "templates" });
+    expect(pending).toContainEqual({ key: "frontend", choice: "--frontend templates", isDefault: false });
     expect(pending.map((item) => item.key)).not.toContain("captcha");
     expect(pending.map((item) => item.key)).not.toContain("cache");
     expect(pending.map((item) => item.key)).not.toContain("notifications");

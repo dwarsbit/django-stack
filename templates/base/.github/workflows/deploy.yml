@@ -24,7 +24,9 @@ permissions:
 
 env:
   BACKEND_IMAGE: ghcr.io/${{ github.repository }}-backend:${{ github.sha }}
+  # @if frontend
   FRONTEND_IMAGE: ghcr.io/${{ github.repository }}-frontend:${{ github.sha }}
+  # @end
 
 jobs:
   deploy:
@@ -38,9 +40,11 @@ jobs:
       - name: Build and push the images
         run: |
           docker build --target prod --tag "${BACKEND_IMAGE,,}" backend
-          docker build --target prod --tag "${FRONTEND_IMAGE,,}" frontend
           docker push "${BACKEND_IMAGE,,}"
+          # @if frontend
+          docker build --target prod --tag "${FRONTEND_IMAGE,,}" frontend
           docker push "${FRONTEND_IMAGE,,}"
+          # @end
 
       - name: Set up SSH
         run: |
@@ -63,7 +67,12 @@ jobs:
             set -e
             cd '$DEPLOY_PATH'
             echo '$REGISTRY_TOKEN' | docker login ghcr.io --username '${{ github.actor }}' --password-stdin
+            # @if frontend
             export BACKEND_IMAGE='${BACKEND_IMAGE,,}' FRONTEND_IMAGE='${FRONTEND_IMAGE,,}'
+            # @end
+            # @if !frontend
+            export BACKEND_IMAGE='${BACKEND_IMAGE,,}'
+            # @end
             docker compose pull --quiet --ignore-buildable
             docker compose up -d --no-build --remove-orphans
             docker logout ghcr.io

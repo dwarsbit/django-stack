@@ -18,11 +18,15 @@ import { scaffold } from "../src/scaffold";
 import { DEFAULT_STACK, decodePreset, encodePreset } from "../src/stack";
 
 const dirs: string[] = [];
-function project(env = "COMPOSE_PROFILES=dev,db\n") {
+function project(env = "COMPOSE_PROFILES=dev,db\n", frontend = true) {
   const dir = mkdtempSync(join(tmpdir(), "django-stack-"));
   dirs.push(dir);
   writeFileSync(join(dir, "compose.yaml"), "name: my-site\nservices: {}\n");
   writeFileSync(join(dir, ".env"), env);
+  if (frontend) {
+    mkdirSync(join(dir, "frontend"));
+    writeFileSync(join(dir, "frontend", "package.json"), "{}\n");
+  }
   return dir;
 }
 afterEach(() => {
@@ -278,6 +282,13 @@ describe("checkSteps", () => {
     expect(checkSteps(readProject(project()), true)).toHaveLength(6);
     const prod = checkSteps(readProject(project("COMPOSE_PROFILES=prod,db\n")), true);
     expect(prod.map((step) => step.name)).toEqual(["Django deploy checks", "Migrations are up to date"]);
+  });
+
+  it("leaves out the frontend's checks in a headless project", () => {
+    const headless = readProject(project(undefined, false));
+    expect(headless.services.frontend).toBeUndefined();
+    const steps = checkSteps(headless, true).map((step) => step.name);
+    expect(steps).toEqual(["Django system checks", "Migrations are up to date", "Ruff", "Backend tests"]);
   });
 });
 

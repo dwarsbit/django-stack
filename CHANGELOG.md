@@ -5,6 +5,24 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.11.0 (unreleased)
+
+- **Headless projects.** `init --frontend headless` (and `--preset api`)
+  now generates a project with the content API and the admin only: no
+  `frontend/` and no frontend service. Django serves the whole domain, in
+  development on `SITE_PORT`, with a start page at `/` that links to the
+  admin and the API schema (`django_stack.views.start`). Page analytics is
+  off, `REVALIDATE_URL` is empty until you set your frontend's, and
+  `dstack types` writes only `backend/openapi.json`. `dstack check`,
+  `doctor`, `dev` and `update` skip the frontend when there is none. The
+  templates' text files can now hold `# @if frontend` / `# @end` blocks.
+- Fixed: with page analytics off, the backend did not start with Django
+  Content Studio 1.12, whose check `content_studio.E037` refuses the
+  `Analytics` components of the page and post studios without an
+  `AnalyticsExtension`. `content/admin.py` now adds them only when Umami is
+  configured. In an existing project with analytics off, make the same
+  change.
+
 ## 0.10.0 (2026-11-07)
 
 - **pnpm and Bun.** `init --package-manager` now generates `pnpm`, the

@@ -128,7 +128,8 @@ export async function dev(options: DirectoryOptions & { build: boolean }) {
   intro("Develop");
   project = await freeDevPorts(project);
   urlsNote(project, "Starting");
-  p.log.message(pc.dim("Changes in backend/ and frontend/ reload. Press Ctrl+C to stop."));
+  const reloads = project.services.frontend ? "backend/ and frontend/" : "backend/";
+  p.log.message(pc.dim(`Changes in ${reloads} reload. Press Ctrl+C to stop.`));
   exitWith(compose(project, ["up", ...(options.build ? ["--build"] : [])]));
 }
 
@@ -240,6 +241,11 @@ export async function types(options: DirectoryOptions) {
   ];
   if (compose(project, inService(project, project.services.backend, schema, false)) !== 0)
     fail("The backend could not write its schema.");
+  // Headless: the schema is the result, for your own frontend's client.
+  if (!project.services.frontend) {
+    p.outro(`Wrote ${pc.bold("backend/openapi.json")}`);
+    return;
+  }
   const generate = ["npx", "headless", "generate", "--file", "/schema.json", "--out", "src/lib/headless.ts"];
   const mount = ["-v", "./backend/openapi.json:/schema.json:ro"];
   if (
@@ -282,7 +288,9 @@ export function checkSteps(project: Project, tests: boolean): Step[] {
       { name: "Frontend tests", service: "frontend", args: ["npm", "test", "--silent"], devOnly: true },
     );
   }
-  return steps.filter((step) => !(step.devOnly && project.prod));
+  return steps.filter(
+    (step) => !(step.devOnly && project.prod) && (step.service !== "frontend" || project.services.frontend),
+  );
 }
 
 /** `dstack check`: the doctor's checks, Django's checks, the linters and, with --tests, the tests. */
@@ -303,7 +311,7 @@ export async function check(options: DirectoryOptions & { tests?: boolean }) {
   }
   const running = runningServices(project);
   for (const step of checkSteps(project, Boolean(options.tests))) {
-    const service = project.services[step.service];
+    const service = project.services[step.service] as string;
     const args = running.includes(service)
       ? ["exec", "-T", service, ...step.args]
       : ["run", "--rm", "-T", ...(step.service === "frontend" ? ["--no-deps"] : []), service, ...step.args];
@@ -370,8 +378,8 @@ export async function update(
     if (compose(target, build) !== 0) fail("Building the images failed.");
   }
 
-  const volume = project.prod ? undefined : nodeModulesVolume(project);
-  if (volume) {
+  const volume = project.prod || !project.services.frontend ? undefined : nodeModulesVolume(project);
+  if (volume && project.services.frontend) {
     // The volume keeps the old packages; the next start fills it from the new image.
     compose(project, ["rm", "--stop", "--force", project.services.frontend]);
     spawnSync("docker", ["volume", "rm", "--force", volume], { stdio: "ignore" });
