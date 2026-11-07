@@ -10,9 +10,11 @@
 #   `s3` in development for a local S3 service (see .env). `analytics` runs
 #   Umami for page analytics, `valkey` the Valkey service for CACHE_URL or
 #   TASKS_URL.
+# @if frontend
 #
 # The frontend only receives the variables it needs: never the full-access
 # API key or the database password.
+# @end
 
 name: {{project_name}}
 
@@ -34,6 +36,7 @@ x-logging: &logging
     max-size: 10m
     max-file: "5"
 
+# @if frontend
 x-frontend-env: &frontend-env
   SITE_URL: ${SITE_URL}
   API_URL: http://backend:8000/api
@@ -52,6 +55,7 @@ x-frontend-env: &frontend-env
   SENTRY_DSN: ${SENTRY_DSN:-}
   SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
   SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+# @end
 
 x-backend-depends: &backend-depends
   db:
@@ -98,7 +102,13 @@ services:
       - ./backend:/app
       - media:/app/media
     ports:
+      # @if frontend
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
+      # @end
+      # @if !frontend
+      # The site is the backend: the API, the admin and a start page.
+      - "127.0.0.1:${SITE_PORT:-3000}:8000"
+      # @end
     depends_on: *backend-depends
     healthcheck: *backend-health
     logging: *logging
@@ -124,6 +134,7 @@ services:
     logging: *logging
     restart: unless-stopped
 
+  # @if frontend
   frontend:
     profiles: [dev]
     build:
@@ -140,6 +151,7 @@ services:
         condition: service_healthy
     logging: *logging
     restart: unless-stopped
+  # @end
 
   mailpit:
     profiles: [dev]
@@ -224,6 +236,7 @@ services:
     logging: *logging
     restart: unless-stopped
 
+  # @if frontend
   frontend-prod:
     profiles: [prod]
     image: ${FRONTEND_IMAGE:-{{project_name}}-frontend}
@@ -244,6 +257,7 @@ services:
           memory: 512M
     logging: *logging
     restart: unless-stopped
+  # @end
 
   # The only service with public ports: HTTPS for SITE_URL with a
   # certificate from Let's Encrypt, routing to Django and the frontend.
@@ -269,8 +283,10 @@ services:
     depends_on:
       backend-prod:
         condition: service_healthy
+      # @if frontend
       frontend-prod:
         condition: service_healthy
+      # @end
     deploy:
       resources:
         limits:
@@ -361,6 +377,8 @@ volumes:
   media:
   backups:
   s3data:
+  # @if frontend
   frontend_node_modules:
+  # @end
   caddy_data:
   caddy_config:

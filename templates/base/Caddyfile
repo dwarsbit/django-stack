@@ -1,8 +1,14 @@
 # {{project_name}}: the reverse proxy of the prod profile.
 #
+# @if frontend
 # One domain: Django serves /admin, /api and /static; uploads on the server's
 # disk are served from /media; Umami's tracker from /_a/; the frontend
 # serves everything else. Caddy
+# @end
+# @if !frontend
+# One domain: Django serves everything (the API, the admin, /static and a
+# start page); uploads on the server's disk are served from /media. Caddy
+# @end
 # gets and renews the HTTPS certificate for SITE_URL by itself.
 #
 # Behind a platform's proxy (Coolify, Dokploy), CADDY_ADDRESS=:80 serves
@@ -54,6 +60,7 @@
 		}
 	}
 
+	# @if frontend
 	@django path /admin /admin/* /api /api/* /static/*
 	handle @django {
 		reverse_proxy backend:8000
@@ -62,6 +69,18 @@
 	handle {
 		reverse_proxy frontend:3000
 	}
+	# @end
+	# @if !frontend
+	# The health checks are for Docker and the platforms, not the public.
+	@health path /healthz /readyz /statusz
+	handle @health {
+		respond 404
+	}
+
+	handle {
+		reverse_proxy backend:8000
+	}
+	# @end
 
 	log {
 		output stdout

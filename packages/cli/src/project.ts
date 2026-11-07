@@ -25,8 +25,8 @@ export interface Project {
   prod: boolean;
   /** Whether this is the local production run of a development project. */
   localRun: boolean;
-  /** The Compose service names of this profile. */
-  services: { backend: string; frontend: string; worker: string };
+  /** The Compose service names of this profile; no frontend in a headless project. */
+  services: { backend: string; frontend?: string; worker: string };
   /** Arguments before the `docker compose` subcommand. */
   composeArgs: string[];
   /** Extra environment for `docker compose`. */
@@ -78,6 +78,11 @@ function projectName(directory: string): string {
   return basename(directory).toLowerCase();
 }
 
+/** Whether the project has a frontend: a headless one has no `frontend/`. */
+export function hasFrontend(directory: string): boolean {
+  return existsSync(join(directory, "frontend", "package.json"));
+}
+
 function fromEnv(directory: string, name: string, envFile: string, localRun: boolean): Project {
   const env = parseEnv(readFileSync(join(directory, envFile), "utf8"));
   const profiles = parseProfiles(env.COMPOSE_PROFILES);
@@ -90,7 +95,11 @@ function fromEnv(directory: string, name: string, envFile: string, localRun: boo
     profiles,
     prod,
     localRun,
-    services: { backend: `backend${suffix}`, frontend: `frontend${suffix}`, worker: `worker${suffix}` },
+    services: {
+      backend: `backend${suffix}`,
+      ...(hasFrontend(directory) ? { frontend: `frontend${suffix}` } : {}),
+      worker: `worker${suffix}`,
+    },
     composeArgs: localRun ? ["--env-file", envFile, "--project-name", `${name}-run`] : [],
     // compose.yaml reads the containers' variables from ${ENV_FILE:-.env}.
     composeEnv: localRun ? { ENV_FILE: envFile, COMPOSE_PROFILES: env.COMPOSE_PROFILES ?? "" } : {},

@@ -37,7 +37,7 @@ export const STACK_OPTIONS = [
     values: [
       { value: "astro", label: "Astro", hint: "server-rendered, fast by default", generated: true },
       { value: "next", label: "Next.js", hint: "React, server components", generated: true },
-      { value: "headless", label: "Headless", hint: "just the API and the admin", generated: false },
+      { value: "headless", label: "Headless", hint: "just the API and the admin", generated: true },
       {
         value: "templates",
         label: "Django templates",
@@ -221,10 +221,14 @@ export function taskQueue(stack: Pick<Stack, "cache" | "tasks">): "database" | "
 /** The frontends that run on Node, with a `frontend/` directory and a package manager. */
 export const NODE_FRONTENDS: readonly string[] = ["astro", "next", "nuxt", "sveltekit"];
 
-/** Whether an option applies to a stack: the package manager only with a Node frontend. */
+/**
+ * Whether an option applies to a stack: the package manager only with a Node
+ * frontend, page analytics only with a frontend for its tracker.
+ */
 export function applies(key: StackKey, stack: Partial<Stack>): boolean {
   if (key === "packageManager")
     return stack.frontend === undefined || NODE_FRONTENDS.includes(stack.frontend);
+  if (key === "analytics") return stack.frontend !== "headless";
   return true;
 }
 

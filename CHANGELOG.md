@@ -14,6 +14,21 @@ the unreleased version; the release workflow releases it.
   (`ARG POSTGRES_VERSION` in `backend/Dockerfile`), so backups work with
   either. `config` refuses another Postgres version; the backups docs
   show how to upgrade with a backup and a restore.
+- **Headless projects.** `init --frontend headless` (and `--preset api`)
+  now generates a project with the content API and the admin only: no
+  `frontend/` and no frontend service. Django serves the whole domain, in
+  development on `SITE_PORT`, with a start page at `/` that links to the
+  admin and the API schema (`django_stack.start`). Page analytics is
+  off, `REVALIDATE_URL` is empty until you set your frontend's, and
+  `dstack types` writes only `backend/openapi.json`. `dstack check`,
+  `doctor`, `dev` and `update` skip the frontend when there is none. The
+  templates' text files can now hold `# @if frontend` / `# @end` blocks.
+- Fixed: with page analytics off, the backend did not start with Django
+  Content Studio 1.12, whose check `content_studio.E037` refuses the
+  `Analytics` components of the page and post studios without an
+  `AnalyticsExtension`. `content/admin.py` now adds them only when Umami is
+  configured. In an existing project with analytics off, make the same
+  change.
 - **A local Postgres with an external database.** `init --database-url`
   now saves the URL as `PRODUCTION_DATABASE_URL` and keeps the bundled
   Postgres for development, so local work never writes to the server's

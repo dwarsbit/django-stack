@@ -26,7 +26,7 @@ import {
   usesValkey,
   validateProjectName,
 } from "../src";
-import { frontendPackageManager, packageManagerValues } from "../src/scaffold";
+import { frontendPackageManager, packageManagerValues, selectBlocks } from "../src/scaffold";
 
 const dirs: string[] = [];
 function tempDir() {
@@ -84,7 +84,7 @@ describe("frontend templates", () => {
     .map((entry) => entry.slice("frontend-".length));
 
   it("has a template for every generated frontend", () => {
-    for (const frontend of FRONTENDS) expect(frontends).toContain(frontend);
+    for (const frontend of FRONTENDS) if (frontend !== "headless") expect(frontends).toContain(frontend);
   });
 
   it.each(frontends)("%s meets the frontend contract", (frontend) => {
@@ -109,6 +109,20 @@ describe("frontend templates", () => {
     for (const file of ["README.md", "AGENTS.md", "SECURITY.md", "package.json"]) {
       expect(readFileSync(join(directory, file), "utf8"), file).not.toMatch(/\{\{/);
     }
+  });
+});
+
+describe("selectBlocks", () => {
+  it("keeps the blocks of the flags that are on", () => {
+    const text = "a\n# @if frontend\nb\n# @end\n<!-- @if !frontend -->\nc\n<!-- @end -->\nd";
+    expect(selectBlocks(text, { frontend: true })).toBe("a\nb\nd");
+    expect(selectBlocks(text, { frontend: false })).toBe("a\nc\nd");
+  });
+
+  it("refuses unknown flags and unclosed blocks", () => {
+    expect(() => selectBlocks("# @if other\n# @end", { frontend: true })).toThrow(/other/);
+    expect(() => selectBlocks("# @if frontend\nb", { frontend: true })).toThrow(/@end/);
+    expect(() => selectBlocks("# @end", { frontend: true })).toThrow(/@if/);
   });
 });
 
@@ -283,6 +297,54 @@ describe("scaffold", () => {
     expect(env.COMPOSE_PROFILES).toBe("dev,db");
   });
 
+  it("creates a headless project: the API and the admin, no frontend", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "headless", demoContent: true, analytics: true });
+    expect(existsSync(join(directory, "frontend"))).toBe(false);
+    const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
+    expect(compose).not.toMatch(/frontend(-prod|-env|_node_modules|:)/);
+    expect(compose).toContain('SITE_PORT:-3000}:8000"');
+    const caddy = readFileSync(join(directory, "Caddyfile"), "utf8");
+    expect(caddy).not.toMatch(/frontend:3000/);
+    expect(caddy).toContain("reverse_proxy backend:8000");
+    expect(readFileSync(join(directory, "backend", "config", "urls.py"), "utf8")).toContain(
+      'include("django_stack.start")',
+    );
+    const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
+    expect(env.REVALIDATE_URL).toBe("");
+    expect(env.COMPOSE_PROFILES).toBe("dev,db");
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
+    expect(manifest.scripts.test).toBe("docker compose exec backend pytest");
+    expect(JSON.stringify(manifest.scripts)).not.toMatch(/frontend/);
+    expect(manifest["django-stack"].frontend).toBe("headless");
+    const deploy = readFileSync(join(directory, ".github", "workflows", "deploy.yml"), "utf8");
+    expect(deploy).not.toMatch(/FRONTEND_IMAGE/);
+    for (const file of [
+      "README.md",
+      "AGENTS.md",
+      "SECURITY.md",
+      "compose.yaml",
+      "Caddyfile",
+      ".env.example",
+    ]) {
+      const text = readFileSync(join(directory, file), "utf8");
+      expect(text, file).not.toMatch(/\{\{|@if|@end/);
+      expect(text, file).not.toMatch(/frontend\//);
+    }
+  });
+
+  it("keeps a frontend project's blocks without the markers", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true });
+    for (const file of ["README.md", "AGENTS.md", "compose.yaml", "Caddyfile", "backend/config/urls.py"]) {
+      expect(readFileSync(join(directory, file), "utf8"), file).not.toMatch(/@if|@end/);
+    }
+    expect(readFileSync(join(directory, "compose.yaml"), "utf8")).toContain("frontend-prod:");
+    expect(readFileSync(join(directory, "backend", "config", "urls.py"), "utf8")).not.toContain(
+      "django_stack.start",
+    );
+  });
+
   it.each([
     ["stable", "17", "/var/lib/postgresql/data"],
     ["latest", "18", "/var/lib/postgresql"],
@@ -386,7 +448,7 @@ describe("scaffold", () => {
 
   it("installs the frontend with the chosen package manager", () => {
     const read = (directory: string, file: string) => readFileSync(join(directory, "frontend", file), "utf8");
-    for (const frontend of FRONTENDS) {
+    for (const frontend of FRONTENDS.filter((value) => value !== "headless")) {
       const pnpm = join(tempDir(), `${frontend}-pnpm`);
       scaffold({ directory: pnpm, name: "site", frontend, demoContent: true });
       expect(read(pnpm, "Dockerfile")).toContain("RUN npm install --global pnpm@");

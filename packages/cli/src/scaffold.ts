@@ -235,7 +235,7 @@ export function localS3(port = 8333): Record<string, string> {
 export const LOCAL_S3: Record<string, string> = localS3();
 
 const TEXT_EXTENSIONS =
-  /\.(py|ts|tsx|mjs|js|jsx|json|astro|vue|svelte|css|md|yaml|yml|toml|txt|html|sh|svg)$|Dockerfile$|gitignore$|\.dockerignore$|env\.example$/;
+  /\.(py|ts|tsx|mjs|js|jsx|json|astro|vue|svelte|css|md|yaml|yml|toml|txt|html|sh|svg)$|Dockerfile$|Caddyfile$|gitignore$|\.dockerignore$|env\.example$/;
 
 export function defaultTemplatesDir(): string {
   return fileURLToPath(new URL("../templates", import.meta.url));
@@ -280,6 +280,37 @@ function walk(directory: string): string[] {
   });
 }
 
+const BLOCK_START = /^\s*(?:#|<!--)\s*@if\s+(!?)([a-z]+)\s*(?:-->)?\s*$/;
+const BLOCK_END = /^\s*(?:#|<!--)\s*@end\s*(?:-->)?\s*$/;
+
+/**
+ * Keeps or drops the template's conditional blocks: the lines between a
+ * comment line `# @if frontend` (or `<!-- @if !frontend -->`) and `# @end`
+ * stay when the flag is on (off with `!`). The marker lines always go.
+ */
+export function selectBlocks(text: string, flags: Record<string, boolean>): string {
+  if (!/@(if|end)\b/.test(text)) return text;
+  const kept: string[] = [];
+  const open: boolean[] = [];
+  for (const line of text.split("\n")) {
+    const start = line.match(BLOCK_START);
+    if (start) {
+      const flag = flags[start[2] as string];
+      if (flag === undefined) throw new Error(`Unknown template flag ${start[2]}.`);
+      open.push(start[1] ? !flag : flag);
+      continue;
+    }
+    if (BLOCK_END.test(line)) {
+      if (!open.length) throw new Error("@end without @if.");
+      open.pop();
+      continue;
+    }
+    if (open.every(Boolean)) kept.push(line);
+  }
+  if (open.length) throw new Error("@if without @end.");
+  return kept.join("\n");
+}
+
 function render(text: string, values: Record<string, string>): string {
   return text.replace(/\{\{([a-z_]+)\}\}/g, (match, key: string) => values[key] ?? match);
 }
@@ -292,6 +323,21 @@ export function timeZones(): string[] {
 export function validateTimeZone(value: string): string | undefined {
   if (timeZones().includes(value)) return undefined;
   return `${JSON.stringify(value)} is not a time zone. Use a name such as Europe/Amsterdam or UTC.`;
+}
+
+/** The root package.json of a headless project: the scripts without the frontend's steps. */
+function headlessScripts(text: string): string {
+  const manifest = JSON.parse(text);
+  const scripts = manifest.scripts as Record<string, string>;
+  scripts.test = "docker compose exec backend pytest";
+  scripts.lint = "docker compose exec backend ruff check .";
+  // The OpenAPI schema for your own frontend's client, in backend/openapi.json.
+  scripts["generate:types"] = (scripts["generate:types"] ?? "").split(" && ")[0] ?? "";
+  manifest.description = manifest.description.replace(
+    ", Content Studio and Headless,",
+    " and Content Studio,",
+  );
+  return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
 export function scaffold(options: ScaffoldOptions): ScaffoldResult {
@@ -310,21 +356,26 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     if (zoneError) throw new Error(zoneError);
   }
 
+  // Headless: the API and the admin, no frontend service.
+  const headless = options.frontend === "headless";
   const frontendTemplate = join(templates, `frontend-${options.frontend}`);
-  if (!existsSync(frontendTemplate)) {
+  if (!headless && !existsSync(frontendTemplate)) {
     throw new Error(`This version of the CLI has no ${options.frontend} frontend.`);
   }
 
   mkdirSync(target, { recursive: true });
   cpSync(join(templates, "base"), target, { recursive: true });
   cpSync(join(templates, "backend"), join(target, "backend"), { recursive: true });
-  cpSync(frontendTemplate, join(target, "frontend"), { recursive: true });
+  if (!headless) cpSync(frontendTemplate, join(target, "frontend"), { recursive: true });
   renameSync(join(target, "gitignore"), join(target, ".gitignore"));
   makeExecutable(target);
   // The frontend's name and links, for the project's README, AGENTS.md and SECURITY.md.
-  const about = join(target, "frontend", "template.json");
-  const frontend = JSON.parse(readFileSync(about, "utf8")) as FrontendTemplate;
-  rmSync(about);
+  let frontend: FrontendTemplate = { label: "Headless", url: "", security: "" };
+  if (!headless) {
+    const about = join(target, "frontend", "template.json");
+    frontend = JSON.parse(readFileSync(about, "utf8")) as FrontendTemplate;
+    rmSync(about);
+  }
 
   const packageManager = options.packageManager ?? "pnpm";
   const values = {
@@ -344,13 +395,18 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   for (const file of files) {
     if (!TEXT_EXTENSIONS.test(file)) continue;
     const text = readFileSync(file, "utf8");
-    const rendered = render(text, values);
+    const rendered = render(selectBlocks(text, { frontend: !headless }), values);
     if (rendered !== text) writeFileSync(file, rendered);
   }
+  if (headless)
+    writeFileSync(
+      join(target, "package.json"),
+      headlessScripts(readFileSync(join(target, "package.json"), "utf8")),
+    );
 
   // pnpm's settings only for pnpm; the package manager in package.json.
   if (packageManager !== "pnpm") rmSync(join(target, "frontend", "pnpm-workspace.yaml"), { force: true });
-  if (packageManager !== "npm") {
+  if (!headless && packageManager !== "npm") {
     const packageJson = join(target, "frontend", "package.json");
     const manifest = JSON.parse(readFileSync(packageJson, "utf8"));
     const version = packageManager === "pnpm" ? PNPM_VERSION : BUN_VERSION;
@@ -387,7 +443,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     profiles.push("s3");
     env = setEnvValues(env, LOCAL_S3);
   }
-  if (options.analytics) {
+  if (options.analytics && !headless) {
     profiles.push("analytics");
     env = setEnvValues(env, umamiEnv(parseEnv(env).DATABASE_URL ?? "", secrets));
   }
@@ -440,6 +496,10 @@ export function linkPackages(target: string, monorepo: string) {
 
   // Every @django-stack package the frontend depends on, such as utils and svelte.
   const packageJson = join(target, "frontend", "package.json");
+  if (!existsSync(packageJson)) {
+    rmSync(frontendVendor, { recursive: true });
+    return;
+  }
   const manifest = JSON.parse(readFileSync(packageJson, "utf8"));
   const packages = Object.keys(manifest.dependencies ?? {}).filter((name) =>
     name.startsWith("@django-stack/"),

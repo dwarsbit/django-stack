@@ -7,6 +7,7 @@ from content_studio import register
 from content_studio.admin import ModelStudio
 from content_studio.analytics import Analytics
 from content_studio.form import ActivityLog, Field, FormSet
+from django_stack.analytics import UmamiProvider
 from django_stack.studio import PreviewButton
 
 from .models import Author, Category, FormSubmission, Menu, Page, Post, Redirect, SiteSettings, Tag
@@ -17,9 +18,17 @@ POST_PREVIEW = PreviewButton(component_id="8d0f6a52-3c51-4a8e-9a2b-6f1f0c8f2a02"
 PAGE_ACTIVITY = ActivityLog(component_id="8d0f6a52-3c51-4a8e-9a2b-6f1f0c8f2a03")
 POST_ACTIVITY = ActivityLog(component_id="8d0f6a52-3c51-4a8e-9a2b-6f1f0c8f2a04")
 # The visitors of the page or post, from the analytics (see config/studio.py).
-# Hidden while analytics are off.
-PAGE_ANALYTICS = Analytics(path_field="path", component_id="8d0f6a52-3c51-4a8e-9a2b-6f1f0c8f2a05")
-POST_ANALYTICS = Analytics(path_field="slug", path_prefix="/blog/", component_id="8d0f6a52-3c51-4a8e-9a2b-6f1f0c8f2a06")
+# Only with analytics on: Content Studio refuses them without its
+# AnalyticsExtension.
+ANALYTICS = UmamiProvider.is_configured()
+PAGE_ANALYTICS = (
+    [Analytics(path_field="path", component_id="8d0f6a52-3c51-4a8e-9a2b-6f1f0c8f2a05")] if ANALYTICS else []
+)
+POST_ANALYTICS = (
+    [Analytics(path_field="slug", path_prefix="/blog/", component_id="8d0f6a52-3c51-4a8e-9a2b-6f1f0c8f2a06")]
+    if ANALYTICS
+    else []
+)
 SEO = FormSet(
     title="Search and sharing",
     description="Leave empty to use the title and the site settings.",
@@ -42,7 +51,7 @@ class PageStudio(ModelStudio):
         FormSet(title="Body", fields=["body"]),
         SEO,
     ]
-    edit_sidebar = ["status", "published_at", PAGE_PREVIEW, "order", PAGE_ANALYTICS, PAGE_ACTIVITY]
+    edit_sidebar = ["status", "published_at", PAGE_PREVIEW, "order", *PAGE_ANALYTICS, PAGE_ACTIVITY]
 
 
 @register(Post)
@@ -67,7 +76,7 @@ class PostStudio(ModelStudio):
         "author",
         "categories",
         "tags",
-        POST_ANALYTICS,
+        *POST_ANALYTICS,
         POST_ACTIVITY,
     ]
 

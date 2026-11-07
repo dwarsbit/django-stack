@@ -30,10 +30,14 @@ trap cleanup EXIT
 node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND:-astro}" \
   ${PACKAGE_MANAGER:+--package-manager "$PACKAGE_MANAGER"} ${POSTGRES:+--postgres "$POSTGRES"}
 cd "$project"
+headless=""
+[ "${FRONTEND:-astro}" = "headless" ] && headless=1
 node "$cli" production . --domain site.localhost --email-url smtp://mail.invalid:25 --yes
 mv .env .env.development
 mv .env.production .env
-grep -q '^COMPOSE_PROFILES=prod,db,analytics$' .env || fail "the production settings do not use the prod profile"
+profiles="prod,db,analytics"
+[ -n "$headless" ] && profiles="prod,db"
+grep -q "^COMPOSE_PROFILES=$profiles\$" .env || fail "the production settings do not use the prod profile"
 
 docker compose build
 docker compose up --detach --wait --wait-timeout 300
@@ -70,8 +74,10 @@ read_key="$(grep '^API_READ_KEY=' .env | cut -d= -f2)"
 password="$(grep '^ADMIN_PASSWORD=' .env | cut -d= -f2)"
 
 expect 200 "$site/"
-expect 200 "$site/blog"
-expect 200 "$site/blog/hello-world"
+if [ -z "$headless" ]; then
+  expect 200 "$site/blog"
+  expect 200 "$site/blog/hello-world"
+fi
 expect 404 "$site/does-not-exist"
 expect 308 http://site.localhost/
 expect 200 "$site/admin/"
@@ -82,8 +88,15 @@ expect 200 -H "X-Secret-Key: $read_key" "$site/api/content.page"
 expect 404 "$site/readyz"
 expect 404 "$site/statusz"
 
-image="$(c "$site/blog" | grep -o 'src="[^"]*/media/[^"]*"' | head -1 | cut -d'"' -f2)"
-[ -n "$image" ] || fail "the blog shows no images"
+if [ -n "$headless" ]; then
+  # The covers are IDs unless expanded; take an image file, not a media page.
+  image="$(c -H "X-Secret-Key: $read_key" "$site/api/content.post?expand=cover" \
+    | { grep -oE '"[^"]*/media/[^"]*\.(webp|jpe?g|png)"' || true; } | head -1 | tr -d '"')"
+  [ -n "$image" ] || fail "the posts in the API have no images"
+else
+  image="$(c "$site/blog" | grep -o 'src="[^"]*/media/[^"]*"' | head -1 | cut -d'"' -f2)"
+  [ -n "$image" ] || fail "the blog shows no images"
+fi
 case "$image" in "$site/media/"*) ;; *) fail "image $image is not served from $site/media/" ;; esac
 expect 200 "$image"
 
@@ -94,6 +107,7 @@ done
 grep -qi '^server:' <<<"$headers" && fail "$site/ shows the server software"
 echo "ok security headers"
 
+if [ -z "$headless" ]; then
 echo "Checking page analytics"
 home="$(c "$site/")"
 grep -q '/_a/script.js' <<<"$home" || fail "the site does not load the analytics tracker"
@@ -106,6 +120,7 @@ expect 200 -X POST -H "Content-Type: application/json" -A "Mozilla/5.0 (X11; Lin
   "$site/_a/api/send"
 docker compose exec -T backend-prod python manage.py shell -c "from content_studio.analytics.ranges import get_query; from django_stack.analytics import UmamiProvider; views = UmamiProvider().get_summary(None, get_query('today'))['pageviews'].value; assert views >= 1, views"
 echo "ok the admin reads the page view from Umami"
+fi
 
 echo "Checking the deployment"
 docker compose exec -T backend-prod python manage.py check --deploy --fail-level WARNING

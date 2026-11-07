@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{{ project_name }}</title>
+</head>
+<body>
+  <main>
+    <h1>{{ project_name }}</h1>
+    <p>The content API and the admin of this site. The API answers requests with a key.</p>
+    <ul>
+      <li><a href="/admin/">Admin</a></li>
+      {% if schema %}<li><a href="/api/schema">API schema</a>: OpenAPI, with an API key in the <code>X-Secret-Key</code> header</li>{% endif %}
+    </ul>
+  </main>
+</body>
+</html>
