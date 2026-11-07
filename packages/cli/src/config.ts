@@ -47,6 +47,10 @@ export function applyStack(
     if (from[key] === to[key]) continue;
     const value = (option.values as readonly StackValue[]).find((candidate) => candidate.value === to[key]);
     if (!value) throw new Error(`${JSON.stringify(to[key])} is not a ${option.key}.`);
+    if (key === "postgres")
+      throw new Error(
+        "--postgres can't change on an existing project: a new major version needs a backup and a restore. See the docs on backups.",
+      );
     if (!SWITCHABLE.includes(key) || !value.generated)
       throw new Error(`${option.flag} ${to[key]} can't be set on an existing project in this version yet.`);
     if (key === "storage") {

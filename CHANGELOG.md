@@ -7,6 +7,13 @@ the unreleased version; the release workflow releases it.
 
 ## 0.11.0 (unreleased)
 
+- **Postgres 18.** `init --postgres latest` now generates Postgres 18,
+  with its volume at `/var/lib/postgresql`, where the image keeps a
+  directory per version. The backend image installs the Postgres client
+  from the PostgreSQL apt repository at the bundled server's major version
+  (`ARG POSTGRES_VERSION` in `backend/Dockerfile`), so backups work with
+  either. `config` refuses another Postgres version; the backups docs
+  show how to upgrade with a backup and a restore.
 - **Headless projects.** `init --frontend headless` (and `--preset api`)
   now generates a project with the content API and the admin only: no
   `frontend/` and no frontend service. Django serves the whole domain, in

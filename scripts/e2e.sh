@@ -27,7 +27,7 @@ cleanup() {
 trap cleanup EXIT
 
 node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND:-astro}" ${LOCAL_S3:+--storage s3} ${CACHE:+--cache "$CACHE"} \
-  ${PACKAGE_MANAGER:+--package-manager "$PACKAGE_MANAGER"}
+  ${PACKAGE_MANAGER:+--package-manager "$PACKAGE_MANAGER"} ${POSTGRES:+--postgres "$POSTGRES"}
 cd "$project"
 headless=""
 [ "${FRONTEND:-astro}" = "headless" ] && headless=1

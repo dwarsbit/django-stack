@@ -349,6 +349,19 @@ describe("scaffold", () => {
     expect(readFileSync(join(directory, "backend", "config", "urls.py"), "utf8")).not.toContain("start");
   });
 
+  it.each([
+    ["stable", "17", "/var/lib/postgresql/data"],
+    ["latest", "18", "/var/lib/postgresql"],
+  ] as const)("runs Postgres %s", (postgres, version, data) => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true, postgres });
+    const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
+    expect(compose).toContain(`image: postgres:${version}-alpine`);
+    expect(compose).toContain(`- pgdata:${data}\n`);
+    const dockerfile = readFileSync(join(directory, "backend", "Dockerfile"), "utf8");
+    expect(dockerfile).toContain(`ARG POSTGRES_VERSION=${version}\n`);
+  });
+
   it("runs Valkey for the cache or the tasks", () => {
     expect(cacheEnv({ cache: "valkey", tasks: "huey" })).toEqual({
       CACHE_URL: "redis://cache:6379/0",
