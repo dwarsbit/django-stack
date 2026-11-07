@@ -9,3 +9,9 @@ minimumReleaseAgeExclude:
 
 # Which dependencies may run install scripts; pnpm refuses others.
 allowBuilds: {}
+
+# The peer ranges of @astrojs/check allow a 2.0 beta of @emnapi, which pnpm
+# picks and which crashes `astro check`. Keep @emnapi on 1.x, as npm does.
+overrides:
+  "@emnapi/core": ^1.11.3
+  "@emnapi/runtime": ^1.11.3
