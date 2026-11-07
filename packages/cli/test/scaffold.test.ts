@@ -314,7 +314,7 @@ describe("scaffold", () => {
     expect(caddy).not.toMatch(/frontend:3000/);
     expect(caddy).toContain("reverse_proxy backend:8000");
     expect(readFileSync(join(directory, "backend", "config", "urls.py"), "utf8")).toContain(
-      'path("", start)',
+      'include("django_stack.start")',
     );
     const env = parseEnv(readFileSync(join(directory, ".env"), "utf8"));
     expect(env.REVALIDATE_URL).toBe("");
@@ -346,7 +346,7 @@ describe("scaffold", () => {
       expect(readFileSync(join(directory, file), "utf8"), file).not.toMatch(/@if|@end/);
     }
     expect(readFileSync(join(directory, "compose.yaml"), "utf8")).toContain("frontend-prod:");
-    expect(readFileSync(join(directory, "backend", "config", "urls.py"), "utf8")).not.toContain("start");
+    expect(readFileSync(join(directory, "backend", "config", "urls.py"), "utf8")).not.toContain("django_stack.start");
   });
 
   it.each([

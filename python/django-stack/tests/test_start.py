@@ -1,6 +1,6 @@
 from django.test import override_settings
 
-from django_stack.views import start
+from django_stack.start import start
 
 
 def test_start_page_links_to_the_admin_and_the_schema(rf, settings):
@@ -24,3 +24,8 @@ def test_start_page_without_the_schema(rf):
 
 def test_start_page_only_answers_reads(rf):
     assert start(rf.post("/")).status_code == 405
+
+
+@override_settings(ROOT_URLCONF="django_stack.start")
+def test_start_page_is_includable(client):
+    assert client.get("/").status_code == 200

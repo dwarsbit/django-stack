@@ -18,7 +18,7 @@ the unreleased version; the release workflow releases it.
   now generates a project with the content API and the admin only: no
   `frontend/` and no frontend service. Django serves the whole domain, in
   development on `SITE_PORT`, with a start page at `/` that links to the
-  admin and the API schema (`django_stack.views.start`). Page analytics is
+  admin and the API schema (`django_stack.start`). Page analytics is
   off, `REVALIDATE_URL` is empty until you set your frontend's, and
   `dstack types` writes only `backend/openapi.json`. `dstack check`,
   `doctor`, `dev` and `update` skip the frontend when there is none. The
