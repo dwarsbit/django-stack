@@ -1,7 +1,7 @@
 """
 Smoke tests of the content API: every exposed model answers the read-only
 key, drafts stay hidden, and the contact form takes submissions.
-Run them with `pnpm test` at the project root.
+Run them with `{{pm_run}} test` at the project root.
 """
 
 import pytest

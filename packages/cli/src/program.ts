@@ -152,7 +152,7 @@ export function createProgram(): Command {
     .command("update")
     .description("Pull and rebuild the images and update the DjangoStack packages")
     .addOption(dirOption())
-    .option("--all", "Update every backend package in uv.lock, not only django-stack")
+    .option("--all", "Update every package in the lockfiles, not only DjangoStack's")
     .option("--no-cache", "Rebuild the images from scratch")
     .option("--no-restart", "Don't restart what was running")
     .action(updateProject);

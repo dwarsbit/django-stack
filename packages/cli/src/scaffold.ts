@@ -54,6 +54,8 @@ export interface ScaffoldOptions {
   notifications?: boolean;
   /** The captcha of the contact form; on by default. */
   captcha?: boolean;
+  /** The frontend's package manager; pnpm by default. */
+  packageManager?: PackageManager;
   /** How errors are reported in production; by email by default. */
   errors?: Stack["errors"];
   /** The cache backend; the database by default. */
@@ -70,6 +72,56 @@ export interface ScaffoldOptions {
   preset?: string;
   /** Where the templates are; the ones in the package by default. */
   templatesDir?: string;
+}
+
+/** A package manager of the frontend. */
+export type PackageManager = Stack["packageManager"];
+
+/** The pnpm and Bun versions the frontend image installs with. */
+export const PNPM_VERSION = "12.18.0";
+export const BUN_VERSION = "1.4.4";
+
+const LOCKFILES: Record<PackageManager, string> = {
+  pnpm: "pnpm-lock.yaml",
+  npm: "package-lock.json",
+  bun: "bun.lock",
+};
+
+/** The install command of a package manager: frozen to the lockfile when there is one. */
+function installCommand(manager: PackageManager, flags = ""): string {
+  const frozen = manager === "npm" ? "npm ci" : `${manager} install --frozen-lockfile`;
+  return `if [ -f ${LOCKFILES[manager]} ]; then ${frozen}${flags}; else ${manager} install${flags}; fi`;
+}
+
+/**
+ * The template values for a package manager: the commands in the README and
+ * AGENTS.md, and the install steps of the frontend's Dockerfile. Scripts run
+ * with npm in the image whatever installed them; it comes with Node.js.
+ */
+export function packageManagerValues(manager: PackageManager): Record<string, string> {
+  return {
+    package_manager: manager,
+    pm_run: { pnpm: "pnpm", npm: "npm run", bun: "bun run" }[manager],
+    // A manage.py command through the backend script; npm needs -- before its arguments.
+    pm_backend: { pnpm: "pnpm backend", npm: "npm run backend --", bun: "bun run backend" }[manager],
+    pm_setup: {
+      pnpm: `RUN npm install --global pnpm@${PNPM_VERSION}`,
+      npm: "# npm comes with Node.js.",
+      bun: `COPY --from=oven/bun:${BUN_VERSION}-alpine /usr/local/bin/bun /usr/local/bin/bun`,
+    }[manager],
+    pm_manifests: {
+      pnpm: "package.json pnpm-lock.yaml* pnpm-workspace.yaml",
+      npm: "package.json package-lock.json*",
+      bun: "package.json bun.lock*",
+    }[manager],
+    pm_install: installCommand(manager),
+    pm_install_no_scripts: installCommand(manager, " --ignore-scripts"),
+    pm_prune: {
+      pnpm: "pnpm prune --prod",
+      npm: "npm prune --omit=dev",
+      bun: "rm -rf node_modules && bun install --production",
+    }[manager],
+  };
 }
 
 export interface ScaffoldResult {
@@ -253,6 +305,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   const frontend = JSON.parse(readFileSync(about, "utf8")) as FrontendTemplate;
   rmSync(about);
 
+  const packageManager = options.packageManager ?? "pnpm";
   const values = {
     project_name: options.name,
     frontend: options.frontend,
@@ -263,6 +316,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     preset: options.preset ?? encodePreset(DEFAULT_STACK),
     site_port: String(options.ports?.SITE_PORT ?? 3000),
     mail_port: String(options.ports?.MAIL_PORT ?? 8025),
+    ...packageManagerValues(packageManager),
   };
   const files = walk(target);
   for (const file of files) {
@@ -270,6 +324,18 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     const text = readFileSync(file, "utf8");
     const rendered = render(text, values);
     if (rendered !== text) writeFileSync(file, rendered);
+  }
+
+  // pnpm's settings only for pnpm; the package manager in package.json.
+  if (packageManager !== "pnpm") rmSync(join(target, "frontend", "pnpm-workspace.yaml"), { force: true });
+  if (packageManager !== "npm") {
+    const packageJson = join(target, "frontend", "package.json");
+    const manifest = JSON.parse(readFileSync(packageJson, "utf8"));
+    const version = packageManager === "pnpm" ? PNPM_VERSION : BUN_VERSION;
+    writeFileSync(
+      packageJson,
+      `${JSON.stringify({ ...manifest, packageManager: `${packageManager}@${version}` }, null, 2)}\n`,
+    );
   }
 
   if (options.notifications === false) {
@@ -371,6 +437,62 @@ export function linkPackages(target: string, monorepo: string) {
 }
 
 /** Locks the backend's dependencies with uv, when uv is installed. */
+/** Runs a package manager in the frontend directory: pnpm and Bun through npx, at the image's version. */
+function runPackageManager(directory: string, manager: PackageManager, args: string[]): boolean {
+  const version = manager === "pnpm" ? PNPM_VERSION : BUN_VERSION;
+  const [file, commandArgs] =
+    manager === "npm" ? ["npm", args] : ["npx", ["--yes", `${manager}@${version}`, ...args]];
+  try {
+    execFileSync(file, commandArgs, {
+      cwd: directory,
+      stdio: "ignore",
+      // npm and npx are .cmd scripts on Windows; the arguments are fixed.
+      shell: process.platform === "win32",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Writes the frontend's lockfile with the chosen package manager, without installing anything. */
+export function lockFrontend(target: string, manager: PackageManager): boolean {
+  const directory = join(target, "frontend");
+  const args =
+    manager === "npm"
+      ? ["install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"]
+      : ["install", "--lockfile-only"];
+  return runPackageManager(directory, manager, args) && existsSync(join(directory, LOCKFILES[manager]));
+}
+
+/** The package manager of a project's frontend, from its lockfile. */
+export function frontendPackageManager(directory: string): PackageManager | undefined {
+  return (Object.keys(LOCKFILES) as PackageManager[]).find((manager) =>
+    existsSync(join(directory, "frontend", LOCKFILES[manager])),
+  );
+}
+
+/**
+ * Updates the frontend's lockfile, without installing: the @django-stack
+ * packages, or every package with `all`, within the ranges of package.json.
+ * Returns the lockfile, or undefined without one or on failure.
+ */
+export function updateFrontendLock(target: string, all = false): string | undefined {
+  const manager = frontendPackageManager(target);
+  if (!manager) return undefined;
+  const directory = join(target, "frontend");
+  const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
+  const names = Object.keys(manifest.dependencies ?? {}).filter((name) => name.startsWith("@django-stack/"));
+  const packages = all ? [] : names;
+  const args = {
+    pnpm: ["update", ...packages, "--lockfile-only"],
+    npm: ["update", ...packages, "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"],
+    bun: ["update", ...packages, "--lockfile-only"],
+  }[manager];
+  if (!all && !names.length) return LOCKFILES[manager];
+  return runPackageManager(directory, manager, args) ? LOCKFILES[manager] : undefined;
+}
+
 export function lockBackend(target: string): boolean {
   try {
     execFileSync("uv", ["lock", "--quiet"], { cwd: join(target, "backend"), stdio: "ignore" });

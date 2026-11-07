@@ -26,6 +26,7 @@ import {
   usesValkey,
   validateProjectName,
 } from "../src";
+import { frontendPackageManager, packageManagerValues } from "../src/scaffold";
 
 const dirs: string[] = [];
 function tempDir() {
@@ -374,6 +375,41 @@ describe("scaffold", () => {
     const off = join(tempDir(), "off");
     scaffold({ directory: off, name: "site", frontend: "astro", demoContent: true, captcha: false });
     expect(parseEnv(readFileSync(join(off, ".env"), "utf8")).CAPTCHA).toBe("off");
+  });
+
+  it("installs the frontend with the chosen package manager", () => {
+    const read = (directory: string, file: string) => readFileSync(join(directory, "frontend", file), "utf8");
+    for (const frontend of FRONTENDS) {
+      const pnpm = join(tempDir(), `${frontend}-pnpm`);
+      scaffold({ directory: pnpm, name: "site", frontend, demoContent: true });
+      expect(read(pnpm, "Dockerfile")).toContain("RUN npm install --global pnpm@");
+      expect(read(pnpm, "Dockerfile")).toContain("pnpm install --frozen-lockfile");
+      expect(read(pnpm, "Dockerfile")).not.toContain("{{");
+      expect(JSON.parse(read(pnpm, "package.json")).packageManager).toMatch(/^pnpm@\d/);
+      expect(read(pnpm, "pnpm-workspace.yaml")).toContain("minimumReleaseAge: 1440");
+
+      const bun = join(tempDir(), `${frontend}-bun`);
+      scaffold({ directory: bun, name: "site", frontend, demoContent: true, packageManager: "bun" });
+      expect(read(bun, "Dockerfile")).toContain("COPY --from=oven/bun:");
+      expect(read(bun, "Dockerfile")).toContain("bun install --frozen-lockfile");
+      expect(existsSync(join(bun, "frontend", "pnpm-workspace.yaml"))).toBe(false);
+
+      const npm = join(tempDir(), `${frontend}-npm`);
+      scaffold({ directory: npm, name: "site", frontend, demoContent: true, packageManager: "npm" });
+      expect(read(npm, "Dockerfile")).toContain("npm ci");
+      expect(JSON.parse(read(npm, "package.json")).packageManager).toBeUndefined();
+      expect(readFileSync(join(npm, "README.md"), "utf8")).toContain("`npm run test`");
+      expect(readFileSync(join(pnpm, "README.md"), "utf8")).toContain("`pnpm test`");
+    }
+  });
+
+  it("knows the package manager from the lockfile", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true });
+    expect(frontendPackageManager(directory)).toBeUndefined();
+    writeFileSync(join(directory, "frontend", "bun.lock"), "{}");
+    expect(frontendPackageManager(directory)).toBe("bun");
+    expect(packageManagerValues("npm").pm_backend).toBe("npm run backend --");
   });
 
   it("refuses an unknown time zone", () => {

@@ -5,8 +5,8 @@ site settings, menus, redirects and form submissions.
 These models are yours: add fields, remove models, create new ones. Every
 model exposed with ``@expose()`` gets routes under /api/ (see
 https://djangoheadless.org/docs/models); register it in ``admin.py`` to edit
-it in Content Studio. After a change, run ``pnpm backend makemigrations``
-and ``pnpm generate:types``.
+it in Content Studio. After a change, run ``{{pm_run}} backend makemigrations``
+and ``{{pm_run}} generate:types``.
 """
 
 from content_studio.blocks import Block, BlockField

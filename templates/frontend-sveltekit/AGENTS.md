@@ -13,7 +13,7 @@ src/routes/+layout.svelte    the page shell: SEO tags, menus, footer, preview ba
 src/lib/components/          the post list and the contact form
 src/lib/server/api.ts        getContent(): content helpers with the read-only key, drafts in preview
 src/lib/server/cache.ts      the in-memory page cache that /revalidate empties
-src/lib/headless.ts          generated API types; do not edit, run `npm run generate:types`
+src/lib/headless.ts          generated API types; do not edit, run `{{pm_run}} generate:types`
 src/hooks.server.ts          page cache, editor-managed redirects, security headers
 vite.config.ts               SvelteKit's options (Node adapter, Content-Security-Policy) and the dev proxy to Django
 ```
@@ -49,5 +49,5 @@ Run them in the `frontend` container (`docker compose exec frontend <command>`):
 
 | Task | Command |
 |------|---------|
-| Type-check | `npm run check` |
-| Test | `npm test` |
+| Type-check | `{{pm_run}} check` |
+| Test | `{{pm_run}} test` |

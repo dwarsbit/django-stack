@@ -7,6 +7,17 @@ the unreleased version; the release workflow releases it.
 
 ## 0.10.0 (unreleased)
 
+- **pnpm and Bun.** `init --package-manager` now generates `pnpm`, the
+  default, and `bun` next to `npm`. `init` writes the frontend's lockfile
+  (`pnpm-lock.yaml`, `bun.lock` or, now also for npm, `package-lock.json`)
+  through `npx`, and the frontend's `Dockerfile` installs with that
+  package manager from it; the frontend still runs on Node.js. With pnpm,
+  `frontend/pnpm-workspace.yaml` resolves only versions published at least
+  a day ago and lists the packages allowed to run install scripts. The
+  README and `AGENTS.md` show the commands of the chosen package manager.
+  `dstack update` now also upgrades the `@django-stack` packages in the
+  frontend's lockfile (`--all`: every package). Existing projects keep
+  npm.
 - **Captcha on the contact form.** `init` now generates `--captcha on`,
   the default: the new `django_stack.contrib.captcha` app serves the Cap
   protocol at `/api/cap/`, with its tokens in the database, and every

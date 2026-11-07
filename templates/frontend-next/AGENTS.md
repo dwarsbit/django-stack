@@ -12,7 +12,7 @@ src/app/                 routes: /, /[...path], /blog, /blog/[slug], /category/[
 src/app/layout.tsx       the page shell: menus, footer, preview banner
 src/components/          the post list, the menu links and the contact form
 src/lib/api.ts           getContent(): content helpers with the read-only key, drafts in preview; pageMetadata()
-src/lib/headless.ts      generated API types; do not edit, run `npm run generate:types`
+src/lib/headless.ts      generated API types; do not edit, run `{{pm_run}} generate:types`
 src/proxy.ts             Content-Security-Policy with a nonce, security headers, the dev proxy to Django
 next.config.ts           standalone output, the in-memory data cache
 ```
@@ -55,5 +55,5 @@ Run them in the `frontend` container (`docker compose exec frontend <command>`):
 
 | Task | Command |
 |------|---------|
-| Type-check | `npm run check` |
-| Test | `npm test` |
+| Type-check | `{{pm_run}} check` |
+| Test | `{{pm_run}} test` |

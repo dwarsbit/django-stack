@@ -38,9 +38,9 @@ the frontend {{frontend_label}}'s, with the source mounted from `backend/` and
 |------|---------|
 | Run a manage.py command | `docker compose exec backend python manage.py <command>` |
 | Make migrations | `docker compose exec backend python manage.py makemigrations` |
-| Regenerate the API types | `npm run generate:types` |
-| Run the tests | `npm test` |
-| Check the setup | `npm run doctor` |
+| Regenerate the API types | `{{pm_run}} generate:types` |
+| Run the tests | `{{pm_run}} test` |
+| Check the setup | `{{pm_run}} doctor` |
 
 With the `dstack` command installed (`npm i -g @django-stack/cli`),
 `dstack dev`, `dstack check`, `dstack manage <command>` and `dstack types` do

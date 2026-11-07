@@ -6,6 +6,7 @@ import { isOnPath, offerGlobalInstall } from "../global-install";
 import { chooseFreePorts, describeMove } from "../ports";
 import {
   lockBackend,
+  lockFrontend,
   relativeDirectory,
   scaffold,
   timeZones,
@@ -17,6 +18,7 @@ import {
   applies,
   DEFAULT_STACK,
   encodePreset,
+  NODE_FRONTENDS,
   PROMPT_ORDER,
   pendingChoices,
   resolvePreset,
@@ -243,6 +245,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
       cache: stack.cache,
       notifications: stack.notifications === "on",
       captcha: stack.captcha === "on",
+      packageManager: stack.packageManager,
       errors: stack.errors,
       tasks: stack.tasks,
       preset: encodePreset(stack),
@@ -260,6 +263,16 @@ export async function init(directoryArgument: string | undefined, options: InitO
     spinner.start("Locking the backend dependencies");
     if (lockBackend(target)) spinner.stop(`Locked the backend dependencies in ${pc.bold("backend/uv.lock")}`);
     else spinner.error("Could not lock the backend dependencies. The image build resolves them instead.");
+  }
+
+  if (NODE_FRONTENDS.includes(stack.frontend)) {
+    const lockfile = { pnpm: "pnpm-lock.yaml", npm: "package-lock.json", bun: "bun.lock" }[
+      stack.packageManager
+    ];
+    spinner.start(`Locking the frontend dependencies with ${stack.packageManager}`);
+    if (lockFrontend(target, stack.packageManager))
+      spinner.stop(`Locked the frontend dependencies in ${pc.bold(`frontend/${lockfile}`)}`);
+    else spinner.error("Could not lock the frontend dependencies. The image build resolves them instead.");
   }
 
   if (options.git && has("git")) {

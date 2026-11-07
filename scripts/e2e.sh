@@ -26,7 +26,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND:-astro}" ${LOCAL_S3:+--storage s3} ${CACHE:+--cache "$CACHE"}
+node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND:-astro}" ${LOCAL_S3:+--storage s3} ${CACHE:+--cache "$CACHE"} \
+  ${PACKAGE_MANAGER:+--package-manager "$PACKAGE_MANAGER"}
 cd "$project"
 
 docker compose build
