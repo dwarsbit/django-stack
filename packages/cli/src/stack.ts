@@ -165,6 +165,18 @@ export const STACK_OPTIONS = [
       { value: "s3", label: "S3", hint: "any S3-compatible service; credentials later", generated: true },
     ],
   },
+  {
+    key: "errors",
+    flag: "--errors",
+    message: "Error reports",
+    description: "How you hear about errors in production",
+    bits: 2,
+    values: [
+      { value: "email", label: "Email", hint: "to the superusers, and in the admin", generated: true },
+      { value: "sentry", label: "Sentry", hint: "or GlitchTip, with SENTRY_DSN", generated: false },
+      { value: "off", label: "Off", hint: "the logs only", generated: true },
+    ],
+  },
 ] as const satisfies readonly StackOption[];
 
 type Options = (typeof STACK_OPTIONS)[number];

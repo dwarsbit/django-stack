@@ -18,6 +18,7 @@ django_stack.settings.configure(
         "PREVIEW_SECRET": "preview-secret",
         "SITE_URL": "http://testserver",
         "PROJECT_NAME": "test",
+        "ERRORS": "off",
     },
 )
 

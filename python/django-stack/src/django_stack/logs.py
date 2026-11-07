@@ -166,10 +166,14 @@ class RequestIdMiddleware:
             request_id.reset(token)
 
 
-def logging_settings(log_format: str, level: str, *, access: bool = True) -> dict:
-    """The LOGGING setting for ``LOG_FORMAT`` and ``LOG_LEVEL``; ``access`` writes the access log."""
+def logging_settings(log_format: str, level: str, *, access: bool = True, errors: bool = False) -> dict:
+    """
+    The LOGGING setting for ``LOG_FORMAT`` and ``LOG_LEVEL``; ``access``
+    writes the access log, ``errors`` reports errors to the superusers
+    (``django_stack.errors``).
+    """
     formatter = "json" if log_format == "json" else "plain"
-    handler = ["console"]
+    handler = ["console", "errors"] if errors else ["console"]
     return {
         "version": 1,
         "disable_existing_loggers": False,
@@ -190,14 +194,21 @@ def logging_settings(log_format: str, level: str, *, access: bool = True) -> dic
                 "class": "logging.StreamHandler",
                 "formatter": formatter,
                 "filters": ["request_id", "quiet_heartbeat"],
-            }
+            },
+            "errors": {
+                "class": "django_stack.errors.ErrorReportHandler",
+                "level": "ERROR",
+                "filters": ["request_id"],
+            },
         },
         "root": {"handlers": handler, "level": level},
         "loggers": {
             "django": {"handlers": handler, "level": "INFO", "propagate": False},
             "django_stack.access": {"level": "INFO" if access else "WARNING"},
             # runserver's own access log; the production server has none.
-            "django.server": {"handlers": handler, "level": "INFO", "propagate": False},
+            "django.server": {"handlers": ["console"], "level": "INFO", "propagate": False},
+            # Requests with a host that is not allowed: bots, never worth an email.
+            "django.security.DisallowedHost": {"handlers": ["console"], "propagate": False},
             # run_huey adds a handler of its own unless the logger has one.
             "huey": {"handlers": handler, "level": "INFO", "propagate": False},
         },

@@ -52,6 +52,8 @@ export interface ScaffoldOptions {
   analytics?: boolean;
   /** Content Studio's notifications app; on by default. */
   notifications?: boolean;
+  /** How errors are reported in production; by email by default. */
+  errors?: Stack["errors"];
   /** The cache backend; the database by default. */
   cache?: Stack["cache"];
   /** The task queue; Huey where the cache is by default. */
@@ -307,6 +309,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   env = setEnvValues(env, { COMPOSE_PROFILES: profiles.join(",") });
   if (options.ports) env = setEnvValues(env, portValues(parseEnv(env), options.ports));
   if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });
+  if (options.errors === "off") env = setEnvValues(env, { ERRORS: "off" });
   writeFileSync(join(target, ".env"), env, { mode: 0o600 });
   writeFileSync(join(target, ".env.example"), envExample);
   rmSync(join(target, "env.example"));

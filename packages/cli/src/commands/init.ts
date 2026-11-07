@@ -242,6 +242,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
       analytics: stack.analytics === "umami",
       cache: stack.cache,
       notifications: stack.notifications === "on",
+      errors: stack.errors,
       tasks: stack.tasks,
       preset: encodePreset(stack),
       timeZone,

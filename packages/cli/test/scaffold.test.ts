@@ -139,6 +139,7 @@ describe("scaffold", () => {
     expect(env.DATABASE_URL).toBe(`postgres://app:${env.POSTGRES_PASSWORD}@db:5432/app`);
     expect(env.ADMIN_PASSWORD).toBe(result.adminPassword);
     expect(env.SEED_DEMO_CONTENT).toBe("1");
+    expect(env.ERRORS).toBe("email");
     expect(env.COMPOSE_PROFILES).toBe("dev,db");
 
     const example = parseEnv(readFileSync(join(directory, ".env.example"), "utf8"));
@@ -180,6 +181,12 @@ describe("scaffold", () => {
     const a = parseEnv(readFileSync(join(root, "a/.env"), "utf8"));
     const b = parseEnv(readFileSync(join(root, "b/.env"), "utf8"));
     expect(a.DJANGO_SECRET_KEY).not.toBe(b.DJANGO_SECRET_KEY);
+  });
+
+  it("turns error reports off", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true, errors: "off" });
+    expect(parseEnv(readFileSync(join(directory, ".env"), "utf8")).ERRORS).toBe("off");
   });
 
   it("uses an external database and no demo content", () => {

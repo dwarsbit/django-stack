@@ -109,9 +109,11 @@ echo "ok the admin reads the page view from Umami"
 echo "Checking the deployment"
 docker compose exec -T backend-prod python manage.py check --deploy --fail-level WARNING
 docker compose exec -T backend-prod python manage.py health
-docker compose logs --no-log-prefix backend-prod | grep -q '"logger": "django_stack.access"' \
+# Not grep -q: it stops reading early, and with pipefail the cut-off
+# `docker compose logs` fails the pipeline.
+docker compose logs --no-log-prefix backend-prod | grep -F '"logger": "django_stack.access"' > /dev/null \
   || fail "the backend wrote no JSON access log"
-docker compose logs --no-log-prefix proxy | grep -q '"request_id"' || fail "Caddy logged no request IDs"
+docker compose logs --no-log-prefix proxy | grep -F '"request_id"' > /dev/null || fail "Caddy logged no request IDs"
 if docker compose exec -T backend-prod touch /app/written 2>/dev/null; then
   fail "the backend can write to its code"
 fi
