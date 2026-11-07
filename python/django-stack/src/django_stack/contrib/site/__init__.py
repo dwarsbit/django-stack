@@ -7,7 +7,8 @@ Add ``"django_stack.contrib.site"`` to ``INSTALLED_APPS``, then:
 
 - ``path("", include("django_stack.contrib.site.urls"))`` serves
   ``/preview?token=…&path=…``, the admin's Preview button, and
-  ``/preview/exit``.
+  ``/preview/exit``, and Umami's tracker and page views at ``/_a/`` where
+  no reverse proxy serves them (development).
 - ``@site_page`` on a view caches its page until content changes, skips
   the cache in preview and sets the site's Content-Security-Policy.
 - ``published(queryset, request)`` returns what a visitor may see: the

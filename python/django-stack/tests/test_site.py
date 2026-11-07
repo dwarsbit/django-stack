@@ -271,3 +271,39 @@ def test_seo_falls_back_to_the_site():
     assert '<meta name="description" content="The site">' in html
     assert '<meta name="twitter:card" content="summary">' in html
     assert re.search(r'<meta property="og:site_name" content="Site">', html)
+
+
+def test_analytics_proxy(client, settings, monkeypatch):
+    import io
+    import urllib.request
+
+    from django_stack.contrib.site import analytics
+
+    assert client.get("/_a/script.js").status_code == 404  # no UMAMI_URL
+    settings.DJANGO_STACK = {**settings.DJANGO_STACK, "UMAMI_URL": "http://umami:3000"}
+    seen = []
+
+    class Answer(io.BytesIO):
+        status = 200
+        headers = {"Content-Type": "application/javascript"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    def fake_urlopen(request, timeout):
+        seen.append(request)
+        return Answer(b"tracker")
+
+    monkeypatch.setattr(analytics.urllib.request, "urlopen", fake_urlopen)
+    response = client.get("/_a/script.js", HTTP_USER_AGENT="Browser")
+    assert response.content == b"tracker"
+    assert seen[0].full_url == "http://umami:3000/script.js"
+    assert seen[0].get_header("User-agent") == "Browser"
+    client.post("/_a/api/send", b'{"type":"event"}', content_type="application/json")
+    assert seen[1].full_url == "http://umami:3000/api/send"
+    assert seen[1].data == b'{"type":"event"}'
+    assert client.get("/_a/api/send").status_code == 405
+    assert isinstance(seen[0], urllib.request.Request)

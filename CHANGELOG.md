@@ -45,7 +45,9 @@ the unreleased version; the release workflow releases it.
   `CONTENT_APPS` or the media library changes, and the site's
   Content-Security-Policy), `RedirectMiddleware` for editor-managed
   redirects, a context processor, and the `{% blocks %}`, `{% image %}`,
-  `{% seo %}`, `link_href` and `is_current` template tags.
+  `{% seo %}`, `link_href` and `is_current` template tags. `/_a/script.js`
+  and `/_a/api/send` pass Umami's tracker and page views through where no
+  reverse proxy does, as in development.
   `django_stack.contrib.captcha.forms.CaptchaField` adds the captcha to a
   Django form, with the `@cap.js/widget` 0.1.58 script vendored as a
   static file.
