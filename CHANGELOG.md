@@ -14,6 +14,14 @@ the unreleased version; the release workflow releases it.
   (`ARG POSTGRES_VERSION` in `backend/Dockerfile`), so backups work with
   either. `config` refuses another Postgres version; the backups docs
   show how to upgrade with a backup and a restore.
+- **A local Postgres with an external database.** `init --database-url`
+  now saves the URL as `PRODUCTION_DATABASE_URL` and keeps the bundled
+  Postgres for development, so local work never writes to the server's
+  database. `dstack production` makes it `DATABASE_URL` in
+  `.env.production` and leaves out `db`; `dstack run` keeps the bundled
+  one. `init` also asks for the external server's Postgres version, for the
+  local Postgres and the backups' client. Existing projects with
+  `DATABASE_URL` set to an external Postgres keep working as before.
 
 ## 0.10.0 (2026-11-07)
 

@@ -22,6 +22,7 @@ kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
 | `DJANGO_SECRET_KEY` | Django's secret key. Required. |
 | `DJANGO_DEBUG` | `1` in development, `0` in production. |
 | `DATABASE_URL` | `postgres://user:password@host:5432/name`, or `sqlite:///path`. |
+| `PRODUCTION_DATABASE_URL` | An external Postgres for the server. `dstack production` makes it `DATABASE_URL` in `.env.production` and leaves out `db`; development keeps the bundled Postgres. |
 | `CACHE_URL` | `db://` for a table in the database, `redis://` or `valkey://` for Valkey, `locmem://` for a cache per process. |
 | `TASKS_URL` | Where the worker's task queue is: `db://` (tables in the database), `redis://cache:6379/1` (Valkey) or `immediate://` (no worker: tasks run in the request, and there are no daily backups). Without it, the queue is in a Redis `CACHE_URL`, as in projects from before 0.7. |
 | `TASK_WORKERS` | The number of worker containers: `1`, or `0` with `TASKS_URL=immediate://`. |
@@ -33,7 +34,7 @@ kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
 | `REVALIDATE_SECRET` | Signs the requests that tell the frontend content changed. Shared with the frontend. |
 | `REVALIDATE_URL` | Where the backend sends those requests. |
 | `ALLOWED_HOSTS` | Extra host names, separated by commas. The hosts of `SITE_URL` and `BACKEND_URL` are always allowed. |
-| `COMPOSE_PROFILES` | The services Docker Compose starts: `dev,db` in development, `prod,db` on a server. Leave out `db` for an external Postgres; add `s3` in development for the local S3 service. `analytics` runs Umami, `valkey` the Valkey service. |
+| `COMPOSE_PROFILES` | The services Docker Compose starts: `dev,db` in development, `prod,db` on a server. Leave out `db` for an external Postgres (`dstack production` does with `PRODUCTION_DATABASE_URL`); add `s3` in development for the local S3 service. `analytics` runs Umami, `valkey` the Valkey service. |
 | `NUM_PROXIES` | The number of reverse proxies in front of the backend, so client IPs and HTTPS are detected. The `prod` profile sets 1, for Caddy. |
 | `S3_BUCKET` and the other `S3_*` | Store uploads in S3 instead of on disk. See [Media and database](./production/media-and-database.md). |
 | `UMAMI_URL` and the other `UMAMI_*` | Page analytics with Umami. See [Page analytics](./analytics.md#variables). |

@@ -9,6 +9,8 @@ export interface ProductionOptions {
   emailUrl?: string;
   /** Where uploads go: `s3` asks for the S3 settings (the `media` stack option). */
   media?: string;
+  /** Keep the bundled database even with PRODUCTION_DATABASE_URL: the local run on this machine. */
+  bundledDatabase?: boolean;
 }
 
 export interface ProductionEnv {
@@ -63,8 +65,15 @@ export function productionEnv(devEnv: string, options: ProductionOptions): Produ
     DEFAULT_FROM_EMAIL: `${current.PROJECT_NAME ?? "site"} <noreply@${options.domain.toLowerCase()}>`,
   };
 
-  // The bundled database gets a new password; an external one is kept.
-  if (profiles.includes("db")) {
+  // PRODUCTION_DATABASE_URL: the server's external Postgres instead of the
+  // bundled one, which development keeps.
+  const external = options.bundledDatabase ? "" : (current.PRODUCTION_DATABASE_URL ?? "");
+  if (external) {
+    values.DATABASE_URL = external;
+    values.POSTGRES_PASSWORD = "";
+    values.COMPOSE_PROFILES = [...new Set(profiles.filter((profile) => profile !== "db"))].join(",");
+  } else if (profiles.includes("db")) {
+    // The bundled database gets a new password.
     const user = current.POSTGRES_USER || "app";
     const name = current.POSTGRES_DB || "app";
     values.POSTGRES_PASSWORD = secrets.postgres ?? "";

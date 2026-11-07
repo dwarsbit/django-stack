@@ -63,6 +63,8 @@ function ensureRunEnv(project: Project): Project {
     const result = productionEnv(readFileSync(join(project.directory, ".env"), "utf8"), {
       domain: RUN_DOMAIN,
       emailUrl: "console://",
+      // Its own data on this machine, never the server's external database.
+      bundledDatabase: true,
     });
     writeFileSync(path, result.text, { mode: 0o600 });
     p.log.success(
