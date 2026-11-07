@@ -89,7 +89,9 @@ expect 404 "$site/readyz"
 expect 404 "$site/statusz"
 
 if [ -n "$headless" ]; then
-  image="$(c -H "X-Secret-Key: $read_key" "$site/api/content.post" | grep -o '"[^"]*/media/[^"]*"' | head -1 | tr -d '"')"
+  # The covers are IDs unless expanded; take an image file, not a media page.
+  image="$(c -H "X-Secret-Key: $read_key" "$site/api/content.post?expand=cover" \
+    | { grep -oE '"[^"]*/media/[^"]*\.(webp|jpe?g|png)"' || true; } | head -1 | tr -d '"')"
   [ -n "$image" ] || fail "the posts in the API have no images"
 else
   image="$(c "$site/blog" | grep -o 'src="[^"]*/media/[^"]*"' | head -1 | cut -d'"' -f2)"

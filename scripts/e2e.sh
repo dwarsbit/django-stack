@@ -108,8 +108,10 @@ expect 201 -X POST -H "Content-Type: application/json" \
   http://localhost:3000/api/content.formsubmission
 
 if [ -n "$headless" ]; then
-  image="$(curl -s -H "X-Secret-Key: $read_key" http://localhost:3000/api/content.post \
-    | grep -o '"[^"]*/media/[^"]*"' | head -1 | tr -d '"')"
+  # The covers are IDs unless expanded; take an image file, not a media page.
+  # `|| true`: with pipefail, no match would end the script without a message.
+  image="$(curl -s -H "X-Secret-Key: $read_key" 'http://localhost:3000/api/content.post?expand=cover' \
+    | { grep -oE '"[^"]*/media/[^"]*\.(webp|jpe?g|png)"' || true; } | head -1 | tr -d '"')"
   [ -n "$image" ] || fail "the posts in the API have no images"
 else
   image="$(curl -s http://localhost:3000/blog | grep -o 'src="[^"]*/media/[^"]*"' | head -1 | cut -d'"' -f2)"
