@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.10.0 (unreleased)
+## 0.10.0 (2026-11-07)
 
 - **pnpm and Bun.** `init --package-manager` now generates `pnpm`, the
   default, and `bun` next to `npm`. `init` writes the frontend's lockfile
