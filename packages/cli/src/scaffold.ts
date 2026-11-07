@@ -44,7 +44,10 @@ export interface ScaffoldOptions {
   frontend: Frontend;
   /** Demo pages and posts on the first start. */
   demoContent: boolean;
-  /** An external Postgres URL; the bundled Postgres when not set. */
+  /**
+   * An external Postgres URL for production, saved as PRODUCTION_DATABASE_URL;
+   * development runs the bundled Postgres either way.
+   */
   databaseUrl?: string;
   /** The bundled Postgres's version, and the backend's Postgres client; stable by default. */
   postgres?: Stack["postgres"];
@@ -432,11 +435,9 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   const secrets = generateProjectSecrets();
   let env = template.replace(/\{\{secret:([a-z_]+)\}\}/g, (match, key: string) => secrets[key] ?? match);
   const envExample = template.replace(/\{\{secret:[a-z_]+\}\}/g, "");
-  const profiles = ["dev"];
+  const profiles = ["dev", "db"];
   if (options.databaseUrl) {
-    env = setEnvValues(env, { DATABASE_URL: normalizeDatabaseUrl(options.databaseUrl) });
-  } else {
-    profiles.push("db");
+    env = setEnvValues(env, { PRODUCTION_DATABASE_URL: normalizeDatabaseUrl(options.databaseUrl) });
   }
   if (options.localS3) {
     profiles.push("s3");

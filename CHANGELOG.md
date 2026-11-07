@@ -29,6 +29,14 @@ the unreleased version; the release workflow releases it.
   `AnalyticsExtension`. `content/admin.py` now adds them only when Umami is
   configured. In an existing project with analytics off, make the same
   change.
+- **A local Postgres with an external database.** `init --database-url`
+  now saves the URL as `PRODUCTION_DATABASE_URL` and keeps the bundled
+  Postgres for development, so local work never writes to the server's
+  database. `dstack production` makes it `DATABASE_URL` in
+  `.env.production` and leaves out `db`; `dstack run` keeps the bundled
+  one. `init` also asks for the external server's Postgres version, for the
+  local Postgres and the backups' client. Existing projects with
+  `DATABASE_URL` set to an external Postgres keep working as before.
 
 ## 0.10.0 (2026-11-07)
 

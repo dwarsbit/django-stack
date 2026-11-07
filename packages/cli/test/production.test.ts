@@ -50,7 +50,7 @@ describe("productionEnv", () => {
     expect(result.todo.join(" ")).toContain("EMAIL_URL");
   });
 
-  it("keeps an external database and drops the local S3 service", () => {
+  it("uses the external database and drops the bundled one and the local S3 service", () => {
     const text = devEnv({ databaseUrl: "postgres://u:p@db.example.com/app", localS3: true });
     const result = productionEnv(text, {
       domain: "example.com",
@@ -59,9 +59,24 @@ describe("productionEnv", () => {
     const prod = parseEnv(result.text);
     expect(prod.COMPOSE_PROFILES).toBe("prod");
     expect(prod.DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require");
+    expect(prod.POSTGRES_PASSWORD).toBe("");
     expect(prod.S3_ENDPOINT_URL).toBe("");
     expect(prod.EMAIL_URL).toBe("smtp+tls://u:p@mail.example.com:587");
     expect(result.todo.join(" ")).toContain("S3_");
+  });
+
+  it("puts Umami's tables in a schema of the external database", () => {
+    const text = devEnv({ databaseUrl: "postgres://u:p@db.example.com/app", analytics: true });
+    const prod = parseEnv(productionEnv(text, { domain: "example.com" }).text);
+    expect(prod.COMPOSE_PROFILES).toBe("prod,analytics");
+    expect(prod.UMAMI_DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require&schema=umami");
+  });
+
+  it("keeps the bundled database for the local run", () => {
+    const text = devEnv({ databaseUrl: "postgres://u:p@db.example.com/app" });
+    const prod = parseEnv(productionEnv(text, { domain: "site.localhost", bundledDatabase: true }).text);
+    expect(prod.COMPOSE_PROFILES).toBe("prod,db");
+    expect(prod.DATABASE_URL).toBe(`postgres://app:${prod.POSTGRES_PASSWORD}@db:5432/app`);
   });
 
   it("asks for the S3 settings with uploads in S3", () => {

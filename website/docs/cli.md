@@ -70,7 +70,7 @@ npx @django-stack/cli init [directory] [options]
 |--------|-------------|
 | `--name <name>` | The project name: lowercase letters, digits and dashes. The default comes from the directory name. |
 | `--preset <preset>` | Set the stack options below from a preset code or name. See [Presets](#presets). |
-| `--database-url <url>` | Use your own Postgres instead of the bundled one. URLs to other hosts get `sslmode=require` unless they set an `sslmode`. |
+| `--database-url <url>` | Your own Postgres for production, saved as `PRODUCTION_DATABASE_URL`: `production` uses it instead of the bundled one. Development, and `dstack run`, keep the bundled Postgres. URLs to other hosts get `sslmode=require` unless they set an `sslmode`. |
 | `--time-zone <zone>` | The time zone of the backend, an IANA name such as `Europe/Amsterdam`. The prompt suggests this computer's zone and filters as you type. The default with `--yes` is `UTC`. |
 | `--no-demo-content` | Start with an empty site. |
 | `--no-git` | Don't create a git repository with a first commit. |
@@ -101,7 +101,7 @@ the defaults it does not generate yet when it is done.
 | Option | Values |
 |--------|--------|
 | `--frontend` | `astro`, `next`, `headless` (just the API and the admin, see [Headless](headless.md)), `templates` (later, Django templates), `nuxt`, `sveltekit` |
-| `--postgres` | `stable` (Postgres 17), `latest` (Postgres 18). It also sets the version of the Postgres client in the backend image, for the backups. Ignored with `--database-url`. |
+| `--postgres` | `stable` (Postgres 17), `latest` (Postgres 18). It also sets the version of the Postgres client in the backend image, for the backups. With `--database-url`, pick your server's version. |
 | `--analytics` | `umami` (Umami, see [Page analytics](./analytics.md)), `off` |
 | `--tasks` | `huey` (a worker, with its queue where the cache is: Postgres, or Valkey with `--cache valkey`), `off` (tasks run in the request, no worker and no daily backups), `huey-valkey` (the queue in Valkey with any cache) |
 | `--cache` | `database` (a table in Postgres, nothing extra to run), `valkey` (the Valkey service), `off` (a cache per process) |
