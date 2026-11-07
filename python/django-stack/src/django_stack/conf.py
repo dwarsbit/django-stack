@@ -16,7 +16,7 @@ DEFAULTS = {
     "CONTENT_APPS": ["content"],
     "SITE_CACHE_TTL": 300,
     "SITE_REDIRECT_MODEL": "content.Redirect",
-    "SITE_BLOCK_TEMPLATE": "site/blocks/{type}.html",
+    "SITE_BLOCK_TEMPLATE": "website/blocks/{type}.html",
     "SEED_CONTENT": None,
     "ADMIN_USERNAME": "admin",
     "ADMIN_EMAIL": None,

@@ -2,7 +2,7 @@
 Template tags of a site Django renders: ``{% load stack %}``.
 
 - ``{% blocks page.body %}`` renders each block of a block field with the
-  template ``site/blocks/<type>.html`` (``SITE_BLOCK_TEMPLATE``), which
+  template ``website/blocks/<type>.html`` (``SITE_BLOCK_TEMPLATE``), which
   gets ``block`` and its ``value``. Types without a template render nothing.
 - ``{% image media size="card" sizes="100vw" %}`` renders an ``<img>`` of a
   media library item with a ``srcset`` of its image sizes.
