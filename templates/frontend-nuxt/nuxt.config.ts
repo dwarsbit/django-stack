@@ -1,3 +1,5 @@
+import { CAPTCHA_CSP } from "@django-stack/utils";
+
 // The Django backend: the frontend container reaches it on the Compose network.
 const backend = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000";
 // Umami, for page analytics: only its tracker and page views, under /_a/.
@@ -42,7 +44,8 @@ export default defineNuxtConfig({
   // Security headers, with a Content-Security-Policy on every page in
   // production: scripts and styles only from this site, with a nonce for
   // the ones Nuxt inlines. server/plugins/media-origins.ts adds the origin
-  // of the media files.
+  // of the media files. CAPTCHA_CSP allows the captcha widget of the contact
+  // form: its solver, its style and its workers.
   security: {
     nonce: true,
     rateLimiter: false,
@@ -52,8 +55,9 @@ export default defineNuxtConfig({
         process.env.NODE_ENV === "production"
           ? {
               "default-src": ["'self'"],
-              "script-src": ["'self'", "'nonce-{{nonce}}'", "'strict-dynamic'"],
-              "style-src": ["'self'", "'nonce-{{nonce}}'"],
+              "script-src": ["'self'", "'nonce-{{nonce}}'", "'strict-dynamic'", ...CAPTCHA_CSP["script-src"]],
+              "style-src": ["'self'", "'nonce-{{nonce}}'", ...CAPTCHA_CSP["style-src"]],
+              "worker-src": [...CAPTCHA_CSP["worker-src"]],
               // Inline style attributes, such as the focal point of an image.
               "style-src-attr": ["'unsafe-inline'"],
               "img-src": ["'self'", "data:"],

@@ -8,7 +8,8 @@ Next.js glue for [DjangoStack](https://github.com/dwarsbit/django-stack):
   data cache with a tag `/revalidate` expires;
 - `toMetadata()`: Next metadata from `seo()` of `@django-stack/utils`;
 - `contentSecurityPolicy()`, `mediaOrigins()` and `SECURITY_HEADERS`: the
-  response headers `proxy.ts` sets.
+  response headers `proxy.ts` sets; `captcha: true` allows the captcha
+  widget.
 
 The components are in `@django-stack/react`.
 

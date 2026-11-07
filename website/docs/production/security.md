@@ -41,7 +41,9 @@ checks are in [Configuration](../configuration.md#system-checks).
 
 **Throttling.** The public form routes are limited to 10 requests a
 minute per client (`PUBLIC_WRITE_THROTTLE_RATE`). `NUM_PROXIES` makes the
-limit apply to the client, not to the proxy.
+limit apply to the client, not to the proxy. They also need a token of the
+[captcha](../captcha.md), which the visitor's browser earns with a proof of
+work.
 
 ## Checklist
 

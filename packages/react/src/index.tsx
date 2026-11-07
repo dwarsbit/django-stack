@@ -1,13 +1,15 @@
 import {
   type Block,
+  CAPTCHA_ATTRIBUTES,
   type CallToActionBlock as CallToActionBlockData,
   type ImageBlock as ImageBlockData,
   imageAttributes,
+  loadCaptcha,
   type Media,
   type QuoteBlock as QuoteBlockData,
   type TextBlock as TextBlockData,
 } from "@django-stack/utils";
-import type { ComponentType } from "react";
+import { type ComponentType, createElement, useEffect } from "react";
 import { version } from "../package.json";
 
 /** The version of this package, the same for every @django-stack package. */
@@ -129,4 +131,25 @@ export function Blocks({
       })}
     </>
   );
+}
+
+export interface CaptchaProps {
+  className?: string;
+}
+
+/**
+ * The captcha widget, for a form that posts to a route in PUBLIC_CREATE: it
+ * adds a hidden `captcha` field with the token once the visitor verified.
+ * Use it in a client component. After a submission, call `resetCaptcha(form)`
+ * from @django-stack/utils: a token is valid once.
+ */
+export function Captcha({ className }: CaptchaProps) {
+  useEffect(() => {
+    void loadCaptcha();
+  }, []);
+  return createElement("cap-widget", {
+    ...CAPTCHA_ATTRIBUTES,
+    class: className,
+    suppressHydrationWarning: true,
+  });
 }

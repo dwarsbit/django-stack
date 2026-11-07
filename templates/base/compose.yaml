@@ -45,6 +45,8 @@ x-frontend-env: &frontend-env
   # Page analytics: the tracker loads from /_a/ on the site when set.
   UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
   UMAMI_URL: ${UMAMI_URL:-}
+  # The captcha widget of the contact form, unless CAPTCHA=off.
+  CAPTCHA: ${CAPTCHA:-on}
 
 x-backend-depends: &backend-depends
   db:

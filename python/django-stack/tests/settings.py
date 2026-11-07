@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "content_studio.media_library",
     "content_studio.notifications",
     "django_stack",
+    "django_stack.contrib.captcha",
     "tests.testapp",
     "headless.rest",
 ]

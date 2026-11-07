@@ -10,6 +10,7 @@ import { chooseFreePorts, DEV_PORTS, describeMove, envPorts, portValues } from "
 import { productionEnv } from "../production";
 import {
   activeProject,
+  CAPTCHA_APP,
   compose,
   composeOutput,
   type Project,
@@ -417,6 +418,12 @@ export async function config(options: ConfigOptions) {
   }
 
   const settingsPath = join(project.directory, "backend", "config", "settings.py");
+  if (next.captcha === "on" && current.captcha !== "on") {
+    if (!existsSync(settingsPath) || !CAPTCHA_APP.test(readFileSync(settingsPath, "utf8")))
+      fail(
+        "The backend has no django_stack.contrib.captcha. Add it and the widget as the captcha docs describe, then run this again.",
+      );
+  }
   let settingsText: string | undefined;
   if (next.notifications !== current.notifications) {
     if (!existsSync(settingsPath)) fail("This project has no backend/config/settings.py.");

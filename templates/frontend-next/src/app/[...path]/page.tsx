@@ -1,4 +1,5 @@
 import { Blocks } from "@django-stack/react";
+import { captchaEnabled } from "@django-stack/utils";
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/ContactForm";
 import { getContent, notFoundOrRedirect, pageMetadata } from "@/lib/api";
@@ -22,7 +23,7 @@ export default async function ContentPage({ params }: Props) {
     <article className="narrow">
       <h1>{page.title}</h1>
       <Blocks blocks={page.body} />
-      {page.path === "contact" ? <ContactForm /> : null}
+      {page.path === "contact" ? <ContactForm captcha={captchaEnabled(process.env.CAPTCHA)} /> : null}
     </article>
   );
 }

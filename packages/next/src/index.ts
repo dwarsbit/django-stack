@@ -1,4 +1,4 @@
-import { type Seo, verifyPreviewToken, verifyWebhook } from "@django-stack/utils";
+import { CAPTCHA_CSP, type Seo, verifyPreviewToken, verifyWebhook } from "@django-stack/utils";
 import type { Metadata } from "next";
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
@@ -122,20 +122,31 @@ export function mediaOrigins(value = env().MEDIA_ORIGINS ?? ""): string[] {
  * A Content-Security-Policy with a nonce: Next adds it to the scripts it
  * renders. Images and video may also come from `mediaOrigins`.
  */
-export function contentSecurityPolicy(options: { nonce: string; mediaOrigins?: string[]; dev?: boolean }) {
+export function contentSecurityPolicy(options: {
+  nonce: string;
+  mediaOrigins?: string[];
+  dev?: boolean;
+  /** Allow the captcha widget: its solver, style and workers. */
+  captcha?: boolean;
+}) {
   const media = (options.mediaOrigins ?? []).map((origin) => ` ${origin}`).join("");
+  const captcha = (directive: keyof typeof CAPTCHA_CSP) =>
+    options.captcha ? CAPTCHA_CSP[directive].map((source) => ` ${source}`).join("") : "";
   return [
     "default-src 'self'",
     // React needs eval in development, for its error stacks.
-    `script-src 'self' 'nonce-${options.nonce}' 'strict-dynamic'${options.dev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${options.nonce}' 'strict-dynamic'${options.dev ? " 'unsafe-eval'" : ""}${captcha("script-src")}`,
     // In development, styles are injected by the hot reloader.
-    options.dev ? "style-src 'self' 'unsafe-inline'" : `style-src 'self' 'nonce-${options.nonce}'`,
+    options.dev
+      ? "style-src 'self' 'unsafe-inline'"
+      : `style-src 'self' 'nonce-${options.nonce}'${captcha("style-src")}`,
     // Inline style attributes, such as the focal point of an image.
     "style-src-attr 'unsafe-inline'",
     `img-src 'self' data:${media}`,
     `media-src 'self'${media}`,
     // The hot reloader's websocket in development.
     options.dev ? "connect-src 'self' ws: wss:" : "connect-src 'self'",
+    ...(options.captcha ? [`worker-src${captcha("worker-src")}`] : []),
     "font-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",

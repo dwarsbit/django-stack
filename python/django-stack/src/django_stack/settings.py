@@ -34,7 +34,8 @@ internal address of the bundled Umami), ``UMAMI_WEBSITE_ID`` and
 or ``plain``), ``LOG_LEVEL`` and ``LOG_ACCESS``, and the error report variables
 ``ERRORS`` (``email``, ``sentry`` or ``off``) and ``ERROR_EMAIL``, and for
 Sentry ``SENTRY_DSN``, ``SENTRY_ENVIRONMENT``, ``SENTRY_RELEASE`` and
-``SENTRY_TRACES_SAMPLE_RATE``.
+``SENTRY_TRACES_SAMPLE_RATE``, and the captcha variables ``CAPTCHA``
+(``on`` or ``off``) and ``CAPTCHA_THROTTLE_RATE``.
 """
 
 from __future__ import annotations
@@ -289,7 +290,10 @@ def configure(
             "DEFAULT_AUTHENTICATION_CLASSES": ["headless.rest.authentication.SecretKeyAuthentication"],
             "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAdminUser"],
             "DEFAULT_THROTTLE_CLASSES": ["django_stack.rest.throttling.PublicWriteThrottle"],
-            "DEFAULT_THROTTLE_RATES": {"public_write": e.str("PUBLIC_WRITE_THROTTLE_RATE", "10/minute")},
+            "DEFAULT_THROTTLE_RATES": {
+                "public_write": e.str("PUBLIC_WRITE_THROTTLE_RATE", "10/minute"),
+                "captcha": e.str("CAPTCHA_THROTTLE_RATE", "30/minute"),
+            },
             "NUM_PROXIES": num_proxies or None,
         },
         namespace.get("REST_FRAMEWORK"),
@@ -339,6 +343,11 @@ def configure(
         namespace.get("CONTENT_STUDIO"),
     )
 
+    # The captcha of django_stack.contrib.captcha: on, or off.
+    captcha = e.str("CAPTCHA", "on")
+    if captcha not in ("on", "off"):
+        raise ImproperlyConfigured(f"CAPTCHA must be on or off, not {captcha!r}.")
+
     # DjangoStack itself
     s["DJANGO_STACK"] = _merge(
         {
@@ -347,6 +356,11 @@ def configure(
             "REVALIDATE_URL": e.str("REVALIDATE_URL"),
             "REVALIDATE_SECRET": e.str("REVALIDATE_SECRET"),
             "PUBLIC_CREATE": [],
+            # With django_stack.contrib.captcha installed: creates in
+            # PUBLIC_CREATE need a captcha token, unless CAPTCHA=off.
+            "CAPTCHA": captcha == "on",
+            "CAPTCHA_CHALLENGES": 50,
+            "CAPTCHA_DIFFICULTY": 4,
             "CONTENT_APPS": ["content"],
             "SEED_CONTENT": None,
             "ADMIN_USERNAME": e.str("ADMIN_USERNAME", "admin"),

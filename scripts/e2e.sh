@@ -69,8 +69,23 @@ expect 200 http://localhost:3000/admin/
 expect 401 http://localhost:3000/api/content.page
 expect 200 -H "X-Secret-Key: $read_key" http://localhost:3000/api/content.page
 expect 200 http://localhost:8000/readyz
-expect 201 -X POST -H "Content-Type: application/json" \
+# The contact form needs a captcha token: solve a challenge like the widget does.
+expect 400 -X POST -H "Content-Type: application/json" \
   -d '{"name":"E2E","email":"e2e@example.com","message":"Hello"}' \
+  http://localhost:3000/api/content.formsubmission
+expect 200 http://localhost:3000/api/cap/solver.wasm
+captcha="$(curl -s -X POST http://localhost:3000/api/cap/challenge \
+  | docker compose exec -T backend python -c '
+import json, sys
+from django_stack.contrib.captcha.pow import solve
+challenge = json.load(sys.stdin)
+c = challenge["challenge"]
+print(json.dumps({"token": challenge["token"], "solutions": solve(challenge["token"], c["c"], c["s"], c["d"])}))
+' | curl -s -X POST -H "Content-Type: application/json" -d @- http://localhost:3000/api/cap/redeem \
+  | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')"
+[ -n "$captcha" ] || fail "the captcha gives no token"
+expect 201 -X POST -H "Content-Type: application/json" \
+  -d "{\"name\":\"E2E\",\"email\":\"e2e@example.com\",\"message\":\"Hello\",\"captcha\":\"$captcha\"}" \
   http://localhost:3000/api/content.formsubmission
 
 image="$(curl -s http://localhost:3000/blog | grep -o 'src="[^"]*/media/[^"]*"' | head -1 | cut -d'"' -f2)"

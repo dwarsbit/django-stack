@@ -5,6 +5,9 @@ The serializer of the generated routes: Django Headless's
 - A media library item, expanded with ``?expand=cover`` or anywhere in a
   block field, is serialized as ``{id, type, name, alt, url, width, height,
   focal_point, sizes}``, with absolute URLs and every image size.
+- With ``django_stack.contrib.captcha`` installed, a create in
+  ``PUBLIC_CREATE`` without an API key or a staff login needs a
+  ``captcha`` field with a token of the captcha widget.
 - A Content Studio ``BlockField`` is serialized as a list of
   ``{id, type, value}``, with related media items as objects and blocks
   inside blocks resolved the same way.
@@ -122,7 +125,36 @@ def block_fields(model) -> list[str]:
     return [field.name for field in model._meta.concrete_fields if isinstance(field, BlockField)]
 
 
+def needs_captcha(context) -> bool:
+    """Whether the request is a public create that must carry a captcha token."""
+    from django.apps import apps
+
+    from .. import conf
+    from .permissions import is_public_create
+
+    request, view = context.get("request"), context.get("view")
+    if request is None or view is None or request.method != "POST":
+        return False
+    if not apps.is_installed("django_stack.contrib.captcha") or not conf.get("CAPTCHA"):
+        return False
+    if request.auth is not None or (request.user and request.user.is_staff):
+        return False
+    return getattr(view, "action", None) == "create" and is_public_create(view)
+
+
 class StackSerializer(FlexibleSerializer):
+    def get_fields(self):
+        fields = super().get_fields()
+        if needs_captcha(self.context):
+            from ..contrib.captcha.fields import CaptchaField
+
+            fields["captcha"] = CaptchaField()
+        return fields
+
+    def create(self, validated_data):
+        validated_data.pop("captcha", None)
+        return super().create(validated_data)
+
     def to_representation(self, instance):
         request = self.context.get("request")
         if is_media_model(type(instance)):

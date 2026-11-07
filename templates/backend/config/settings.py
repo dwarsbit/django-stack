@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "content_studio.contrib.password_reset",
     "content_studio.notifications",  # notifications in the admin and by email
     "django_stack",
+    "django_stack.contrib.captcha",  # the captcha of the contact form (CAPTCHA=off turns it off)
     "content",
     # Last: builds the API routes once every model is exposed.
     "headless.rest",

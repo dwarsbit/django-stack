@@ -1,3 +1,4 @@
+import { captchaEnabled } from "@django-stack/utils";
 import { getContent, PREVIEW_COOKIE, SITE_URL } from "#lib/server/api.ts";
 import type { LayoutServerLoad } from "./$types";
 
@@ -16,5 +17,7 @@ export const load: LayoutServerLoad = async ({ cookies }) => {
     siteUrl: SITE_URL,
     // Page analytics: Umami's tracker, served from this site at /_a/.
     analytics: process.env.UMAMI_WEBSITE_ID || null,
+    // The captcha widget of the contact form, unless CAPTCHA=off.
+    captcha: captchaEnabled(process.env.CAPTCHA),
   };
 };

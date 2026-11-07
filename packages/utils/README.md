@@ -16,6 +16,7 @@ const posts = await content.getPosts({ category: "news", page: 2 });
 - `imageAttributes()`, `imageUrl()`: `src`, `srcset`, size and focal point of a media object.
 - `seo()`: title, description, canonical URL and share image of a page.
 - `signPreviewToken()`, `verifyPreviewToken()`, `verifyWebhook()`: the signatures shared with the `django-stack` Python package.
+- `loadCaptcha()`, `resetCaptcha()`, `captchaEnabled()`, `CAPTCHA_ATTRIBUTES` and `CAPTCHA_CSP`: the `<cap-widget>` captcha of `django_stack.contrib.captcha`, with its solver from the site and the Content-Security-Policy sources it needs.
 
 Part of [DjangoStack](https://github.com/dwarsbit/django-stack).
 

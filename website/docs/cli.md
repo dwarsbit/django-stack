@@ -1,5 +1,5 @@
 ---
-sidebar_position: 8
+sidebar_position: 9
 ---
 
 # ⌨️ CLI reference
@@ -106,7 +106,7 @@ the defaults it does not generate yet when it is done.
 | `--tasks` | `huey` (a worker, with its queue where the cache is: Postgres, or Valkey with `--cache valkey`), `off` (tasks run in the request, no worker and no daily backups), `huey-valkey` (the queue in Valkey with any cache) |
 | `--cache` | `database` (a table in Postgres, nothing extra to run), `valkey` (the Valkey service), `off` (a cache per process) |
 | `--notifications` | `on` (in the admin and by email, see [Notifications](./notifications.md)), `off` |
-| `--captcha` | `on` (later, the built-in captcha), `off` |
+| `--captcha` | `on` (a proof of work on the contact form, see [Captcha](./captcha.md)), `off` |
 | `--storage` | `local`, `s3` (a local S3 service in development, the same code path as S3 in production; see [Media and database](./production/media-and-database.md#s3-in-development)) |
 | `--package-manager` | `pnpm` (later), `npm`, `bun` (later). Only for a Node frontend. |
 | `--media` | `server` (uploads in a volume on the server), `s3` (uploads in S3 in production; [`settings`](#settings) asks for the credentials). Asked before `--storage`, which then suggests `s3`. See [Media in S3](./production/media-and-database.md#media-in-s3). |
@@ -231,7 +231,8 @@ development, `--analytics` between `umami` and `off` (see
 [Page analytics](./analytics.md#turn-analytics-off-or-on)), `--media`
 between `server` and `s3`, which changes only the preset, `--notifications`
 between `on` and `off`, which adds or removes the app in
-`backend/config/settings.py`, and `--cache` and `--tasks`, which also turn
+`backend/config/settings.py`, `--captcha` between `on` and `off`, which sets
+`CAPTCHA` in `.env`, and `--cache` and `--tasks`, which also turn
 the `valkey` profile on or off. Queued tasks and
 cached values stay behind in the old place, so switch while the queue is
 empty. The other options can only be set by `init`; `config` refuses them

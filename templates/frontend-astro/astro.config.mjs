@@ -1,5 +1,6 @@
 // @ts-check
 import node from "@astrojs/node";
+import { CAPTCHA_CSP, CAPTCHA_STYLE_HASH } from "@django-stack/utils";
 import { defineConfig } from "astro/config";
 
 // The Django backend: the frontend container reaches it on the Compose network.
@@ -15,14 +16,24 @@ export default defineConfig({
   server: { host: true, port: 3000 },
   // A Content-Security-Policy on every page: scripts and styles only from
   // this site, with hashes for the ones Astro inlines. src/middleware.ts adds
-  // the origin of the media files.
+  // the origin of the media files. CAPTCHA_CSP allows the captcha widget of
+  // the contact form: its solver, its style and its workers.
   security: {
     csp: {
-      directives: ["default-src 'self'", "base-uri 'self'", "form-action 'self'", "object-src 'none'"],
+      directives: [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "object-src 'none'",
+        `worker-src ${CAPTCHA_CSP["worker-src"].join(" ")}`,
+      ],
       // Scripts from this site, such as the analytics tracker at /_a/script.js.
-      scriptDirective: { resources: ["'self'"] },
-      // Inline style attributes, such as the focal point of an image.
-      styleDirective: { resources: ["'self'", { resource: "'unsafe-inline'", kind: "attribute" }] },
+      scriptDirective: { resources: ["'self'", ...CAPTCHA_CSP["script-src"]] },
+      styleDirective: {
+        // Inline style attributes, such as the focal point of an image.
+        resources: ["'self'", { resource: "'unsafe-inline'", kind: "attribute" }],
+        hashes: [/** @type {`sha256-${string}`} */ (CAPTCHA_STYLE_HASH.replaceAll("'", ""))],
+      },
     },
   },
   vite: {

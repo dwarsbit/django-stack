@@ -59,7 +59,7 @@ def test_write_key_sees_everything(write_client, articles):
     assert slugs(write_client.get("/api/testapp.article")) == ["draft", "later", "live"]
 
 
-def test_public_create(client, read_client, write_client):
+def test_public_create(client, read_client, write_client, no_captcha):
     response = client.post("/api/testapp.message", {"email": "a@example.com", "text": "Hello"}, format="json")
     assert response.status_code == 201
     assert Message.objects.count() == 1
@@ -72,7 +72,7 @@ def test_public_create(client, read_client, write_client):
     assert client.delete(f"/api/testapp.message/{pk}").status_code in (401, 403)
 
 
-def test_public_create_is_throttled(client):
+def test_public_create_is_throttled(client, no_captcha):
     from django.core.cache import cache
 
     cache.clear()

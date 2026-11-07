@@ -98,6 +98,18 @@ describe("projectStack", () => {
     expect(projectStack(readProject(dir)).notifications).toBe("off");
   });
 
+  it("takes the captcha from the backend's INSTALLED_APPS and CAPTCHA", () => {
+    const dir = project();
+    mkdirSync(join(dir, "backend", "config"), { recursive: true });
+    const settings = join(dir, "backend", "config", "settings.py");
+    writeFileSync(settings, "INSTALLED_APPS = []\n");
+    expect(projectStack(readProject(dir)).captcha).toBe("off");
+    writeFileSync(settings, 'INSTALLED_APPS = [\n    "django_stack.contrib.captcha",  # the captcha\n]\n');
+    expect(projectStack(readProject(dir)).captcha).toBe("on");
+    writeFileSync(join(dir, ".env"), "COMPOSE_PROFILES=dev,db\nCAPTCHA=off\n");
+    expect(projectStack(readProject(dir)).captcha).toBe("off");
+  });
+
   it("reads the preset from package.json", () => {
     const dir = project();
     const stack = { ...DEFAULT_STACK, analytics: "off" as const, storage: "s3" as const };
@@ -169,6 +181,14 @@ describe("applyStack", () => {
     expect(off.COMPOSE_PROFILES).toBe("dev,db");
     expect(off.S3_ENDPOINT_URL).toBe("");
     expect(off.S3_CREATE_BUCKET).toBe("0");
+  });
+
+  it("turns the captcha on and off", () => {
+    const off = { ...DEFAULT_STACK, captcha: "off" as const };
+    const result = applyStack(dev, parseEnv(dev), DEFAULT_STACK, off);
+    expect(parseEnv(result.env).CAPTCHA).toBe("off");
+    expect(result.changes).toHaveLength(1);
+    expect(parseEnv(applyStack(result.env, parseEnv(result.env), off, DEFAULT_STACK).env).CAPTCHA).toBe("on");
   });
 
   it("turns analytics on and off, keeping Umami's website", () => {
