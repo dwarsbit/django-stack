@@ -47,6 +47,11 @@ x-frontend-env: &frontend-env
   UMAMI_URL: ${UMAMI_URL:-}
   # The captcha widget of the contact form, unless CAPTCHA=off.
   CAPTCHA: ${CAPTCHA:-on}
+  # Server errors to Sentry with ERRORS=sentry, as the backend's.
+  ERRORS: ${ERRORS:-email}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+  SENTRY_RELEASE: ${SENTRY_RELEASE:-}
 
 x-backend-depends: &backend-depends
   db:

@@ -1,6 +1,6 @@
 # @django-stack/utils
 
-Framework-agnostic helpers for DjangoStack frontends: the API client, content helpers, SEO, images and webhooks.
+Framework-agnostic helpers for DjangoStack frontends: the API client, content helpers, SEO, images, webhooks and error reports.
 
 ```ts
 import { createClient, createContent, imageAttributes, seo } from "@django-stack/utils";
@@ -15,6 +15,7 @@ const posts = await content.getPosts({ category: "news", page: 2 });
 - `createContent()`: pages by path, posts, taxonomies, menus, site settings and redirects of the starter content model.
 - `imageAttributes()`, `imageUrl()`: `src`, `srcset`, size and focal point of a media object.
 - `seo()`: title, description, canonical URL and share image of a page.
+- `reportError()`: sends a server error to Sentry with `ERRORS=sentry` and `SENTRY_DSN` in production, without the Sentry SDK.
 - `signPreviewToken()`, `verifyPreviewToken()`, `verifyWebhook()`: the signatures shared with the `django-stack` Python package.
 - `loadCaptcha()`, `resetCaptcha()`, `captchaEnabled()`, `CAPTCHA_ATTRIBUTES` and `CAPTCHA_CSP`: the `<cap-widget>` captcha of `django_stack.contrib.captcha`, with its solver from the site and the Content-Security-Policy sources it needs.
 

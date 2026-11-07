@@ -21,6 +21,17 @@ export {
   type GetPostsOptions,
   linkHref,
 } from "./content";
+export {
+  type ErrorContext,
+  errorEvent,
+  parseDsn,
+  parseStack,
+  reportError,
+  type SentryFrame,
+  type SentryOptions,
+  sendToSentry,
+  sentryOptions,
+} from "./errors";
 export { type ImageAttributes, imageAttributes, imageUrl } from "./media";
 export { type Seo, type SeoInput, seo } from "./seo";
 export {

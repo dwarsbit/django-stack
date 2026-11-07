@@ -42,7 +42,7 @@ kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
 | `CADDY_ADDRESS`, `TRUSTED_PROXIES`, `HTTP_PORT`, `HTTPS_PORT` | Caddy behind a platform's proxy. See [Coolify and Dokploy](./production/platforms.md). |
 | `CAPTCHA`, `CAPTCHA_THROTTLE_RATE` | The captcha of the contact form, `on` or `off`. See [Captcha](./captcha.md). |
 | `ERRORS`, `ERROR_EMAIL` | Error reports by email and in the admin, or to Sentry. See [Error reports](./production/logs.md#error-reports). |
-| `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_TRACES_SAMPLE_RATE` | Error reports to Sentry with `ERRORS=sentry`. See [Sentry](./production/logs.md#sentry). |
+| `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_RELEASE`, `SENTRY_TRACES_SAMPLE_RATE` | Error reports to Sentry with `ERRORS=sentry`. See [Sentry](./production/logs.md#sentry). |
 | `LOG_FORMAT`, `LOG_LEVEL`, `LOG_ACCESS` | The format and level of the logs. See [Logs and health checks](./production/logs.md). |
 | `SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD` | Extend HSTS to subdomains and the preload list. Off by default. |
 | `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The admin user created on the first start. |

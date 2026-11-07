@@ -1,4 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
+import { reportError } from "@django-stack/utils";
 import { getContent, PREVIEW_COOKIE } from "./lib/api";
 import { getCached, store } from "./lib/cache";
 
@@ -38,7 +39,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (hit) return hit;
   }
 
-  let response = await next();
+  let response: Response;
+  try {
+    response = await next();
+  } catch (error) {
+    // Sent to Sentry with ERRORS=sentry; Astro logs it and renders the error page.
+    await reportError(error, { request });
+    throw error;
+  }
 
   // Redirects that editors manage in the admin, for paths that do not exist.
   if (response.status === 404 && request.method === "GET") {
