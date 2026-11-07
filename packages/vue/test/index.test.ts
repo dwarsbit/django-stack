@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defineComponent, h } from "vue";
 import { renderToString } from "vue/server-renderer";
-import { Blocks, Image } from "../src/index";
+import { Blocks, Captcha, Image } from "../src/index";
 
 const image = {
   id: "1",
@@ -57,5 +57,13 @@ describe("Blocks", () => {
 describe("Image", () => {
   it("renders nothing without media", async () => {
     expect(await render(Image, { media: null })).toBe("<!---->");
+  });
+});
+
+describe("Captcha", () => {
+  it("renders the widget element", async () => {
+    expect(await render(Captcha, {})).toBe(
+      '<cap-widget data-cap-api-endpoint="/api/cap/" data-cap-hidden-field-name="captcha"></cap-widget>',
+    );
   });
 });

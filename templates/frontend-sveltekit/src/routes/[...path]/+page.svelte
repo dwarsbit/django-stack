@@ -8,5 +8,5 @@
 <article class="narrow">
   <h1>{data.page.title}</h1>
   <Blocks blocks={data.page.body} />
-  {#if data.page.path === "contact"}<ContactForm />{/if}
+  {#if data.page.path === "contact"}<ContactForm captcha={data.captcha} />{/if}
 </article>

@@ -7,6 +7,7 @@ Run them with `pnpm test` at the project root.
 import pytest
 from django.apps import apps
 from django.conf import settings
+from django_stack.contrib.captcha.testing import captcha_token
 from rest_framework.test import APIClient
 
 from content.models import FormSubmission, Page, Post
@@ -63,11 +64,22 @@ def test_post_by_slug(reader, seeded):
 def test_contact_form(seeded):
     response = APIClient().post(
         "/api/content.formsubmission",
-        {"name": "Ada", "email": "ada@example.com", "message": "Hello"},
+        {"name": "Ada", "email": "ada@example.com", "message": "Hello", "captcha": captcha_token()},
         format="json",
     )
     assert response.status_code == 201
     assert FormSubmission.objects.filter(email="ada@example.com").exists()
+
+
+@pytest.mark.skipif(not settings.DJANGO_STACK["CAPTCHA"], reason="the captcha is off")
+def test_contact_form_needs_a_captcha(seeded):
+    response = APIClient().post(
+        "/api/content.formsubmission",
+        {"name": "Ada", "email": "ada@example.com", "message": "Hello"},
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "captcha" in response.json()
 
 
 @pytest.mark.skipif(not apps.is_installed("content_studio.notifications"), reason="notifications are off")
@@ -79,7 +91,7 @@ def test_contact_form_notifies_the_editors(seeded, django_capture_on_commit_call
     with django_capture_on_commit_callbacks(execute=True):
         APIClient().post(
             "/api/content.formsubmission",
-            {"name": "Ada", "email": "ada@example.com", "message": "100% sure"},
+            {"name": "Ada", "email": "ada@example.com", "message": "100% sure", "captcha": captcha_token()},
             format="json",
         )
     notification = Notification.objects.get(recipient=editor, event="site.form_submitted")

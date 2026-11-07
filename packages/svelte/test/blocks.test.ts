@@ -1,6 +1,6 @@
 import { render } from "svelte/server";
 import { describe, expect, it } from "vitest";
-import { Blocks, Seo } from "../src/index";
+import { Blocks, Captcha, Seo } from "../src/index";
 import Custom from "./Custom.svelte";
 
 const image = {
@@ -64,5 +64,14 @@ describe("Seo", () => {
     expect(head).toContain("<title>About</title>");
     expect(head).toContain('content="Who we are"');
     expect(head).toContain('href="https://example.com/about"');
+  });
+});
+
+describe("Captcha", () => {
+  it("renders the widget element", () => {
+    const { body } = render(Captcha, { props: {} });
+    expect(body).toContain(
+      '<cap-widget data-cap-api-endpoint="/api/cap/" data-cap-hidden-field-name="captcha">',
+    );
   });
 });

@@ -364,6 +364,18 @@ describe("scaffold", () => {
     expect(() => setNotificationsApp("INSTALLED_APPS = []\n", true)).toThrow(/content_studio/);
   });
 
+  it("turns the captcha off in .env", () => {
+    const on = join(tempDir(), "on");
+    scaffold({ directory: on, name: "site", frontend: "astro", demoContent: true });
+    expect(parseEnv(readFileSync(join(on, ".env"), "utf8")).CAPTCHA).toBe("on");
+    expect(readFileSync(join(on, "backend", "config", "settings.py"), "utf8")).toContain(
+      '"django_stack.contrib.captcha",',
+    );
+    const off = join(tempDir(), "off");
+    scaffold({ directory: off, name: "site", frontend: "astro", demoContent: true, captcha: false });
+    expect(parseEnv(readFileSync(join(off, ".env"), "utf8")).CAPTCHA).toBe("off");
+  });
+
   it("refuses an unknown time zone", () => {
     const directory = join(tempDir(), "site");
     expect(() =>

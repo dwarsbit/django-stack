@@ -83,6 +83,14 @@ describe("headers and metadata", () => {
     expect(policy).toContain("script-src 'self' 'nonce-abc' 'strict-dynamic'");
     expect(policy).toContain("img-src 'self' data: https://cdn.example");
     expect(policy).not.toContain("unsafe-eval");
+    expect(policy).not.toContain("worker-src");
+  });
+
+  it("allows the captcha widget", () => {
+    const policy = contentSecurityPolicy({ nonce: "abc", captcha: true });
+    expect(policy).toContain("script-src 'self' 'nonce-abc' 'strict-dynamic' 'wasm-unsafe-eval'");
+    expect(policy).toMatch(/style-src 'self' 'nonce-abc' 'sha256-[^']+'/);
+    expect(policy).toContain("worker-src 'self' blob:");
   });
 
   it("turns the SEO tags into metadata", () => {

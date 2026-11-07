@@ -7,6 +7,22 @@ the unreleased version; the release workflow releases it.
 
 ## 0.10.0 (unreleased)
 
+- **Captcha on the contact form.** `init` now generates `--captcha on`,
+  the default: the new `django_stack.contrib.captcha` app serves the Cap
+  protocol at `/api/cap/`, with its tokens in the database, and every
+  create in `PUBLIC_CREATE` without an API key or staff login needs a
+  `captcha` field with a token. The contact forms of all four frontends
+  show Cap's widget, which solves a proof of work in the browser and
+  loads its solver from the site; their Content-Security-Policy allows it.
+  The new `Captcha` component of `@django-stack/react`, `@django-stack/vue`
+  and `@django-stack/svelte`, `loadCaptcha`, `resetCaptcha` and
+  `CAPTCHA_CSP` of `@django-stack/utils`, the `captcha` option of
+  `contentSecurityPolicy` in `@django-stack/next`, and `CaptchaField` and
+  `verify_captcha` in Django protect your own forms. `CAPTCHA=off` in
+  `.env` (or `init --captcha off`, `dstack config --captcha off`) turns it
+  off; `CAPTCHA_THROTTLE_RATE` limits challenges per IP address (default
+  `30/minute`). Existing projects keep working without it; to add it,
+  follow the captcha docs.
 - **Error reports to Sentry.** `init --errors sentry` (and `ERRORS=sentry`
   in `.env`) sends the errors of the backend and the worker, and every
   line logged at `ERROR`, to the sentry.io project of `SENTRY_DSN`,

@@ -1,4 +1,5 @@
 import { contentSecurityPolicy, mediaOrigins, PREVIEW_COOKIE, SECURITY_HEADERS } from "@django-stack/next";
+import { captchaEnabled } from "@django-stack/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 const dev = process.env.NODE_ENV === "development";
@@ -11,6 +12,8 @@ const backend = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000";
 const TRACKER_PATHS = /^\/_a\/(script\.js|api\/send)$/;
 const umami = process.env.UMAMI_URL || "http://umami:3000";
 const media = mediaOrigins();
+// The captcha widget of the contact form, unless CAPTCHA=off.
+const captcha = captchaEnabled(process.env.CAPTCHA);
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -23,7 +26,7 @@ export function proxy(request: NextRequest) {
 
   // A fresh nonce for every page: Next adds it to the scripts it renders.
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const policy = contentSecurityPolicy({ nonce, mediaOrigins: media, dev });
+  const policy = contentSecurityPolicy({ nonce, mediaOrigins: media, dev, captcha });
   const headers = new Headers(request.headers);
   headers.set("Content-Security-Policy", policy);
 

@@ -1,3 +1,5 @@
+import { captchaEnabled } from "@django-stack/utils";
+
 /** What every page shows: the site settings and the menus. */
 export default defineEventHandler(async (event) => {
   const data = await cachedContent(event, async () => {
@@ -14,5 +16,7 @@ export default defineEventHandler(async (event) => {
     preview: previewToken(event) !== null,
     // Page analytics: Umami's tracker, served from this site at /_a/.
     analytics: process.env.UMAMI_WEBSITE_ID || null,
+    // The captcha widget of the contact form, unless CAPTCHA=off.
+    captcha: captchaEnabled(process.env.CAPTCHA),
   };
 });

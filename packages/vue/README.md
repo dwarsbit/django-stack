@@ -26,6 +26,7 @@ const { data: page } = await useFetch("/_content/page", { query: { path: "about"
 | `Blocks` | A block field. `components` adds or replaces block types; unknown types render nothing. |
 | `RichText` | HTML from an `HTMLField`, which Django sanitizes when it is saved. |
 | `Image` | A responsive `<img>` with `srcset` from the image sizes and the focal point. |
+| `Captcha` | The captcha widget, inside a `<form>` that posts to a model in `PUBLIC_CREATE`; it adds a hidden `captcha` field with the token. |
 
 For the SEO tags, pass the result of `seo()` from `@django-stack/utils` to
 your framework's head manager, such as Nuxt's `useHead()`.

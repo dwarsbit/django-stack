@@ -12,6 +12,7 @@ export const SWITCHABLE: readonly StackKey[] = [
   "cache",
   "tasks",
   "notifications",
+  "captcha",
 ];
 
 export interface ConfigChange {
@@ -114,6 +115,14 @@ export function applyStack(
         to.notifications === "on"
           ? "Notifications are on: content_studio.notifications is in INSTALLED_APPS."
           : "Notifications are off: content_studio.notifications is out of INSTALLED_APPS; its tables stay.",
+      );
+    }
+    if (key === "captcha") {
+      text = setEnvValues(text, { CAPTCHA: to.captcha });
+      changes.push(
+        to.captcha === "on"
+          ? "The captcha of the contact form is on."
+          : "The captcha is off: public forms need no captcha token.",
       );
     }
     if (key === "media") {

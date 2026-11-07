@@ -122,7 +122,7 @@ export const STACK_OPTIONS = [
     description: "The built-in captcha for forms",
     bits: 2,
     values: [
-      { value: "on", label: "On", hint: "proof of work, no tracking", generated: false },
+      { value: "on", label: "On", hint: "proof of work, no tracking", generated: true },
       { value: "off", label: "Off", generated: true },
     ],
   },

@@ -135,6 +135,7 @@ export function projectStack(project: Project): Stack {
     analytics,
     ...(project.env.CACHE_URL === undefined ? {} : cacheStack(project.env)),
     ...notificationsStack(project),
+    ...captchaStack(project),
   };
   const { preset } = projectManifest(project);
   if (preset) {
@@ -154,6 +155,20 @@ function notificationsStack(project: Project): Partial<Pick<Stack, "notification
       ? "on"
       : "off",
   };
+}
+
+/** The line of DjangoStack's captcha app in the backend's INSTALLED_APPS. */
+export const CAPTCHA_APP = /^ *["']django_stack\.contrib\.captcha["'],/m;
+
+/**
+ * The captcha is on when the backend has DjangoStack's captcha app and
+ * CAPTCHA is not off. Projects from before the captcha have no app.
+ */
+function captchaStack(project: Project): Partial<Pick<Stack, "captcha">> {
+  const settings = join(project.directory, "backend", "config", "settings.py");
+  if (!existsSync(settings)) return {};
+  const installed = CAPTCHA_APP.test(readFileSync(settings, "utf8"));
+  return { captcha: installed && project.env.CAPTCHA !== "off" ? "on" : "off" };
 }
 
 const REDIS = /^(redis|rediss|valkey|valkeys):/;

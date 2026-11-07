@@ -52,6 +52,8 @@ export interface ScaffoldOptions {
   analytics?: boolean;
   /** Content Studio's notifications app; on by default. */
   notifications?: boolean;
+  /** The captcha of the contact form; on by default. */
+  captcha?: boolean;
   /** How errors are reported in production; by email by default. */
   errors?: Stack["errors"];
   /** The cache backend; the database by default. */
@@ -310,6 +312,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   if (options.ports) env = setEnvValues(env, portValues(parseEnv(env), options.ports));
   if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });
   if (options.errors && options.errors !== "email") env = setEnvValues(env, { ERRORS: options.errors });
+  if (options.captcha === false) env = setEnvValues(env, { CAPTCHA: "off" });
   writeFileSync(join(target, ".env"), env, { mode: 0o600 });
   writeFileSync(join(target, ".env.example"), envExample);
   rmSync(join(target, "env.example"));

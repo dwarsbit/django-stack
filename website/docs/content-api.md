@@ -41,8 +41,9 @@ The API is closed by default. Every request needs a key in the
 A model in `DJANGO_STACK["PUBLIC_CREATE"]` accepts anonymous `POST`
 requests, such as the contact form's `content.formsubmission`. These requests
 are rate limited per IP address (`PUBLIC_WRITE_THROTTLE_RATE`, 10 per minute
-by default), and nobody can read the model through the API without the
-full-access key.
+by default), need a `captcha` token unless the captcha is off (see
+[Captcha](./captcha.md)), and nobody can read the model through the API
+without the full-access key.
 
 ## Images
 

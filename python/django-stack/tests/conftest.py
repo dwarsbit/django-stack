@@ -15,3 +15,9 @@ def read_client():
 @pytest.fixture
 def write_client():
     return APIClient(headers={"X-Secret-Key": "write-key"})
+
+
+@pytest.fixture
+def no_captcha(settings):
+    """CAPTCHA=off: public creates need no captcha token."""
+    settings.DJANGO_STACK = {**settings.DJANGO_STACK, "CAPTCHA": False}

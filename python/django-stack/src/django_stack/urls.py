@@ -1,5 +1,6 @@
 """
-DjangoStack's URLs: the health checks at /healthz, /readyz and /statusz.
+DjangoStack's URLs: the health checks at /healthz, /readyz and /statusz,
+and with ``django_stack.contrib.captcha`` installed, the captcha at /api/cap/.
 
     # config/urls.py
     from django_stack.urls import media_urlpatterns
@@ -13,6 +14,7 @@ DjangoStack's URLs: the health checks at /healthz, /readyz and /statusz.
 
 from urllib.parse import urlsplit
 
+from django.apps import apps
 from django.conf import settings
 from django.urls import include, path, re_path
 from django.views.static import serve
@@ -20,6 +22,9 @@ from django.views.static import serve
 urlpatterns = [
     path("", include("django_stack.contrib.health.urls")),
 ]
+
+if apps.is_installed("django_stack.contrib.captcha"):
+    urlpatterns.append(path("api/cap/", include("django_stack.contrib.captcha.urls")))
 
 
 def media_urlpatterns():

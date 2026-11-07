@@ -40,6 +40,7 @@ kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
 | `BACKUP_TIME`, `BACKUP_KEEP`, `BACKUP_S3_BUCKET` | The daily database backup. See [Backups](./production/backups.md). |
 | `BACKUP_PING_URL` | Requested after each daily backup, for an alert when backups stop. See [Health checks](./production/logs.md#alerts-for-missed-backups). |
 | `CADDY_ADDRESS`, `TRUSTED_PROXIES`, `HTTP_PORT`, `HTTPS_PORT` | Caddy behind a platform's proxy. See [Coolify and Dokploy](./production/platforms.md). |
+| `CAPTCHA`, `CAPTCHA_THROTTLE_RATE` | The captcha of the contact form, `on` or `off`. See [Captcha](./captcha.md). |
 | `ERRORS`, `ERROR_EMAIL` | Error reports by email and in the admin, or to Sentry. See [Error reports](./production/logs.md#error-reports). |
 | `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_RELEASE`, `SENTRY_TRACES_SAMPLE_RATE` | Error reports to Sentry with `ERRORS=sentry`. See [Sentry](./production/logs.md#sentry). |
 | `LOG_FORMAT`, `LOG_LEVEL`, `LOG_ACCESS` | The format and level of the logs. See [Logs and health checks](./production/logs.md). |

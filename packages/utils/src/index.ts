@@ -1,5 +1,17 @@
 import { version } from "../package.json";
 
+export {
+  CAPTCHA_ATTRIBUTES,
+  CAPTCHA_CSP,
+  CAPTCHA_ENDPOINT,
+  CAPTCHA_FIELD,
+  CAPTCHA_SOLVER_URL,
+  CAPTCHA_STYLE_HASH,
+  type CaptchaElement,
+  captchaEnabled,
+  loadCaptcha,
+  resetCaptcha,
+} from "./captcha";
 export { createClient, type StackClientOptions } from "./client";
 export {
   type Content,

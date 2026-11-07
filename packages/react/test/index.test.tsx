@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Blocks, Image, VERSION } from "../src/index";
+import { Blocks, Captcha, Image, VERSION } from "../src/index";
 
 const image = {
   id: "1",
@@ -63,5 +63,14 @@ describe("Image", () => {
 describe("package", () => {
   it("has a version", () => {
     expect(VERSION).toMatch(/^\d+\.\d+\.\d+/);
+  });
+});
+
+describe("Captcha", () => {
+  it("renders the widget element", () => {
+    const html = renderToStaticMarkup(<Captcha className="captcha" />);
+    expect(html).toBe(
+      '<cap-widget data-cap-api-endpoint="/api/cap/" data-cap-hidden-field-name="captcha" class="captcha"></cap-widget>',
+    );
   });
 });

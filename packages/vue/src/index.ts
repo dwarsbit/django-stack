@@ -1,13 +1,15 @@
 import {
   type Block,
+  CAPTCHA_ATTRIBUTES,
   type CallToActionBlock as CallToActionBlockData,
   type ImageBlock as ImageBlockData,
   imageAttributes,
+  loadCaptcha,
   type Media,
   type QuoteBlock as QuoteBlockData,
   type TextBlock as TextBlockData,
 } from "@django-stack/utils";
-import { type Component, defineComponent, h, type PropType } from "vue";
+import { type Component, defineComponent, h, onMounted, type PropType } from "vue";
 
 /**
  * A responsive image from Django Headless: `srcset` from the image sizes and
@@ -134,5 +136,21 @@ export const Blocks = defineComponent({
         return component ? h(component, { block, key: block.id }) : null;
       });
     };
+  },
+});
+
+/**
+ * The captcha widget, for a form that posts to a route in PUBLIC_CREATE: it
+ * adds a hidden `captcha` field with the token once the visitor verified.
+ * After a submission, call `resetCaptcha(form)` from @django-stack/utils: a
+ * token is valid once.
+ */
+export const Captcha = defineComponent({
+  name: "StackCaptcha",
+  setup() {
+    onMounted(() => {
+      void loadCaptcha();
+    });
+    return () => h("cap-widget", { ...CAPTCHA_ATTRIBUTES });
   },
 });

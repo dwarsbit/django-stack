@@ -106,6 +106,9 @@ importers:
 
   packages/utils:
     dependencies:
+      '@cap.js/widget':
+        specifier: 0.1.58
+        version: 0.1.58
       '@django-headless/client':
         specifier: ^1.1.1
         version: 1.1.1
@@ -891,6 +894,9 @@ packages:
         optional: true
       commander:
         optional: true
+
+  '@cap.js/widget@0.1.58':
+    resolution: {integrity: sha512-snNjlYZLx1XddDH7DPZF9uedynSXTPPeRl/nExDlMjw0pCHiu/Fm1NKjRcT4HmqpOBf0TZRvio1HhkTMWg9p9A==}
 
   '@clack/core@1.5.1':
     resolution: {integrity: sha512-iHTrHA8MtVuLl2TfZySmcKv1qO2PoyC9Z7pfSDozEuV5vtY3/wcOPKJXlqJ5Oq2Cx5DDGQGAMVx6HZfRRoVEbQ==}
@@ -7330,6 +7336,8 @@ snapshots:
     optionalDependencies:
       cac: 7.1.0
       commander: 15.0.0
+
+  '@cap.js/widget@0.1.58': {}
 
   '@clack/core@1.5.1':
     dependencies:
