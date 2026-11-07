@@ -26,7 +26,9 @@ content, and creates `my-site` with:
 - a Django backend in `backend/`, with a starter content model of pages,
   posts, menus and site settings;
 - the frontend in `frontend/`: Astro by default, or Next.js, SvelteKit or
-  Nuxt with `--frontend next`, `sveltekit` or `nuxt`;
+  Nuxt with `--frontend next`, `sveltekit` or `nuxt`. With `--frontend
+  templates` Django renders the site from `backend/website/` instead, and
+  `--frontend headless` has no site at all;
 - `compose.yaml`, which runs both with Postgres and Mailpit;
 - `.env` with fresh secrets for this project, and `.env.example` with the
   same names and no values.

@@ -7,7 +7,7 @@
 #   pnpm build && scripts/e2e-prod.sh [directory]
 #
 # FRONTEND picks the frontend (astro by default); every frontend must pass
-# the same tests.
+# the same tests, FRONTEND=templates included.
 # Needs Docker, uv and pnpm, and ports 80 and 443. Caddy signs site.localhost
 # with its own local CA. Leaves the project running with KEEP=1.
 set -euo pipefail

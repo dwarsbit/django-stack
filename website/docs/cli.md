@@ -100,7 +100,7 @@ the defaults it does not generate yet when it is done.
 
 | Option | Values |
 |--------|--------|
-| `--frontend` | `astro`, `next`, `headless` (just the API and the admin, see [Headless](headless.md)), `templates` (later, Django templates), `nuxt`, `sveltekit` |
+| `--frontend` | `astro`, `next`, `headless` (just the API and the admin, see [Headless](headless.md)), `templates` (Django renders the site, see [Django templates](django-templates.md)), `nuxt`, `sveltekit` |
 | `--postgres` | `stable` (Postgres 17), `latest` (Postgres 18). It also sets the version of the Postgres client in the backend image, for the backups. With `--database-url`, pick your server's version. |
 | `--analytics` | `umami` (Umami, see [Page analytics](./analytics.md)), `off` |
 | `--tasks` | `huey` (a worker, with its queue where the cache is: Postgres, or Valkey with `--cache valkey`), `off` (tasks run in the request, no worker and no daily backups), `huey-valkey` (the queue in Valkey with any cache) |
@@ -182,7 +182,7 @@ stop with `Docker not running.` and how to start it.
 | `dstack shell` | Opens Django's shell in the backend. |
 | `dstack backup` | Backs up the database and, when uploads are on disk, the media now. `--list` lists the backups, `--no-media` skips the media. |
 | `dstack restore <backup>` | Restores a backup from `dstack backup --list` over the database. `--media` also restores its media; a `.media.tar.gz` name restores only the media. It asks first; `--yes` doesn't. See [Backups](./production/backups.md). |
-| `dstack types` | Generates the frontend's API types in `frontend/src/lib/headless.ts` from the backend's schema; in a headless project it writes the schema to `backend/openapi.json`. |
+| `dstack types` | Generates the frontend's API types in `frontend/src/lib/headless.ts` from the backend's schema; in a headless or Django templates project it writes the schema to `backend/openapi.json`. |
 | `dstack deploy` | Deploys to a hosting platform and shows the status. See [`deploy`](#deploy). |
 
 `manage`, `shell`, `logs` and `check` use the running containers, and start

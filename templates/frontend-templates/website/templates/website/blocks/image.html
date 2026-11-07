@@ -1,0 +1,4 @@
+{% load stack %}<figure class="block-image">
+  {% image value.image size="content" sizes="(min-width: 48rem) 44rem, 100vw" %}
+  {% if value.caption %}<figcaption class="muted">{{ value.caption }}</figcaption>{% endif %}
+</figure>

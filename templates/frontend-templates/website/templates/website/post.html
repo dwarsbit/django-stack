@@ -1,0 +1,20 @@
+{% extends "website/base.html" %}
+{% load stack %}
+{% block seo %}{% seo post site type="article" %}{% endblock %}
+{% block content %}
+  <article class="narrow">
+    <p class="muted">
+      {% if post.published_at %}<time datetime="{{ post.published_at|date:'c' }}">{{ post.published_at|date:"F j, Y" }}</time>{% endif %}
+      {% if post.author %}<span> · {{ post.author.name }}</span>{% endif %}
+      {% for category in post.categories.all %}<span> · <a href="{{ category.get_absolute_url }}">{{ category.name }}</a></span>{% endfor %}
+    </p>
+    <h1>{{ post.title }}</h1>
+    {% image post.cover size="content" sizes="(min-width: 48rem) 44rem, 100vw" class_name="cover" eager=True %}
+    {% blocks post.body %}
+    {% with tags=post.tags.all %}
+      {% if tags %}
+        <p class="tags">{% for tag in tags %}<a href="{{ tag.get_absolute_url }}">#{{ tag.name }}</a>{% endfor %}</p>
+      {% endif %}
+    {% endwith %}
+  </article>
+{% endblock %}

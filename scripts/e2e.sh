@@ -8,7 +8,8 @@
 # With LOCAL_S3=1 the project stores media in the local S3 service, with
 # CACHE=valkey the cache and the task queue are in Valkey.
 # FRONTEND picks the frontend (astro by default); every frontend must pass
-# the same tests. FRONTEND=headless tests the API and the admin only.
+# the same tests. FRONTEND=headless tests the API and the admin only;
+# FRONTEND=templates the site Django renders, with no frontend service.
 # Needs Docker, uv and pnpm. Leaves the project running with KEEP=1.
 set -euo pipefail
 
@@ -31,13 +32,16 @@ node "$cli" init "$project" --yes --no-git --link "$repo" --frontend "${FRONTEND
 cd "$project"
 headless=""
 [ "${FRONTEND:-astro}" = "headless" ] && headless=1
-# Headless: the backend is the site, on the site's port.
+templates=""
+[ "${FRONTEND:-astro}" = "templates" ] && templates=1
+# Headless and templates: the backend is the site, on the site's port.
+nofrontend="$headless$templates"
 backend="http://localhost:8000"
-[ -n "$headless" ] && backend="http://localhost:3000"
+[ -n "$nofrontend" ] && backend="http://localhost:3000"
 
 docker compose build
 docker compose up --detach --wait --wait-timeout 300 backend worker
-if [ -n "$headless" ]; then
+if [ -n "$nofrontend" ]; then
   docker compose up --detach mailpit
 else
   docker compose up --detach frontend mailpit
@@ -107,6 +111,34 @@ expect 201 -X POST -H "Content-Type: application/json" \
   -d "{\"name\":\"E2E\",\"email\":\"e2e@example.com\",\"message\":\"Hello\",\"captcha\":\"$captcha\"}" \
   http://localhost:3000/api/content.formsubmission
 
+if [ -n "$templates" ]; then
+  # The site's own contact form: a CSRF token from the page, then a post
+  # with a solved challenge.
+  jar="$(mktemp)"
+  form="$(curl -s -c "$jar" http://localhost:3000/contact)"
+  grep -q '<cap-widget' <<<"$form" || fail "the contact page has no captcha widget"
+  csrf="$(grep -o 'name="csrfmiddlewaretoken" value="[^"]*"' <<<"$form" | cut -d'"' -f4)"
+  expect 400 -b "$jar" -H "Referer: http://localhost:3000/contact" \
+    --data-urlencode "csrfmiddlewaretoken=$csrf" --data-urlencode "name=E2E" \
+    --data-urlencode "email=e2e@example.com" --data-urlencode "message=Hello" http://localhost:3000/contact
+  captcha="$(curl -s -X POST http://localhost:3000/api/cap/challenge \
+    | docker compose exec -T backend python -c '
+import json, sys
+from django_stack.contrib.captcha.pow import solve
+challenge = json.load(sys.stdin)
+c = challenge["challenge"]
+print(json.dumps({"token": challenge["token"], "solutions": solve(challenge["token"], c["c"], c["s"], c["d"])}))
+' | curl -s -X POST -H "Content-Type: application/json" -d @- http://localhost:3000/api/cap/redeem \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')"
+  expect 302 -b "$jar" -H "Referer: http://localhost:3000/contact" \
+    --data-urlencode "csrfmiddlewaretoken=$csrf" --data-urlencode "name=E2E" \
+    --data-urlencode "email=e2e@example.com" --data-urlencode "message=Hello" \
+    --data-urlencode "captcha=$captcha" http://localhost:3000/contact
+  expect 200 http://localhost:3000/static/django_stack/captcha/cap.min.js
+  expect 200 http://localhost:3000/static/website/global.css
+  rm -f "$jar"
+fi
+
 if [ -n "$headless" ]; then
   # The covers are IDs unless expanded; take an image file, not a media page.
   # `|| true`: with pipefail, no match would end the script without a message.
@@ -157,7 +189,7 @@ echo "Running the template tests"
 docker compose exec -T backend python manage.py check --fail-level WARNING
 docker compose exec -T backend python manage.py makemigrations --check --dry-run
 docker compose exec -T backend pytest -q
-if [ -z "$headless" ]; then
+if [ -z "$nofrontend" ]; then
   docker compose exec -T frontend npm run check
   docker compose exec -T frontend npm test
 fi

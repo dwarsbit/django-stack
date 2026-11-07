@@ -42,7 +42,7 @@ export const STACK_OPTIONS = [
         value: "templates",
         label: "Django templates",
         hint: "no Node, Django renders the site",
-        generated: false,
+        generated: true,
       },
       { value: "nuxt", label: "Nuxt", hint: "Vue, server-rendered", generated: true },
       { value: "sveltekit", label: "SvelteKit", hint: "Svelte, server-rendered", generated: true },

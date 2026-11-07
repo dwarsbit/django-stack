@@ -106,7 +106,7 @@ services:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
       # @end
       # @if !frontend
-      # The site is the backend: the API, the admin and a start page.
+      # The site is the backend: the API, the admin and the pages.
       - "127.0.0.1:${SITE_PORT:-3000}:8000"
       # @end
     depends_on: *backend-depends

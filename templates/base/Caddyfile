@@ -5,9 +5,14 @@
 # disk are served from /media; Umami's tracker from /_a/; the frontend
 # serves everything else. Caddy
 # @end
-# @if !frontend
+# @if headless
 # One domain: Django serves everything (the API, the admin, /static and a
 # start page); uploads on the server's disk are served from /media. Caddy
+# @end
+# @if templates
+# One domain: Django serves everything (the pages, the API, the admin and
+# /static); uploads on the server's disk are served from /media; Umami's
+# tracker from /_a/. Caddy
 # @end
 # gets and renews the HTTPS certificate for SITE_URL by itself.
 #

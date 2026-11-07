@@ -356,8 +356,11 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     if (zoneError) throw new Error(zoneError);
   }
 
-  // Headless: the API and the admin, no frontend service.
+  // Headless: the API and the admin, no frontend service. Templates: Django
+  // renders the site, from a `website` app in the backend; no frontend service either.
   const headless = options.frontend === "headless";
+  const djangoTemplates = options.frontend === "templates";
+  const jsFrontend = !headless && !djangoTemplates;
   const frontendTemplate = join(templates, `frontend-${options.frontend}`);
   if (!headless && !existsSync(frontendTemplate)) {
     throw new Error(`This version of the CLI has no ${options.frontend} frontend.`);
@@ -366,13 +369,14 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   mkdirSync(target, { recursive: true });
   cpSync(join(templates, "base"), target, { recursive: true });
   cpSync(join(templates, "backend"), join(target, "backend"), { recursive: true });
-  if (!headless) cpSync(frontendTemplate, join(target, "frontend"), { recursive: true });
+  const frontendDir = join(target, djangoTemplates ? "backend" : "frontend");
+  if (!headless) cpSync(frontendTemplate, frontendDir, { recursive: true });
   renameSync(join(target, "gitignore"), join(target, ".gitignore"));
   makeExecutable(target);
   // The frontend's name and links, for the project's README, AGENTS.md and SECURITY.md.
   let frontend: FrontendTemplate = { label: "Headless", url: "", security: "" };
   if (!headless) {
-    const about = join(target, "frontend", "template.json");
+    const about = join(frontendDir, "template.json");
     frontend = JSON.parse(readFileSync(about, "utf8")) as FrontendTemplate;
     rmSync(about);
   }
@@ -395,10 +399,11 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   for (const file of files) {
     if (!TEXT_EXTENSIONS.test(file)) continue;
     const text = readFileSync(file, "utf8");
-    const rendered = render(selectBlocks(text, { frontend: !headless }), values);
+    const flags = { frontend: jsFrontend, headless, templates: djangoTemplates, site: !headless };
+    const rendered = render(selectBlocks(text, flags), values);
     if (rendered !== text) writeFileSync(file, rendered);
   }
-  if (headless)
+  if (!jsFrontend)
     writeFileSync(
       join(target, "package.json"),
       headlessScripts(readFileSync(join(target, "package.json"), "utf8")),
@@ -406,7 +411,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
 
   // pnpm's settings only for pnpm; the package manager in package.json.
   if (packageManager !== "pnpm") rmSync(join(target, "frontend", "pnpm-workspace.yaml"), { force: true });
-  if (!headless && packageManager !== "npm") {
+  if (jsFrontend && packageManager !== "npm") {
     const packageJson = join(target, "frontend", "package.json");
     const manifest = JSON.parse(readFileSync(packageJson, "utf8"));
     const version = packageManager === "pnpm" ? PNPM_VERSION : BUN_VERSION;
