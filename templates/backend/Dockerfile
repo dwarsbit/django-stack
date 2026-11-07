@@ -10,9 +10,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_PROJECT_ENVIRONMENT=/venv \
     PATH="/venv/bin:$PATH"
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/uv
-# The Postgres client, for the backups (pg_dump and pg_restore).
+# The Postgres client, for the backups (pg_dump and pg_restore), from the
+# PostgreSQL apt repository: its major version must match the server's, as
+# pg_dump refuses a newer server. Change it with the database.
+ARG POSTGRES_VERSION={{postgres_version}}
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends postgresql-client \
+    && apt-get install --yes --no-install-recommends postgresql-common \
+    && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
+    && apt-get install --yes --no-install-recommends "postgresql-client-${POSTGRES_VERSION}" \
     && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system app && useradd --system --gid app --home-dir /app app
 WORKDIR /app

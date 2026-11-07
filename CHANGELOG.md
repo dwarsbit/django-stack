@@ -5,6 +5,16 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.11.0 (unreleased)
+
+- **Postgres 18.** `init --postgres latest` now generates Postgres 18,
+  with its volume at `/var/lib/postgresql`, where the image keeps a
+  directory per version. The backend image installs the Postgres client
+  from the PostgreSQL apt repository at the bundled server's major version
+  (`ARG POSTGRES_VERSION` in `backend/Dockerfile`), so backups work with
+  either. `config` refuses another Postgres version; the backups docs
+  show how to upgrade with a backup and a restore.
+
 ## 0.10.0 (2026-11-07)
 
 - **pnpm and Bun.** `init --package-manager` now generates `pnpm`, the

@@ -101,7 +101,7 @@ the defaults it does not generate yet when it is done.
 | Option | Values |
 |--------|--------|
 | `--frontend` | `astro`, `next`, `headless` (later, just the API and the admin), `templates` (later, Django templates), `nuxt`, `sveltekit` |
-| `--postgres` | `stable` (Postgres 17), `latest` (Postgres 18, later). Ignored with `--database-url`. |
+| `--postgres` | `stable` (Postgres 17), `latest` (Postgres 18). It also sets the version of the Postgres client in the backend image, for the backups. Ignored with `--database-url`. |
 | `--analytics` | `umami` (Umami, see [Page analytics](./analytics.md)), `off` |
 | `--tasks` | `huey` (a worker, with its queue where the cache is: Postgres, or Valkey with `--cache valkey`), `off` (tasks run in the request, no worker and no daily backups), `huey-valkey` (the queue in Valkey with any cache) |
 | `--cache` | `database` (a table in Postgres, nothing extra to run), `valkey` (the Valkey service), `off` (a cache per process) |
@@ -259,7 +259,8 @@ between `on` and `off`, which adds or removes the app in
 the `valkey` profile on or off. Queued tasks and
 cached values stay behind in the old place, so switch while the queue is
 empty. The other options can only be set by `init`; `config` refuses them
-with the reason.
+with the reason. For another Postgres version, see
+[Upgrade Postgres](production/backups.md#upgrade-postgres).
 
 ## `production`
 
