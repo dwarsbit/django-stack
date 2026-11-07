@@ -108,9 +108,29 @@ the defaults it does not generate yet when it is done.
 | `--notifications` | `on` (in the admin and by email, see [Notifications](./notifications.md)), `off` |
 | `--captcha` | `on` (a proof of work on the contact form, see [Captcha](./captcha.md)), `off` |
 | `--storage` | `local`, `s3` (a local S3 service in development, the same code path as S3 in production; see [Media and database](./production/media-and-database.md#s3-in-development)) |
-| `--package-manager` | `pnpm` (later), `npm`, `bun` (later). Only for a Node frontend. |
+| `--package-manager` | `pnpm` (resolves only versions published a day ago), `npm`, `bun` (installs with Bun; the frontend runs on Node.js). Only for a Node frontend. See [Package managers](#package-managers). |
 | `--media` | `server` (uploads in a volume on the server), `s3` (uploads in S3 in production; [`settings`](#settings) asks for the credentials). Asked before `--storage`, which then suggests `s3`. See [Media in S3](./production/media-and-database.md#media-in-s3). |
 | `--errors` | `email` (each new error by email to the superusers and in the admin, see [Error reports](./production/logs.md#error-reports)), `sentry` (to sentry.io with `SENTRY_DSN`, see [Sentry](./production/logs.md#sentry)), `off` (the logs only) |
+
+### Package managers
+
+`--package-manager` picks what installs the frontend's packages. `init`
+writes its lockfile through `npx` at the version the image uses, so you
+don't need the package manager on your computer, and the frontend's
+`Dockerfile` installs from that lockfile. The frontend runs on Node.js
+either way, and npm, which comes with Node.js, runs the `package.json`
+scripts in the image.
+
+| Value | What `init` writes |
+|-------|--------------------|
+| `pnpm` | `pnpm-lock.yaml`, `packageManager` in `frontend/package.json`, and `frontend/pnpm-workspace.yaml`, which resolves only versions published at least a day ago (`minimumReleaseAge`, except the `@django-stack` packages) and lists the packages that may run install scripts (`allowBuilds`). The image installs pnpm with npm. |
+| `npm` | `package-lock.json`. |
+| `bun` | `bun.lock` and `packageManager` in `frontend/package.json`. The image copies the `bun` binary from Bun's image for the install only. |
+
+`config` can't switch the package manager. To switch by hand, delete the
+lockfile (and `pnpm-workspace.yaml` when you leave pnpm), install with the
+other package manager in `frontend/`, and change the install lines of the
+`deps` stage in `frontend/Dockerfile`.
 
 ### Presets
 
@@ -209,15 +229,18 @@ It prints the output of each check that fails and exits with status 1.
 
 1. With [uv](https://docs.astral.sh/uv/) installed, upgrades `django-stack`
    in `backend/uv.lock`. `--all` upgrades every backend package.
-2. Pulls the newer images of the services (Postgres, Valkey, Caddy and the
+2. Upgrades the `@django-stack` packages in the frontend's lockfile
+   (`pnpm-lock.yaml`, `package-lock.json` or `bun.lock`) with its package
+   manager, within the ranges in `frontend/package.json`. `--all` upgrades
+   every frontend package.
+3. Pulls the newer images of the services (Postgres, Valkey, Caddy and the
    others) and rebuilds the backend and frontend images on fresh base
-   images. `--no-cache` rebuilds them from scratch, which also picks up
-   newer npm packages within the ranges in `frontend/package.json`.
-3. In development, empties the frontend's `node_modules` volume, so the
+   images. `--no-cache` rebuilds them from scratch.
+4. In development, empties the frontend's `node_modules` volume, so the
    next start uses the packages of the new image.
-4. Restarts what was running, unless you pass `--no-restart`.
+5. Restarts what was running, unless you pass `--no-restart`.
 
-Commit the changed `backend/uv.lock`. On a server, `git pull` first, then
+Commit the changed lockfiles. On a server, `git pull` first, then
 `dstack update`.
 
 ### `config`

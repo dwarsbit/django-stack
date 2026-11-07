@@ -144,9 +144,9 @@ export const STACK_OPTIONS = [
     description: "The frontend's package manager",
     bits: 3,
     values: [
-      { value: "pnpm", label: "pnpm", generated: false },
+      { value: "pnpm", label: "pnpm", hint: "with a day's delay on new releases", generated: true },
       { value: "npm", label: "npm", generated: true },
-      { value: "bun", label: "Bun", generated: false },
+      { value: "bun", label: "Bun", hint: "for installs; the frontend runs on Node.js", generated: true },
     ],
   },
   {

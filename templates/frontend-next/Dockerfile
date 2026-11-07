@@ -7,10 +7,13 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 FROM base AS deps
-COPY package.json package-lock.json* ./
+{{pm_setup}}
+COPY {{pm_manifests}} ./
 COPY vendor/ vendor/
 # No BuildKit cache mounts: Railway rejects them, and the layer is cached anyway.
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+RUN {{pm_install}}
+# The package manager only installs: npm, which comes with Node.js, runs
+# the scripts of package.json below.
 
 FROM deps AS dev
 EXPOSE 3000

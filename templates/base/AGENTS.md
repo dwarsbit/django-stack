@@ -17,7 +17,7 @@ backend/                 Django project
   content/seed.py        demo content
   content/tests/         pytest tests of the API
 frontend/                the {{frontend_label}} site; frontend/AGENTS.md lists its files
-  src/lib/headless.ts    generated API types; do not edit, run `npm run generate:types`
+  src/lib/headless.ts    generated API types; do not edit, run `{{pm_run}} generate:types`
 compose.yaml             every service; COMPOSE_PROFILES in .env picks dev or prod
 Caddyfile                the prod profile's reverse proxy and HTTPS
 .github/workflows/deploy.yml  optional deploy to a server over SSH
@@ -26,16 +26,16 @@ Caddyfile                the prod profile's reverse proxy and HTTPS
 
 ## Commands
 
-Run them at the project root. They need Docker; Node is only needed for the `npm run` shortcuts.
+Run them at the project root. They need Docker; Node is only needed for the `{{pm_run}}` shortcuts.
 
 | Task | Command |
 |------|---------|
-| Start everything | `docker compose up --build` (or `npm run dev`) |
-| Run a manage.py command | `docker compose exec backend python manage.py <command>` (or `npm run backend -- <command>`) |
+| Start everything | `docker compose up --build` (or `{{pm_run}} dev`) |
+| Run a manage.py command | `docker compose exec backend python manage.py <command>` (or `{{pm_backend}} <command>`) |
 | Make migrations after a model change | `docker compose exec backend python manage.py makemigrations` |
-| Regenerate the API types after a model change | `npm run generate:types` |
-| Run the tests | `npm test` |
-| Lint and type-check | `npm run lint` |
+| Regenerate the API types after a model change | `{{pm_run}} generate:types` |
+| Run the tests | `{{pm_run}} test` |
+| Lint and type-check | `{{pm_run}} lint` |
 | Logs | `docker compose logs --follow backend` |
 | Production settings for a server | `npx @django-stack/cli production --domain example.com` |
 
@@ -54,7 +54,7 @@ in a running container.
    `ModelStudio`.
 3. Run `makemigrations`; the backend migrates on its next start, or run
    `migrate`.
-4. Run `npm run generate:types`, then read it in the frontend as
+4. Run `{{pm_run}} generate:types`, then read it in the frontend as
    `frontend/AGENTS.md` shows.
 5. Add an API smoke test to `backend/content/tests/test_api.py`.
 

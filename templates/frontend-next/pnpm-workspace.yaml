@@ -1,0 +1,11 @@
+# pnpm's settings for the frontend (pnpm 11 and later).
+
+# Resolve only versions published at least a day ago, so a compromised
+# release is usually caught before it reaches you. DjangoStack's own
+# packages are exempt, so a project made on a release day installs.
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - "@django-stack/*"
+
+# Which dependencies may run install scripts; pnpm refuses others.
+allowBuilds: {}

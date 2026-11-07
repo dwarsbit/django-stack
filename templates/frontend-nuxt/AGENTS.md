@@ -13,7 +13,7 @@ src/pages/                   routes: /, /[...path], /blog, /blog/[slug], /catego
 src/layouts/default.vue      the page shell: menus, footer, preview banner
 src/components/              the post list and the contact form
 src/composables/             useContent() loads from server/routes/_content and follows redirects; usePageSeo() sets the SEO tags
-src/lib/headless.ts          generated API types; do not edit, run `npm run generate:types`
+src/lib/headless.ts          generated API types; do not edit, run `{{pm_run}} generate:types`
 server/routes/_content/      the content the pages load, cached in memory
 server/routes/               sitemap.xml, rss.xml, robots.txt, /preview, /revalidate
 server/utils/content.ts      getContent(): content helpers with the read-only key, drafts in preview
@@ -60,5 +60,5 @@ Run them in the `frontend` container (`docker compose exec frontend <command>`):
 
 | Task | Command |
 |------|---------|
-| Type-check | `npm run check` |
-| Test | `npm test` |
+| Type-check | `{{pm_run}} check` |
+| Test | `{{pm_run}} test` |

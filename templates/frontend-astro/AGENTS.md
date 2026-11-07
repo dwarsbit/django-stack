@@ -12,7 +12,7 @@ src/layouts/Base.astro the page shell: head, menus, footer, preview banner
 src/components/        Blocks.astro maps block types to components in components/blocks/
 src/lib/api.ts         getContent(): content helpers with the read-only key, drafts in preview
 src/lib/cache.ts       the in-memory page cache that /revalidate empties
-src/lib/headless.ts    generated API types; do not edit, run `npm run generate:types`
+src/lib/headless.ts    generated API types; do not edit, run `{{pm_run}} generate:types`
 src/middleware.ts      page cache, editor-managed redirects, security headers
 astro.config.mjs       server output, Content-Security-Policy, the dev proxy to Django
 ```
@@ -39,5 +39,5 @@ Run them in the `frontend` container (`docker compose exec frontend <command>`):
 
 | Task | Command |
 |------|---------|
-| Type-check | `npm run check` |
-| Test | `npm test` |
+| Type-check | `{{pm_run}} check` |
+| Test | `{{pm_run}} test` |

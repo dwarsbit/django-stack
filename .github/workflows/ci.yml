@@ -91,6 +91,18 @@ jobs:
             script: scripts/e2e.sh
             project: e2e-site
             cache: valkey
+          # The frontend installed with npm and with Bun instead of pnpm,
+          # in production images.
+          - frontend: nuxt
+            profile: prod-npm
+            script: scripts/e2e-prod.sh
+            project: prod-site
+            package-manager: npm
+          - frontend: sveltekit
+            profile: prod-bun
+            script: scripts/e2e-prod.sh
+            project: prod-site
+            package-manager: bun
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v5
@@ -108,6 +120,7 @@ jobs:
           FRONTEND: ${{ matrix.frontend }}
           LOCAL_S3: ${{ matrix.profile == 'dev' && '1' || '' }}
           CACHE: ${{ matrix.cache || '' }}
+          PACKAGE_MANAGER: ${{ matrix.package-manager || '' }}
       - name: Logs
         if: failure()
         run: docker compose --project-directory "$RUNNER_TEMP/${{ matrix.project }}" logs --tail 200

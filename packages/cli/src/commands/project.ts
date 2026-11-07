@@ -22,7 +22,7 @@ import {
   readProject,
   runningServices,
 } from "../project";
-import { setNotificationsApp } from "../scaffold";
+import { frontendPackageManager, setNotificationsApp, updateFrontendLock } from "../scaffold";
 import { encodePreset, PROMPT_ORDER, type Stack, stackOption } from "../stack";
 import { dockerNotRunning, dockerRunning } from "../tools";
 import { command, fail, has, intro, isInteractive, logCheck, secret, unwrap, url } from "../ui";
@@ -353,6 +353,15 @@ export async function update(
     p.log.success(options.all ? "Updated backend/uv.lock" : "Updated django-stack in backend/uv.lock");
   } else if (existsSync(lock)) {
     p.log.warn("uv is not installed, so backend/uv.lock stays as it is: https://docs.astral.sh/uv/");
+  }
+  if (frontendPackageManager(project.directory)) {
+    const lockfile = updateFrontendLock(project.directory, options.all);
+    if (!lockfile) fail("The package manager could not update the frontend's lockfile.");
+    p.log.success(
+      options.all
+        ? `Updated frontend/${lockfile}`
+        : `Updated the @django-stack packages in frontend/${lockfile}`,
+    );
   }
 
   for (const target of targets) {

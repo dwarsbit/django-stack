@@ -6,10 +6,13 @@ FROM node:22-alpine AS base
 WORKDIR /app
 
 FROM base AS deps
-COPY package.json package-lock.json* ./
+{{pm_setup}}
+COPY {{pm_manifests}} ./
 COPY vendor/ vendor/
 # No BuildKit cache mounts: Railway rejects them, and the layer is cached anyway.
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+RUN {{pm_install}}
+# The package manager only installs: npm, which comes with Node.js, runs
+# the scripts of package.json below.
 
 FROM deps AS dev
 EXPOSE 3000
@@ -17,7 +20,7 @@ CMD ["npm", "run", "dev"]
 
 FROM deps AS build
 COPY . .
-RUN npm run build && npm prune --omit=dev
+RUN npm run build && {{pm_prune}}
 
 FROM base AS prod
 # The proxy in front sets X-Forwarded-Proto, so links and cookies use https.
