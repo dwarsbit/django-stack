@@ -346,7 +346,9 @@ describe("scaffold", () => {
       expect(readFileSync(join(directory, file), "utf8"), file).not.toMatch(/@if|@end/);
     }
     expect(readFileSync(join(directory, "compose.yaml"), "utf8")).toContain("frontend-prod:");
-    expect(readFileSync(join(directory, "backend", "config", "urls.py"), "utf8")).not.toContain("django_stack.start");
+    expect(readFileSync(join(directory, "backend", "config", "urls.py"), "utf8")).not.toContain(
+      "django_stack.start",
+    );
   });
 
   it.each([
