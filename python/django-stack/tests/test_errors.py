@@ -23,7 +23,7 @@ def test_reports_errors_in_production_only():
     assert "errors" not in logging_for({"DJANGO_DEBUG": "1"})["root"]["handlers"]
     assert "errors" not in logging_for({"ERRORS": "off"})["root"]["handlers"]
     with pytest.raises(ImproperlyConfigured):
-        logging_for({"ERRORS": "sentry"})
+        logging_for({"ERRORS": "bugsnag"})
 
 
 def failing_record(message="Internal Server Error: /api/x"):

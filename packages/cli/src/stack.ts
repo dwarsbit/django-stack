@@ -173,7 +173,7 @@ export const STACK_OPTIONS = [
     bits: 2,
     values: [
       { value: "email", label: "Email", hint: "to the superusers, and in the admin", generated: true },
-      { value: "sentry", label: "Sentry", hint: "or GlitchTip, with SENTRY_DSN", generated: false },
+      { value: "sentry", label: "Sentry", hint: "sentry.io, with SENTRY_DSN", generated: true },
       { value: "off", label: "Off", hint: "the logs only", generated: true },
     ],
   },

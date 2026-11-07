@@ -5,6 +5,16 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.10.0 (unreleased)
+
+- **Error reports to Sentry.** `init --errors sentry` (and `ERRORS=sentry`
+  in `.env`) sends the errors of the backend and the worker, and every
+  line logged at `ERROR`, to the sentry.io project of `SENTRY_DSN`,
+  tagged with the request ID and without personal data.
+  `SENTRY_ENVIRONMENT` names the environment (`production` by default)
+  and `SENTRY_TRACES_SAMPLE_RATE` (0 to 1) also sends performance traces.
+  The `server` extra of `django-stack` now includes `sentry-sdk`.
+
 ## 0.9.0 (2026-11-07)
 
 - **System page in the admin.** Superusers get **System** in the user

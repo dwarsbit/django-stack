@@ -28,7 +28,7 @@ from content_studio.form import ButtonLink
 from django.apps import apps
 from django.utils.translation import gettext_lazy as _
 
-from . import errors, health
+from . import conf, errors, health
 from .preview import preview_url
 
 
@@ -130,7 +130,8 @@ class SystemPage(DashboardPage):
 
     def __init__(self, path: str | None = None, **kwargs):
         widgets = [SystemStatusWidget()]
-        if apps.is_installed("content_studio.notifications"):
+        # Error reports by email are also notifications; Sentry has its own page.
+        if apps.is_installed("content_studio.notifications") and conf.get("ERRORS") == "email":
             widgets.append(RecentErrorsWidget())
         super().__init__(path=path, dashboard=Dashboard(widgets=widgets), **kwargs)
 
