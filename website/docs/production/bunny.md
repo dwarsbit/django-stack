@@ -28,7 +28,7 @@ for the domain.
 | Service | On Bunny |
 |---------|----------|
 | `proxy` | Caddy with the project's `Caddyfile` copied into the image, the app's only public endpoint |
-| `backend-prod`, `worker-prod`, `frontend-prod` | The production images, built for `linux/amd64` and pushed to Bunny Container Registry |
+| `backend-prod`, `worker-prod`, `frontend-prod` | The production images, built for `linux/amd64` and pushed to a private package on GitHub Container Registry |
 | `db` | Postgres from Docker Hub with the `pgdata` volume |
 | `cache` | Valkey from Docker Hub, without a volume, with the `valkey` profile only |
 
@@ -56,8 +56,13 @@ You need a bunny.net account with a payment card, Docker with `buildx` on
 your machine and an S3 bucket for uploads and backups.
 
 1. Copy the account API key from
-   [dash.bunny.net/account/api-key](https://dash.bunny.net/account/api-key).
-   The same key logs in to Bunny Container Registry.
+   [dash.bunny.net/account/api-key](https://dash.bunny.net/account/api-key),
+   and create a GitHub token (classic) with the `write:packages` scope at
+   [github.com/settings/tokens](https://github.com/settings/tokens/new?scopes=write:packages&description=dstack).
+   The CLI pushes the images to `ghcr.io/<owner>` with the token, and adds
+   it to Magic Containers as a private GitHub registry, so Bunny can pull
+   them. It keeps the token in the system keychain; in CI, set
+   `DSTACK_GHCR_TOKEN`.
 2. Write the settings for the domain, with S3:
 
    ```bash
@@ -68,7 +73,8 @@ your machine and an S3 bucket for uploads and backups.
    Then fill in `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`,
    `S3_ENDPOINT_URL` and `BACKUP_S3_BUCKET` in `.env.production`.
 3. Commit your work: the CLI builds the last commit.
-4. Set up the app. It asks for the API key and the region, builds and
+4. Set up the app. It asks for the API key, the GitHub owner and token
+   and the region, builds and
    pushes the images, creates the app, adds the domain to the app's CDN
    pull zone and prints the DNS record to add:
 
@@ -100,7 +106,9 @@ dashboard, under the app; `dstack deploy status` links to it.
 |--------------------------|-------------|
 | `--region <region>` | The region of the app, such as `DE`. Default: the one Bunny picks as closest. |
 | `--volume-size <GB>` | The size of the database volume, from 1 to 100 GB. Default: 10. It can grow later, not shrink. |
-| `--account <id>` | The account id, the namespace in Bunny Container Registry. Asked for when Bunny does not list it. |
+| `--registry <registry>` | Where the images are pushed: `ghcr` (GitHub Container Registry, the default) or `bunny` (Bunny Container Registry, in preview, which logs in with the account API key). |
+| `--ghcr-owner <owner>` | The GitHub user or organization of the images on ghcr.io. Asked for when it is not given. |
+| `--account <id>` | With `--registry bunny`, the account id, the namespace in Bunny Container Registry. Asked for when Bunny does not list it. |
 
 ## Variables
 

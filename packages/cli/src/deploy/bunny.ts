@@ -20,6 +20,7 @@ import {
   type ProbePlan,
   planApp,
 } from "./bunny-compose";
+import { getToken, saveToken } from "./credentials";
 import { uncommittedReason } from "./link";
 import type {
   AppState,
@@ -38,19 +39,37 @@ import { deployId, envValue, type RunResult } from "./ssh";
  * API at https://api.bunny.net/mc with the account API key in the AccessKey
  * header. Bunny has no Compose: the CLI reads the resolved compose.yaml,
  * builds the images of the local commit for linux/amd64, pushes them to
- * Bunny Container Registry and creates one app whose containers are the
+ * GitHub Container Registry (ghcr.io, a private package that Bunny pulls
+ * with a GitHub token) or Bunny Container Registry, and creates one app whose containers are the
  * production services, in one pod on localhost. A CDN endpoint on the
  * proxy carries the site's domain; Bunny's CDN holds the certificate, so
  * Caddy serves plain HTTP on port 80. A deploy pushes new images tagged with
  * the commit and changes the containers' tags, which starts Bunny's rolling
  * update.
  *
- * Link ids: project = the app id, environment = the account's registry
- * namespace, application = the CDN pull zone id.
+ * Link ids: project = the app id, environment = where the images are pushed
+ * (ghcr.io/<owner>, or the Bunny account id for Bunny Container Registry),
+ * application = the CDN pull zone id.
  */
 
 export const BUNNY_API = "https://api.bunny.net";
 export const BUNNY_REGISTRY = "registry.bunny.net";
+export const GHCR = "ghcr.io";
+/** Where the GitHub token for ghcr.io is read from in CI. */
+export const GHCR_TOKEN_ENV = "DSTACK_GHCR_TOKEN";
+
+/** Where a project's images go: a registry host and the namespace in it. */
+export interface PushTarget {
+  host: string;
+  namespace: string;
+}
+
+/** The push target of a link's environment: ghcr.io/<owner>, or a bare Bunny account id. */
+export function pushTarget(environment: string): PushTarget {
+  const slash = environment.indexOf("/");
+  if (slash === -1) return { host: BUNNY_REGISTRY, namespace: environment };
+  return { host: environment.slice(0, slash), namespace: environment.slice(slash + 1) };
+}
 
 /** Variables that put Caddy behind Bunny's CDN. TRUSTED_PROXIES is Bunny's edge list, set in setup. */
 export const BUNNY_PLATFORM_ENV: Record<string, string> = {
@@ -299,12 +318,14 @@ export function registryKind(item: Record<string, unknown>): keyof Registries | 
 export interface Registries {
   dockerHub: string;
   gitHub?: string;
-  bunny: string;
+  bunny?: string;
 }
 
 export interface AppRequestOptions {
   registries: Registries;
-  /** The account's namespace in Bunny Container Registry. */
+  /** The Bunny id of the registry the project's own images are pushed to. */
+  pushRegistry: string;
+  /** The namespace of the pushed images: the GitHub owner or the Bunny account id. */
   namespace: string;
   tag: string;
   region: string;
@@ -319,7 +340,7 @@ export function imageFields(
   const { image } = container;
   if (image.source === "push")
     return {
-      imageRegistryId: options.registries.bunny,
+      imageRegistryId: options.pushRegistry,
       imageNamespace: options.namespace,
       imageName: image.repository,
       imageTag: options.tag,
@@ -464,7 +485,16 @@ export interface BunnyClientOptions {
   now?: () => Date;
   /** Reads a file that compose.yaml bind-mounts. */
   readFile?: (path: string) => string;
+  /** Reads and saves the GitHub token for ghcr.io, per owner. */
+  ghcrToken?: { get(owner: string): string | undefined; save(owner: string, token: string): void };
 }
+
+const savedGhcrToken = {
+  get: (owner: string) => getToken("ghcr", owner, GHCR_TOKEN_ENV)?.token,
+  save: (owner: string, token: string) => {
+    if (!process.env[GHCR_TOKEN_ENV]) saveToken("ghcr", owner, token);
+  },
+};
 
 export class BunnyClient implements ProviderClient {
   readonly api: BunnyApi;
@@ -473,6 +503,7 @@ export class BunnyClient implements ProviderClient {
   private readonly now: () => Date;
   private readonly readFile: (path: string) => string;
   private readonly edgeServersImpl: () => Promise<string[]>;
+  private readonly ghcrToken: NonNullable<BunnyClientOptions["ghcrToken"]>;
 
   constructor(
     token: string,
@@ -485,6 +516,7 @@ export class BunnyClient implements ProviderClient {
     this.now = options.now ?? (() => new Date());
     this.readFile = options.readFile ?? ((path) => readFileSync(path, "utf8"));
     this.edgeServersImpl = options.edgeServers ?? (() => this.defaultEdgeServers());
+    this.ghcrToken = options.ghcrToken ?? savedGhcrToken;
   }
 
   async verify(): Promise<string> {
@@ -548,8 +580,19 @@ export class BunnyClient implements ProviderClient {
     return planApp(project, { readFile: this.readFile });
   }
 
-  /** Builds an image for linux/amd64 and pushes it to Bunny Container Registry. */
-  private async buildAndPush(build: ImageBuild, reference: string, directory: string) {
+  /** The login for a push target: the API key for Bunny, the saved GitHub token for ghcr.io. */
+  private pushLogin(target: PushTarget): { username: string; password: string } {
+    if (target.host === BUNNY_REGISTRY) return { username: "token", password: this.token };
+    const password = this.ghcrToken.get(target.namespace);
+    if (!password)
+      throw new Error(
+        `No GitHub token for ${target.host}/${target.namespace}. Set ${GHCR_TOKEN_ENV}, or run dstack deploy setup --force.`,
+      );
+    return { username: target.namespace, password };
+  }
+
+  /** Builds an image for linux/amd64 and pushes it with a throwaway Docker login. */
+  private async buildAndPush(build: ImageBuild, reference: string, directory: string, target: PushTarget) {
     if (build.kind === "build") {
       await this.docker(
         [
@@ -582,9 +625,10 @@ export class BunnyClient implements ProviderClient {
     // Log in with a throwaway Docker config, so the API key is not left in ~/.docker.
     const config = mkdtempSync(join(tmpdir(), "dstack-docker-"));
     try {
-      await this.docker(["login", BUNNY_REGISTRY, "--username", "token", "--password-stdin"], {
+      const login = this.pushLogin(target);
+      await this.docker(["login", target.host, "--username", login.username, "--password-stdin"], {
         env: { DOCKER_CONFIG: config },
-        input: this.token,
+        input: login.password,
       });
       await this.docker(["push", reference], { env: { DOCKER_CONFIG: config }, stream: true });
     } finally {
@@ -596,7 +640,7 @@ export class BunnyClient implements ProviderClient {
   private async pushImages(
     directory: string,
     env: Record<string, string>,
-    namespace: string,
+    target: PushTarget,
     tag: string,
     log: (line: string) => void,
   ): Promise<AppPlan> {
@@ -605,9 +649,9 @@ export class BunnyClient implements ProviderClient {
       // .env.production is not in the commit; Compose reads it from the variables.
       const plan = await this.plan(checkout, env);
       for (const build of plan.builds) {
-        const reference = `${BUNNY_REGISTRY}/${namespace}/${build.repository}:${tag}`;
+        const reference = `${target.host}/${target.namespace}/${build.repository}:${tag}`;
         log(`Building and pushing ${reference}`);
-        await this.buildAndPush(build, reference, checkout);
+        await this.buildAndPush(build, reference, checkout, target);
       }
       return plan;
     } finally {
@@ -617,10 +661,17 @@ export class BunnyClient implements ProviderClient {
 
   // Bunny resources ------------------------------------------------------------
 
-  async registries(): Promise<{ registries: Partial<Registries>; namespace?: string; listed: string[] }> {
+  async registries(): Promise<{
+    registries: Partial<Registries>;
+    namespace?: string;
+    /** Registries with a GitHub login, for private ghcr.io packages. */
+    privateGitHub: { id: string; userName?: string }[];
+    listed: string[];
+  }> {
     const list = listOf(await this.api.mc("GET", "/registries"));
     const registries: Partial<Registries> = {};
     let namespace: string | undefined;
+    const privateGitHub: { id: string; userName?: string }[] = [];
     const listed: string[] = [];
     // Public registries first, so a private Docker Hub login is only a fallback.
     const ordered = [...list].sort((a, b) => Number(b.isPublic === true) - Number(a.isPublic === true));
@@ -629,6 +680,8 @@ export class BunnyClient implements ProviderClient {
       if (!id) continue;
       const kind = registryKind(item);
       listed.push(text(item.displayName) ?? text(item.hostName) ?? id);
+      if (kind === "gitHub" && item.isPublic !== true && text(item.userName))
+        privateGitHub.push({ id, userName: text(item.userName)?.toLowerCase() });
       if (kind === "dockerHub" && !registries.dockerHub) registries.dockerHub = id;
       else if (kind === "gitHub" && !registries.gitHub) registries.gitHub = id;
       else if (kind === "bunny" && !registries.bunny) {
@@ -636,25 +689,54 @@ export class BunnyClient implements ProviderClient {
         namespace = text(item.namespace ?? item.accountId ?? item.userName ?? item.username);
       }
     }
-    return { registries, namespace, listed };
+    return { registries, namespace, privateGitHub, listed };
   }
 
-  private async ensureRegistries(): Promise<{ registries: Registries; namespace?: string }> {
+  /** Adds a registry to Magic Containers; returns its id. */
+  private async addRegistry(body: Json, name: string): Promise<string> {
+    const created = await this.api.mc<Json>("POST", "/registries", body);
+    const id = text(created?.id) ?? text(findKey(created, /^id$/i));
+    if (!id || (created?.status && created.status !== "saved")) {
+      const reason = text(created?.error) ?? text(created?.status);
+      throw new Error(`Could not add ${name} to Magic Containers${reason ? `: ${reason}` : "."}`);
+    }
+    return id;
+  }
+
+  /**
+   * The registries for setup: the public Docker Hub and GitHub, and the one
+   * the project's images are pushed to, added to Bunny when missing.
+   */
+  private async ensureRegistries(
+    push: { kind: "bunny" } | { kind: "ghcr"; owner: string; token: string },
+  ): Promise<{ registries: Registries; pushRegistry: string; namespace?: string }> {
     const found = await this.registries();
     if (!found.registries.dockerHub)
       throw new Error(
         `Could not find the public Docker Hub registry among the registries Bunny returned (${found.listed.join(", ") || "none"}). Please report this at https://github.com/dwarsbit/django-stack/issues.`,
       );
-    if (!found.registries.bunny) {
-      const created = await this.api.mc<Json>("POST", "/registries", {
-        displayName: "Bunny Container Registry",
-        type: "bunnyRegistry",
-      });
-      const id = text(created?.id) ?? text(findKey(created, /^id$/i));
-      if (!id) throw new Error("Could not add Bunny Container Registry to Magic Containers.");
-      found.registries.bunny = id;
+    const registries = found.registries as Registries;
+    if (push.kind === "ghcr") {
+      const existing = found.privateGitHub.find((item) => item.userName === push.owner);
+      const pushRegistry =
+        existing?.id ??
+        (await this.addRegistry(
+          {
+            displayName: `GitHub ${push.owner}`.slice(0, 50),
+            type: "gitHub",
+            passwordCredentials: { userName: push.owner, password: push.token },
+          },
+          `the GitHub registry of ${push.owner}`,
+        ));
+      return { registries, pushRegistry, namespace: push.owner };
     }
-    return { registries: found.registries as Registries, namespace: found.namespace };
+    const pushRegistry =
+      registries.bunny ??
+      (await this.addRegistry(
+        { displayName: "Bunny Container Registry", type: "bunnyRegistry" },
+        "Bunny Container Registry",
+      ));
+    return { registries: { ...registries, bunny: pushRegistry }, pushRegistry, namespace: found.namespace };
   }
 
   async app(link: DeployLink): Promise<Json> {
@@ -810,15 +892,52 @@ export class BunnyClient implements ProviderClient {
         `Bunny runs the app in a gVisor sandbox; not applied from compose.yaml: ${local.ignored.join(", ")}`,
       );
 
-    const { registries, namespace: found } = await this.ensureRegistries();
-    let namespace = options.account ?? found;
-    if (!namespace)
-      namespace = (
-        await ask.text("Bunny account id (Magic Containers › Image Registries, or bunny whoami)", {
-          placeholder: "123456",
-        })
-      ).trim();
-    if (!/^[\w.-]+$/.test(namespace)) throw new Error(`${namespace} is not a Bunny account id.`);
+    const registry = await ask.select(
+      "Image registry",
+      [
+        { value: "ghcr", label: "GitHub Container Registry (ghcr.io)", hint: "a private package" },
+        { value: "bunny", label: "Bunny Container Registry", hint: "in preview" },
+      ],
+      options.registry ?? (options.account ? "bunny" : "ghcr"),
+    );
+    if (registry !== "ghcr" && registry !== "bunny") throw new Error("Give --registry ghcr or bunny.");
+    let target: PushTarget;
+    let registries: Registries;
+    let pushRegistry: string;
+    if (registry === "ghcr") {
+      const owner = (
+        options.ghcrOwner ??
+        (await ask.text("GitHub user or organization that owns the images", { placeholder: "octocat" }))
+      )
+        .trim()
+        .toLowerCase();
+      if (!/^[a-z\d](?:[a-z\d-]{0,38})$/.test(owner))
+        throw new Error(`${owner} is not a GitHub user or organization.`);
+      let token = this.ghcrToken.get(owner);
+      if (!token) {
+        if (!ask.password)
+          throw new Error(`Set ${GHCR_TOKEN_ENV} to a GitHub token with the write:packages scope.`);
+        ask.step(
+          "Create a GitHub token (classic) with the write:packages scope at https://github.com/settings/tokens/new?scopes=write:packages&description=dstack. dstack pushes with it, and Bunny pulls with it.",
+        );
+        token = (await ask.password("GitHub token")).trim();
+      }
+      ({ registries, pushRegistry } = await this.ensureRegistries({ kind: "ghcr", owner, token }));
+      this.ghcrToken.save(owner, token);
+      target = { host: GHCR, namespace: owner };
+    } else {
+      const found = await this.ensureRegistries({ kind: "bunny" });
+      ({ registries, pushRegistry } = found);
+      let namespace = options.account ?? found.namespace;
+      if (!namespace)
+        namespace = (
+          await ask.text("Bunny account id (Magic Containers › Image Registries, or bunny whoami)", {
+            placeholder: "123456",
+          })
+        ).trim();
+      if (!/^[\w.-]+$/.test(namespace)) throw new Error(`${namespace} is not a Bunny account id.`);
+      target = { host: BUNNY_REGISTRY, namespace };
+    }
 
     let region = options.region;
     if (!region) {
@@ -838,7 +957,7 @@ export class BunnyClient implements ProviderClient {
     if (uncommitted)
       ask.step(`Building the last commit, ${commit}: ${uncommitted.replace(/ Commit first\.$/, "")}`);
     const log: string[] = [];
-    const plan = await this.pushImages(directory, env, namespace, commit, (line) => {
+    const plan = await this.pushImages(directory, env, target, commit, (line) => {
       log.push(line);
       ask.step(line);
     });
@@ -846,7 +965,14 @@ export class BunnyClient implements ProviderClient {
     const created = await this.api.mc<Json>(
       "POST",
       "/apps",
-      appRequest(plan, { registries, namespace, tag: commit, region, volumeSize }),
+      appRequest(plan, {
+        registries,
+        pushRegistry,
+        namespace: target.namespace,
+        tag: commit,
+        region,
+        volumeSize,
+      }),
     );
     const appId = text(created?.id);
     if (!appId) throw new Error("Bunny created the app but returned no id.");
@@ -864,9 +990,9 @@ export class BunnyClient implements ProviderClient {
         `Bunny has not created the CDN endpoint of app ${appId} yet. Run dstack deploy setup --force later.`,
       );
     await this.setupPullZone(zone, context.domain, ask.step);
-    const target = await this.cname(zone);
+    const cname = await this.cname(zone);
     ask.step(
-      `Add this DNS record: ${context.domain} CNAME ${target ?? "the pull zone's b-cdn.net address"}${
+      `Add this DNS record: ${context.domain} CNAME ${cname ?? "the pull zone's b-cdn.net address"}${
         context.domain.split(".").length === 2
           ? " (an apex domain needs Bunny DNS, or use www and redirect)"
           : ""
@@ -878,7 +1004,11 @@ export class BunnyClient implements ProviderClient {
       { id: deployId(this.now(), commit), tag: commit, commit, message, createdAt: this.now().toISOString() },
       log,
     );
-    return { project: appId, environment: namespace, application: zone };
+    return {
+      project: appId,
+      environment: target.host === BUNNY_REGISTRY ? target.namespace : `${target.host}/${target.namespace}`,
+      application: zone,
+    };
   }
 
   async pushEnv(link: DeployLink, env: Record<string, string>): Promise<void> {
@@ -930,7 +1060,7 @@ export class BunnyClient implements ProviderClient {
           log.push(`The app already runs ${commit}; nothing to deploy. Pass --force to restart it.`);
         }
       } else {
-        await this.pushImages(directory, env, link.environment, commit, (line) => {
+        await this.pushImages(directory, env, pushTarget(link.environment), commit, (line) => {
           log.push(line);
           process.stderr.write(`${line}\n`);
         });
@@ -1094,9 +1224,9 @@ function missingContainer(name: string): string {
   return `The app on Bunny has no container ${name}. compose.yaml changed since setup: run dstack deploy setup --force to create the app again.`;
 }
 
-/** Whether a Bunny container runs an image this project pushes: one in the account's namespace. */
+/** Whether a Bunny container runs an image this project pushes: one in the push namespace. */
 function isPushed(container: BunnyContainer, link: DeployLink): boolean {
-  return container.imageNamespace === link.environment;
+  return container.imageNamespace?.toLowerCase() === pushTarget(link.environment).namespace.toLowerCase();
 }
 
 /** The project directory, where the deploy records are. */
@@ -1138,8 +1268,7 @@ export const bunny: DeployProvider = {
   auth: {
     kind: "token",
     env: "DSTACK_BUNNY_TOKEN",
-    help: () =>
-      "Copy the API key of your bunny.net account from https://dash.bunny.net/account/api-key. It also logs in to Bunny Container Registry.",
+    help: () => "Copy the API key of your bunny.net account from https://dash.bunny.net/account/api-key.",
   },
   source: "local",
   target: {
@@ -1152,6 +1281,8 @@ export const bunny: DeployProvider = {
   setupFlags: [
     { name: "region", description: "Bunny: the region of the app, such as DE (default: the closest)" },
     { name: "volumeSize", description: "Bunny: the size of the database volume in GB (default: 10)" },
+    { name: "registry", description: "Bunny: where the images are pushed, ghcr or bunny (default: ghcr)" },
+    { name: "ghcrOwner", description: "Bunny: the GitHub user or organization of the ghcr.io images" },
     { name: "account", description: "Bunny: the account id, the namespace in Bunny Container Registry" },
   ],
   printsDns: true,

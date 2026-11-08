@@ -5,6 +5,17 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.3 (unreleased)
+
+- **Bunny deploys push to GitHub Container Registry.** Bunny Container
+  Registry, in preview, refused the account API key at `docker login`.
+  `dstack deploy setup --provider bunny` now pushes the images to a
+  private package on `ghcr.io/<owner>` with a GitHub token
+  (`write:packages`), and adds the token to Magic Containers as a private
+  GitHub registry so Bunny can pull them. `--registry bunny` keeps Bunny
+  Container Registry. The token is kept in the system keychain, or read
+  from `DSTACK_GHCR_TOKEN`. An app set up before keeps its registry.
+
 ## 0.12.2 (2026-11-08)
 
 - **Bunny deploy finds the public Docker Hub registry.** `dstack deploy
