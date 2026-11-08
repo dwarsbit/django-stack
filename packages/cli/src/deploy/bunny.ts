@@ -274,6 +274,28 @@ function probeRequest(probe: ProbePlan, failureThreshold: number) {
   };
 }
 
+/**
+ * Which registry a Magic Containers registry is. Bunny returns no type, so
+ * this goes by the host name, and by the display name or a type field when
+ * there is no host name. Public Docker Hub and GitHub are built in.
+ */
+export function registryKind(item: Record<string, unknown>): keyof Registries | undefined {
+  const host = (text(item.hostName) ?? text(item.host) ?? text(item.url) ?? "").toLowerCase();
+  const label = `${text(item.type) ?? ""} ${text(item.displayName) ?? ""}`
+    .toLowerCase()
+    .replace(/[\s_-]/g, "");
+  if (host) {
+    if (/(^|\.|\/)(docker\.io|docker\.com)(\/|$)/.test(host)) return "dockerHub";
+    if (/(^|\.|\/)ghcr\.io(\/|$)/.test(host)) return "gitHub";
+    if (/(^|\.|\/)bunny\.net(\/|$)/.test(host)) return "bunny";
+    return undefined;
+  }
+  if (label.includes("dockerhub")) return "dockerHub";
+  if (label.includes("github") || label.includes("ghcr")) return "gitHub";
+  if (label.includes("bunny")) return "bunny";
+  return undefined;
+}
+
 export interface Registries {
   dockerHub: string;
   gitHub?: string;
@@ -595,29 +617,33 @@ export class BunnyClient implements ProviderClient {
 
   // Bunny resources ------------------------------------------------------------
 
-  async registries(): Promise<{ registries: Partial<Registries>; namespace?: string }> {
+  async registries(): Promise<{ registries: Partial<Registries>; namespace?: string; listed: string[] }> {
     const list = listOf(await this.api.mc("GET", "/registries"));
     const registries: Partial<Registries> = {};
     let namespace: string | undefined;
-    for (const item of list) {
-      const type = (text(item.type) ?? "").toLowerCase();
+    const listed: string[] = [];
+    // Public registries first, so a private Docker Hub login is only a fallback.
+    const ordered = [...list].sort((a, b) => Number(b.isPublic === true) - Number(a.isPublic === true));
+    for (const item of ordered) {
       const id = text(item.id);
       if (!id) continue;
-      if (type === "dockerhub" && !registries.dockerHub) registries.dockerHub = id;
-      else if (type === "github" && !registries.gitHub) registries.gitHub = id;
-      else if ((type === "bunnyregistry" || type === "bunny") && !registries.bunny) {
+      const kind = registryKind(item);
+      listed.push(text(item.displayName) ?? text(item.hostName) ?? id);
+      if (kind === "dockerHub" && !registries.dockerHub) registries.dockerHub = id;
+      else if (kind === "gitHub" && !registries.gitHub) registries.gitHub = id;
+      else if (kind === "bunny" && !registries.bunny) {
         registries.bunny = id;
         namespace = text(item.namespace ?? item.accountId ?? item.userName ?? item.username);
       }
     }
-    return { registries, namespace };
+    return { registries, namespace, listed };
   }
 
   private async ensureRegistries(): Promise<{ registries: Registries; namespace?: string }> {
     const found = await this.registries();
     if (!found.registries.dockerHub)
       throw new Error(
-        "Bunny lists no public Docker Hub registry for this account. Check Magic Containers › Image Registries.",
+        `Could not find the public Docker Hub registry among the registries Bunny returned (${found.listed.join(", ") || "none"}). Please report this at https://github.com/dwarsbit/django-stack/issues.`,
       );
     if (!found.registries.bunny) {
       const created = await this.api.mc<Json>("POST", "/registries", {

@@ -14,6 +14,7 @@ import {
   durationSeconds,
   parsePublicImage,
   planApp,
+  registryKind,
   rewriteHosts,
 } from "../src/deploy";
 
@@ -291,6 +292,38 @@ const link = {
 };
 
 describe("BunnyClient", () => {
+  it("finds the built-in registries by host name", async () => {
+    expect(registryKind({ hostName: "docker.io", isPublic: true })).toBe("dockerHub");
+    expect(registryKind({ hostName: "registry-1.docker.io" })).toBe("dockerHub");
+    expect(registryKind({ hostName: "ghcr.io", isPublic: true })).toBe("gitHub");
+    expect(registryKind({ hostName: "registry.bunny.net" })).toBe("bunny");
+    expect(registryKind({ hostName: "quay.io" })).toBeUndefined();
+    expect(registryKind({ displayName: "Docker Hub" })).toBe("dockerHub");
+    const { client } = fakeBunny(
+      {
+        "GET /mc/registries": () => ({
+          items: [
+            { id: 4, displayName: "My Docker Hub", hostName: "docker.io", isPublic: false },
+            { id: 2, displayName: "GitHub", hostName: "ghcr.io", isPublic: true, isPlatformManaged: true },
+            {
+              id: 1,
+              displayName: "Docker Hub",
+              hostName: "docker.io",
+              isPublic: true,
+              isPlatformManaged: true,
+            },
+            { id: 9, displayName: "Bunny", hostName: "registry.bunny.net", accountId: "123" },
+          ],
+        }),
+      },
+      fakeRunner().run,
+    );
+    expect(await client.registries()).toMatchObject({
+      registries: { dockerHub: "1", gitHub: "2", bunny: "9" },
+      namespace: "123",
+    });
+  });
+
   it("sends the API key", async () => {
     const { calls, client } = fakeBunny(
       { "GET /mc/apps": () => ({ items: [{ id: "a" }] }) },
@@ -315,8 +348,8 @@ describe("BunnyClient", () => {
     const { calls, client } = fakeBunny(
       {
         "GET /mc/registries": () => [
-          { id: 1, type: "dockerHub", displayName: "Docker Hub" },
-          { id: 9, type: "bunnyRegistry", displayName: "Bunny" },
+          { id: 1, displayName: "Docker Hub", hostName: "docker.io", isPublic: true },
+          { id: 9, displayName: "Bunny", hostName: "registry.bunny.net" },
         ],
         "GET /mc/regions/optimal": () => ({ id: "DE" }),
         "GET /mc/regions": () => [{ id: "DE", name: "Frankfurt" }],
