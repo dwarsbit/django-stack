@@ -19,6 +19,28 @@ There is no Node and no frontend service: the pages read the content with
 the ORM.
 <!-- @end -->
 
+## Skills
+
+Django Headless and Django Content Studio each publish an agent skill. Read the skill before you change what it
+covers, and use the options it shows instead of writing your own
+serializers, views or admin code:
+
+- Django Headless, for the API (`@expose()`, permissions, filters, the
+  TypeScript client):
+  https://raw.githubusercontent.com/dwarsbit/django-headless/main/skills/django-headless/SKILL.md
+- Django Content Studio, for the admin (`ModelStudio`, the edit page,
+  widgets, the dashboard, the media library):
+  https://djangocontentstudio.org/skills/django-content-studio/SKILL.md
+
+Their full documentation is available as Markdown at
+https://djangoheadless.org/llms.txt and
+https://djangocontentstudio.org/llms.txt. If a skill is installed in your
+skills folder, such as `.claude/skills/`, it takes the place of the link.
+
+The skills follow the latest release; `backend/uv.lock` pins the installed
+one. When a skill shows an option the project does not have, upgrade both
+packages with `npx @django-stack/cli update` instead of working around it.
+
 ## Layout
 
 ```

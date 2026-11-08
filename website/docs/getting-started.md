@@ -31,7 +31,10 @@ content, and creates `my-site` with:
   `--frontend headless` has no site at all;
 - `compose.yaml`, which runs both with Postgres and Mailpit;
 - `.env` with fresh secrets for this project, and `.env.example` with the
-  same names and no values.
+  same names and no values;
+- `AGENTS.md` and `CLAUDE.md` for AI coding agents: the layout, the
+  commands, the rules, and links to the agent skills of Django Headless
+  and Django Content Studio.
 
 Every prompt has a flag, so the command also runs in scripts:
 
@@ -108,6 +111,30 @@ After a model change, update the frontend's API types:
 ```bash
 dstack types
 ```
+
+### With an AI agent
+
+Coding agents such as Claude Code, Codex or Cursor read `AGENTS.md`, which
+links to the agent skills of [Django Headless](https://djangoheadless.org/docs/agents)
+and [Django Content Studio](https://djangocontentstudio.org/docs/ai-agents).
+The agent reads a skill before it changes the API or the admin, so it uses
+their options instead of writing serializers or admin code by hand. The
+links follow the latest release of each package.
+
+To load the skills without the links, install them in the project. Install
+the Django Headless skill with the [skills](https://www.npmjs.com/package/skills)
+command, which asks which agents to install it for, and save the Django
+Content Studio skill in your agent's skills folder, here for Claude Code:
+
+```bash
+npx skills add dwarsbit/django-headless
+mkdir -p .claude/skills/django-content-studio
+curl -o .claude/skills/django-content-studio/SKILL.md \
+  https://djangocontentstudio.org/skills/django-content-studio/SKILL.md
+```
+
+An installed skill does not update itself: install it again after
+`dstack update`.
 
 ## Check the project
 
