@@ -56,8 +56,11 @@ API.
   page and `/blog/` plus the `slug` of a post, so change those when you
   change the frontend's URLs. It is hidden while analytics are off.
 
-  Django Content Studio also has dashboard widgets that read from the same
-  provider; see its [analytics documentation](https://djangocontentstudio.org/docs/analytics).
+- **The dashboard.** The admin's start page shows the visitors of the
+  last 30 days and the most visited pages, with Django Content Studio's
+  analytics widgets. They are left out while analytics are off. See its
+  [analytics documentation](https://djangocontentstudio.org/docs/analytics)
+  for the other metrics and ranges.
 
 ## Variables
 
