@@ -402,6 +402,18 @@ describe("scaffold", () => {
     );
   });
 
+  it.each(["astro", "templates", "headless"] as const)(
+    "points the agents of a %s project to the skills",
+    (frontend) => {
+      const directory = join(tempDir(), "site");
+      scaffold({ directory, name: "site", frontend, demoContent: true });
+      const agents = readFileSync(join(directory, "AGENTS.md"), "utf8");
+      expect(agents).toContain("skills/django-headless/SKILL.md");
+      expect(agents).toContain("https://djangocontentstudio.org/skills/django-content-studio/SKILL.md");
+      expect(readFileSync(join(directory, "CLAUDE.md"), "utf8")).toContain("AGENTS.md");
+    },
+  );
+
   it.each([
     ["stable", "17", "/var/lib/postgresql/data"],
     ["latest", "18", "/var/lib/postgresql"],

@@ -12,6 +12,13 @@ the unreleased version; the release workflow releases it.
   `django-headless` and `django-content-studio` too. `--all` still
   upgrades every package.
 
+- **Agent skills of Django Headless and Content Studio.** The
+  `AGENTS.md` of a new project links to the agent skills of Django
+  Headless and Django Content Studio and their Markdown docs, so a coding
+  agent reads them before it changes the API or the admin. The links
+  follow the latest release of each package. In an existing project, copy
+  the "Skills" section of a new project's `AGENTS.md` into yours.
+
 - **A clear error for the database of an earlier project.** Docker keeps
   the volumes of a deleted project, and a new project with the same name
   started on that old database, whose password is not the one in the new
