@@ -5,6 +5,14 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.2 (unreleased)
+
+- **Bunny deploy finds the public Docker Hub registry.** `dstack deploy
+  setup` on Bunny stopped with "Bunny lists no public Docker Hub registry
+  for this account", because it looked for a `type` field that Bunny's
+  API does not return. It now recognizes the built-in Docker Hub, GitHub
+  and Bunny Container Registry by their host name.
+
 ## 0.12.1 (2026-11-08)
 
 - **`dstack update` upgrades Django Headless and Content Studio.** It
