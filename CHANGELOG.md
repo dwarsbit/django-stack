@@ -7,6 +7,11 @@ the unreleased version; the release workflow releases it.
 
 ## 0.12.1 (unreleased)
 
+- **`dstack update` upgrades Django Headless and Content Studio.** It
+  upgraded only `django-stack` in `backend/uv.lock`; it now upgrades
+  `django-headless` and `django-content-studio` too. `--all` still
+  upgrades every package.
+
 - **A clear error for the database of an earlier project.** Docker keeps
   the volumes of a deleted project, and a new project with the same name
   started on that old database, whose password is not the one in the new

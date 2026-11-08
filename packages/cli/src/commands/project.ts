@@ -346,6 +346,9 @@ function nodeModulesVolume(project: Project): string | undefined {
   }
 }
 
+/** The backend packages `dstack update` upgrades without `--all`. */
+const BACKEND_PACKAGES = ["django-stack", "django-headless", "django-content-studio"];
+
 /** `dstack update`: newer images, newer DjangoStack packages, and a restart of what was running. */
 export async function update(
   options: DirectoryOptions & { all?: boolean; cache: boolean; restart: boolean },
@@ -357,10 +360,14 @@ export async function update(
 
   const lock = join(project.directory, "backend", "uv.lock");
   if (existsSync(lock) && has("uv")) {
-    const args = options.all ? ["lock", "--upgrade"] : ["lock", "--upgrade-package", "django-stack"];
+    const args = options.all
+      ? ["lock", "--upgrade"]
+      : ["lock", ...BACKEND_PACKAGES.flatMap((name) => ["--upgrade-package", name])];
     const result = spawnSync("uv", args, { cwd: join(project.directory, "backend"), stdio: "inherit" });
     if (result.status !== 0) fail("uv could not update backend/uv.lock.");
-    p.log.success(options.all ? "Updated backend/uv.lock" : "Updated django-stack in backend/uv.lock");
+    p.log.success(
+      options.all ? "Updated backend/uv.lock" : `Updated ${BACKEND_PACKAGES.join(", ")} in backend/uv.lock`,
+    );
   } else if (existsSync(lock)) {
     p.log.warn("uv is not installed, so backend/uv.lock stays as it is: https://docs.astral.sh/uv/");
   }
