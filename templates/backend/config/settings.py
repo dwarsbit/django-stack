@@ -52,6 +52,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django_stack.logs.RequestIdMiddleware",  # request IDs and the access log
+    "django_stack.contrib.health.middleware.HealthCheckMiddleware",  # /healthz and /readyz for any host
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

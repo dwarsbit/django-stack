@@ -139,6 +139,13 @@ are reachable only inside the Compose network:
 | `/readyz` | The database and the cache are reachable. | The healthcheck of the backend, which the frontend, the worker and Caddy wait for. |
 | `/statusz` | As `/readyz`, and the worker and the daily backup are healthy. | `dstack status` |
 
+`/healthz` and `/readyz` answer for any `Host` header, so a platform that
+calls the container by its own address, such as Bunny Magic Containers,
+gets an answer without opening `ALLOWED_HOSTS`. The
+`django_stack.contrib.health.middleware.HealthCheckMiddleware` entry in
+`MIDDLEWARE`, right after `RequestIdMiddleware`, does this. A project made
+before 0.12.4 adds that line to `config/settings.py`.
+
 They answer JSON, `503` when a check fails:
 
 ```json
