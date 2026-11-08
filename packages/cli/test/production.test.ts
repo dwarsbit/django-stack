@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { parseEnv, productionEnv, scaffold, validateDomain } from "../src";
+import { postgresUrl } from "../src/production";
 
 const root = mkdtempSync(join(tmpdir(), "django-stack-prod-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -72,6 +73,15 @@ describe("productionEnv", () => {
     expect(prod.UMAMI_DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require&schema=umami");
   });
 
+  it("uses a database URL given to production instead of the bundled one", () => {
+    const prod = parseEnv(
+      productionEnv(devEnv(), { domain: "example.com", databaseUrl: "postgres://u:p@db.example.com/app" })
+        .text,
+    );
+    expect(prod.COMPOSE_PROFILES).toBe("prod");
+    expect(prod.DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require");
+  });
+
   it("keeps the bundled database for the local run", () => {
     const text = devEnv({ databaseUrl: "postgres://u:p@db.example.com/app" });
     const prod = parseEnv(productionEnv(text, { domain: "site.localhost", bundledDatabase: true }).text);
@@ -94,5 +104,28 @@ describe("productionEnv", () => {
     expect(validateDomain("example.com")).toBeUndefined();
     expect(validateDomain("https://example.com")).toBeDefined();
     expect(() => productionEnv("", { domain: "localhost" })).toThrow();
+  });
+});
+
+describe("postgresUrl", () => {
+  it("encodes special characters in the password, user and name", () => {
+    const url = postgresUrl({
+      host: "db.example.com",
+      name: "my app",
+      user: "me@x",
+      password: "p@ss:w/rd#?%",
+    });
+    expect(url).toBe(
+      "postgres://me%40x:p%40ss%3Aw%2Frd%23%3F%25@db.example.com:5432/my%20app?sslmode=require",
+    );
+    const parsed = new URL(url);
+    expect(decodeURIComponent(parsed.password)).toBe("p@ss:w/rd#?%");
+    expect(parsed.hostname).toBe("db.example.com");
+  });
+
+  it("keeps the port and needs no TLS on this machine", () => {
+    expect(postgresUrl({ host: "localhost", port: "6543", name: "app", user: "app" })).toBe(
+      "postgres://app@localhost:6543/app",
+    );
   });
 });

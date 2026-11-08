@@ -321,6 +321,7 @@ export function createProgram(): Command {
     .argument("[directory]", "The project directory", ".")
     .option("--domain <domain>", "The domain of the site, such as example.com")
     .option("--email-url <url>", "The SMTP server, such as smtp+tls://user:pass@host:587")
+    .option("--database-url <url>", "Your own Postgres for the server instead of the bundled one")
     .option("--force", "Overwrite an existing .env.production")
     .option("-y, --yes", "Don't ask; fail when --domain is missing")
     .action(production);

@@ -275,6 +275,7 @@ npx @django-stack/cli production [directory] --domain example.com [options]
 |--------|-------------|
 | `--domain <domain>` | The domain of the site. Asked for when it is not given. |
 | `--email-url <url>` | The SMTP server, such as `smtp+tls://user:password@smtp.example.com:587`. Without it, `EMAIL_URL` gets a placeholder to fill in. |
+| `--database-url <url>` | Your own Postgres for the server: `.env.production` gets it as `DATABASE_URL`, without `db` in `COMPOSE_PROFILES`. URLs to other hosts get `sslmode=require` unless they set an `sslmode`. Without it, and without `PRODUCTION_DATABASE_URL` in `.env`, it asks. |
 | `--force` | Replace an existing `.env.production`. |
 | `-y`, `--yes` | Don't ask; fail when `--domain` is missing. |
 
@@ -284,6 +285,12 @@ secrets for everything, including the admin password and the bundled
 database's password. The local S3 service's values are cleared. It then
 prints what is left to fill in and the admin password. The file is readable
 only by you. See [Deploy to a server](./production/server.md).
+
+In a terminal, it asks whether the server uses the bundled Postgres or
+your own. For your own, you enter either a `postgres://` URL or the host,
+port, database name, user and password separately. Separate values are
+URL-encoded for you, so use them when the password has characters such as
+`@`, `:`, `/` or `#`. See [An external database](./production/media-and-database.md#an-external-database).
 
 In a terminal, it then offers to ask for the missing settings, as
 [`settings`](#settings) does.

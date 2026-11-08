@@ -1,5 +1,5 @@
 import { parseEnv, setEnvValues } from "./env";
-import { umamiDatabaseUrl } from "./scaffold";
+import { normalizeDatabaseUrl, umamiDatabaseUrl } from "./scaffold";
 import { generateProjectSecrets } from "./secrets";
 
 export interface ProductionOptions {
@@ -11,6 +11,27 @@ export interface ProductionOptions {
   media?: string;
   /** Keep the bundled database even with PRODUCTION_DATABASE_URL: the local run on this machine. */
   bundledDatabase?: boolean;
+  /** An external Postgres for the server; it takes the place of PRODUCTION_DATABASE_URL. */
+  databaseUrl?: string;
+}
+
+/**
+ * A Postgres URL from its parts, with the user name, password and database
+ * name URL-encoded, so a password with `@`, `:`, `/` or `#` still works.
+ * Hosts other than this machine get `sslmode=require`.
+ */
+export function postgresUrl(parts: {
+  host: string;
+  port?: string;
+  name: string;
+  user: string;
+  password?: string;
+}): string {
+  const host = parts.host.includes(":") && !parts.host.startsWith("[") ? `[${parts.host}]` : parts.host;
+  const password = parts.password ? `:${encodeURIComponent(parts.password)}` : "";
+  return normalizeDatabaseUrl(
+    `postgres://${encodeURIComponent(parts.user)}${password}@${host}:${parts.port || "5432"}/${encodeURIComponent(parts.name)}`,
+  );
 }
 
 export interface ProductionEnv {
@@ -67,7 +88,11 @@ export function productionEnv(devEnv: string, options: ProductionOptions): Produ
 
   // PRODUCTION_DATABASE_URL: the server's external Postgres instead of the
   // bundled one, which development keeps.
-  const external = options.bundledDatabase ? "" : (current.PRODUCTION_DATABASE_URL ?? "");
+  const external = options.bundledDatabase
+    ? ""
+    : options.databaseUrl
+      ? normalizeDatabaseUrl(options.databaseUrl)
+      : (current.PRODUCTION_DATABASE_URL ?? "");
   if (external) {
     values.DATABASE_URL = external;
     values.POSTGRES_PASSWORD = "";
