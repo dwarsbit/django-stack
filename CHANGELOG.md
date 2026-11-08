@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.11.0 (unreleased)
+## 0.11.0 (2026-11-08)
 
 - **Postgres 18.** `init --postgres latest` now generates Postgres 18,
   with its volume at `/var/lib/postgresql`, where the image keeps a
