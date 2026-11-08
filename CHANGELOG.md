@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.12.4 (unreleased)
+## 0.12.4 (2026-11-08)
 
 - **Health checks answer for any host.** Bunny Magic Containers calls
   `/readyz` on the container's own address, which is not in
