@@ -227,8 +227,9 @@ It prints the output of each check that fails and exits with status 1.
 
 ### `update`
 
-1. With [uv](https://docs.astral.sh/uv/) installed, upgrades `django-stack`
-   in `backend/uv.lock`. `--all` upgrades every backend package.
+1. With [uv](https://docs.astral.sh/uv/) installed, upgrades `django-stack`,
+   `django-headless` and `django-content-studio` in `backend/uv.lock`.
+   `--all` upgrades every backend package.
 2. Upgrades the `@django-stack` packages in the frontend's lockfile
    (`pnpm-lock.yaml`, `package-lock.json` or `bun.lock`) with its package
    manager, within the ranges in `frontend/package.json`. `--all` upgrades
