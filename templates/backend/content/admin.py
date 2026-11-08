@@ -124,7 +124,15 @@ class RedirectStudio(ModelStudio):
 
 @register(FormSubmission)
 class FormSubmissionStudio(ModelStudio):
+    """Submissions come from the site's form: editors read and delete them, never create or edit."""
+
     icon = "ph-bold ph-envelope"
     table_display = ["name", "email", "created_at"]
     search_fields = ["name", "email", "message"]
     ordering = ["-created_at"]
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

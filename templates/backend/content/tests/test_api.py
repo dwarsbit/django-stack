@@ -101,3 +101,18 @@ def test_contact_form_notifies_the_editors(seeded, django_capture_on_commit_call
 
 def test_read_key_cannot_read_submissions(reader):
     assert reader.get("/api/content.formsubmission").status_code == 403
+
+
+def test_editors_only_read_and_delete_submissions(rf):
+    from content_studio.admin import admin_site
+    from django.contrib.auth import get_user_model
+
+    from content.admin import FormSubmissionStudio
+
+    request = rf.get("/")
+    request.user = get_user_model().objects.create_superuser("editor", "editor@example.com", "x")
+    studio = FormSubmissionStudio(FormSubmission, admin_site)
+    assert studio.has_view_permission(request)
+    assert studio.has_delete_permission(request)
+    assert not studio.has_add_permission(request)
+    assert not studio.has_change_permission(request)
