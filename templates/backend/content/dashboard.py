@@ -90,10 +90,15 @@ class RecentSubmissionsWidget(ContentListWidget):
 
     def get_data(self, request):
         check_view_permission(request, FormSubmission)
-        latest = FormSubmission.objects.order_by("-created_at")[: self.limit]
+        latest = list(FormSubmission.objects.order_by("-created_at")[: self.limit])
         return {
             "title": "Recent form submissions",
-            "description": "The latest messages from the contact form.",
+            "description": (
+                "The latest messages from the contact form."
+                if latest
+                else "No messages yet. Submissions from the contact form appear here."
+            ),
+            "view_all": f"/content/{FormSubmission._meta.label_lower}",
             "content": [
                 {
                     "model": FormSubmission._meta.label_lower,

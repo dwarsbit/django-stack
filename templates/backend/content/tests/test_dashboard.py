@@ -44,6 +44,13 @@ def test_every_widget_answers_on_an_empty_site(admin):
         assert item.get_data(request_as(admin)) is not None
 
 
+def test_no_submissions_yet(admin):
+    data = widget(RecentSubmissionsWidget).get_data(request_as(admin))
+    assert data["content"] == []
+    assert data["description"].startswith("No messages yet.")
+    assert data["view_all"] == "/content/content.formsubmission"
+
+
 def test_every_widget_answers(seeded, admin):
     for item in cs_settings.ADMIN_SITE.dashboard.widgets:
         assert item.get_data(request_as(admin)) is not None
