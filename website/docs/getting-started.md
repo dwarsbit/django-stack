@@ -69,6 +69,14 @@ When a port is in use, for example by another project, `init` and
 Log in to the admin as `admin` with the password that `init` printed. It is
 also in `.env` as `ADMIN_PASSWORD`. Change it after you log in.
 
+The admin opens on a dashboard: the published pages and posts, the contact
+form submissions of the last 30 days and the latest ones, the latest edits,
+the queued and failed tasks, and the visitors and top pages when analytics
+are on. `backend/config/studio.py` lists the widgets and
+`backend/content/dashboard.py` has the ones of the content models; change
+or remove them there. With `--no-demo-content` the same widgets show an
+empty site.
+
 ## Edit content
 
 Open a page in the admin, change its title and save. Reload the site: it

@@ -10,7 +10,7 @@ from content_studio.media_library.models import Media
 from django.core.files.base import ContentFile
 from django.db import transaction
 
-from .models import Author, Category, Menu, Page, Post, Redirect, SiteSettings, Tag
+from .models import Author, Category, FormSubmission, Menu, Page, Post, Redirect, SiteSettings, Tag
 
 
 def block(type: str, **data) -> dict:
@@ -141,6 +141,13 @@ def seed(if_empty: bool = False, stdout=None) -> bool:
         items=[block("link", label="RSS", url="/rss.xml")],
     )
     Redirect.objects.create(old_path="/old-about", new_path="/about")
+    # Messages of the contact form, so the dashboard has something to show.
+    FormSubmission.objects.bulk_create(
+        [
+            FormSubmission(name="Grace Reader", email="grace@example.com", message="Is there an RSS feed of the blog?"),
+            FormSubmission(name="Alan Visitor", email="alan@example.com", message="Hello from the contact page."),
+        ]
+    )
 
     settings = SiteSettings.objects.first() or SiteSettings()
     settings.site_name = "{{project_name}}"

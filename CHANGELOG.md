@@ -7,6 +7,15 @@ the unreleased version; the release workflow releases it.
 
 ## 0.12.0 (unreleased)
 
+- **A dashboard in the admin.** New projects open the admin on a
+  dashboard with the published pages and posts, the contact form
+  submissions of the last 30 days and the latest ones, the activity log,
+  the queued and failed tasks, and, with analytics on, the visitors and
+  the most visited pages. The widgets are listed in
+  `backend/config/studio.py`; those of the content models are in
+  `backend/content/dashboard.py`. The demo content now includes two
+  contact form submissions. Existing projects keep their admin as it is;
+  copy the two files from a new project to add the dashboard.
 - **Your own Postgres in `dstack production`.** `init` no longer asks for
   a production database URL; its Database question only picks the Postgres
   version. `dstack production` now asks whether the server uses the
