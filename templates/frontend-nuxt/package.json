@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@django-headless/client": "^1.1.1",
-    "@django-stack/utils": "^0.12.2",
-    "@django-stack/vue": "^0.12.2",
+    "@django-stack/utils": "^0.12.3",
+    "@django-stack/vue": "^0.12.3",
     "nuxt": "^4.6.3",
     "nuxt-security": "^2.7.0",
     "vue": "^3.5.44",

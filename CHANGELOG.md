@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.12.3 (unreleased)
+## 0.12.3 (2026-11-08)
 
 - **Bunny deploys push to GitHub Container Registry.** Bunny Container
   Registry, in preview, refused the account API key at `docker login`.
