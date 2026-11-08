@@ -92,7 +92,9 @@ export function productionEnv(devEnv: string, options: ProductionOptions): Produ
     ? ""
     : options.databaseUrl
       ? normalizeDatabaseUrl(options.databaseUrl)
-      : (current.PRODUCTION_DATABASE_URL ?? "");
+      : current.PRODUCTION_DATABASE_URL
+        ? normalizeDatabaseUrl(current.PRODUCTION_DATABASE_URL)
+        : "";
   if (external) {
     values.DATABASE_URL = external;
     values.POSTGRES_PASSWORD = "";

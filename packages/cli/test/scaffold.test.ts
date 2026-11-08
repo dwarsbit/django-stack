@@ -26,7 +26,12 @@ import {
   usesValkey,
   validateProjectName,
 } from "../src";
-import { frontendPackageManager, packageManagerValues, selectBlocks } from "../src/scaffold";
+import {
+  frontendPackageManager,
+  packageManagerValues,
+  selectBlocks,
+  umamiDatabaseUrl,
+} from "../src/scaffold";
 import { NODE_FRONTENDS } from "../src/stack";
 
 const dirs: string[] = [];
@@ -53,6 +58,18 @@ describe("project names", () => {
 });
 
 describe("normalizeDatabaseUrl", () => {
+  it("encodes a raw password, and keeps an encoded one", () => {
+    expect(normalizeDatabaseUrl("postgres://u:p@ss#w/rd?@db.example.com:5432/app")).toBe(
+      "postgres://u:p%40ss%23w%2Frd%3F@db.example.com:5432/app?sslmode=require",
+    );
+    expect(normalizeDatabaseUrl("postgres://u:p%40ss@localhost/app")).toBe(
+      "postgres://u:p%40ss@localhost/app",
+    );
+    expect(umamiDatabaseUrl("postgres://u:a^b@db:5432/app")).toBe(
+      "postgres://u:a%5Eb@db:5432/app?schema=umami",
+    );
+  });
+
   it("requires TLS for remote hosts", () => {
     expect(normalizeDatabaseUrl("postgres://u:p@db.example.com:5432/app")).toBe(
       "postgres://u:p@db.example.com:5432/app?sslmode=require",

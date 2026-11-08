@@ -154,7 +154,7 @@ export interface ScaffoldResult {
 
 /** Umami's database URL: the project's database, with Umami's tables in the `umami` schema. */
 export function umamiDatabaseUrl(databaseUrl: string): string {
-  const url = new URL(databaseUrl);
+  const url = new URL(encodeDatabaseUserinfo(databaseUrl));
   url.searchParams.set("schema", "umami");
   return url.toString();
 }
@@ -257,11 +257,42 @@ export function validateProjectName(value: string): string | undefined {
   return undefined;
 }
 
+/** Decodes a URL part that may already be percent-encoded; a stray % stays as it is. */
+function decodePart(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * Percent-encodes the user name and password of a database URL, so one
+ * pasted with a raw `@`, `#`, `/`, `?` or `%` in the password still parses,
+ * and every client (Django, Umami's Prisma) reads the same password. The
+ * user info ends at the last `@` before the host.
+ */
+export function encodeDatabaseUserinfo(url: string): string {
+  const match = url.match(/^([a-z][a-z\d+.-]*:\/\/)(.*)$/i);
+  if (!match) return url;
+  const [, scheme = "", rest = ""] = match;
+  const at = rest.lastIndexOf("@");
+  if (at === -1) return url;
+  const userinfo = rest.slice(0, at);
+  const colon = userinfo.indexOf(":");
+  const user = colon === -1 ? userinfo : userinfo.slice(0, colon);
+  const password = colon === -1 ? undefined : userinfo.slice(colon + 1);
+  const encoded =
+    encodeURIComponent(decodePart(user)) +
+    (password === undefined ? "" : `:${encodeURIComponent(decodePart(password))}`);
+  return `${scheme}${encoded}@${rest.slice(at + 1)}`;
+}
+
 /** Postgres URLs for hosts other than this machine must use TLS. */
 export function normalizeDatabaseUrl(url: string): string {
   let parsed: URL;
   try {
-    parsed = new URL(url);
+    parsed = new URL(encodeDatabaseUserinfo(url));
   } catch {
     throw new Error(`The database URL is not a URL: ${url}`);
   }
