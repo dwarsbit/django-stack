@@ -10,7 +10,8 @@ worker was down. The worker also checks once when it starts. It only runs where
 worker records its time for ``/statusz`` and pings ``BACKUP_PING_URL``.
 
 The worker also stamps a heartbeat in the cache every minute, which
-``manage.py worker_alive`` and ``/statusz`` read.
+``manage.py worker_alive`` and ``/statusz`` read, and with it whether it runs
+the daily backups.
 """
 
 from __future__ import annotations
@@ -103,13 +104,19 @@ def daily_backup():
 
 @db_periodic_task(crontab(minute="*"), expires=60)
 def heartbeat():
-    """Tells the backend the worker runs; see ``django_stack.health``."""
-    health.stamp(health.HEARTBEAT_KEY)
+    """Tells the backend the worker runs, and whether it backs up; see ``django_stack.health``."""
+    stamp_heartbeat()
 
 
 @on_startup("django-stack-heartbeat")
 def first_heartbeat():
+    stamp_heartbeat()
+
+
+def stamp_heartbeat() -> None:
     health.stamp(health.HEARTBEAT_KEY)
+    if conf.get("BACKUP_DAILY"):
+        health.stamp(health.BACKUP_DAILY_KEY)
 
 
 def notifications_installed() -> bool:

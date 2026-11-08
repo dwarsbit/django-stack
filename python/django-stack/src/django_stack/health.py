@@ -4,13 +4,14 @@ The state of the site's services, for health checks and ``manage.py health``.
 The worker stamps the cache every minute (``django_stack.tasks.heartbeat``)
 and after each daily backup, so the backend and ``manage.py worker_alive``
 can tell whether it runs and when it last backed up. Each check answers
-``ok``, ``error`` or ``off`` (not used by this site).
+``ok``, ``error`` or ``off`` (not used by this site); the backup check
+answers ``active`` when daily backups are on but none ran yet.
 """
 
 from __future__ import annotations
 
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.cache import cache
@@ -18,6 +19,8 @@ from django.db import connection
 
 HEARTBEAT_KEY = "django_stack:health:worker"
 BACKUP_KEY = "django_stack:health:backup"
+# Stamped with the heartbeat by a worker that runs the daily backups (BACKUP_DAILY).
+BACKUP_DAILY_KEY = "django_stack:health:backup-daily"
 
 #: The worker stamps the heartbeat every minute.
 WORKER_STALE_AFTER = timedelta(minutes=3)
@@ -40,15 +43,6 @@ def tasks_on_worker() -> bool:
 
 def stamp(key: str, now: float | None = None) -> None:
     cache.set(key, time.time() if now is None else now, STAMP_TIMEOUT)
-
-
-def stamped_at(key: str) -> datetime | None:
-    """When ``key`` was last stamped, or None."""
-    try:
-        value = cache.get(key)
-    except Exception:  # noqa: BLE001
-        return None
-    return None if value is None else datetime.fromtimestamp(float(value), UTC)
 
 
 def age(key: str, now: float | None = None) -> timedelta | None:
@@ -89,15 +83,18 @@ def check_worker(now: float | None = None) -> str:
 
 
 def check_backup(now: float | None = None) -> str:
-    """``ok`` when the last daily backup is less than 26 hours old; ``off`` before the first one."""
+    """``ok`` when the last daily backup is less than 26 hours old.
+
+    Before the first one: ``active`` when the worker runs daily backups, else ``off``.
+    """
     if not tasks_on_worker() or not _shared_cache():
         return "off"
     try:
         last = age(BACKUP_KEY, now)
+        if last is None:
+            return "active" if cache.get(BACKUP_DAILY_KEY) else "off"
     except Exception:  # noqa: BLE001
         return "error"
-    if last is None:
-        return "off"
     return "ok" if last < BACKUP_STALE_AFTER else "error"
 
 

@@ -145,15 +145,16 @@ They answer JSON, `503` when a check fails:
 {"status": "ok", "checks": {"database": "ok", "cache": "ok", "worker": "ok", "backup": "ok"}}
 ```
 
-Each check is `ok`, `error` or `off`:
+Each check is `ok`, `error` or `off`, and the backup check can also be `active`:
 
 - **worker**: the worker runs a task every minute that records the time
   in the cache. The check fails when the last one is more than three
   minutes old. `off` without a worker (`TASKS_URL=immediate://`) or with a
   cache per process (`CACHE_URL=locmem://`).
 - **backup**: the worker records the time of each daily backup. The check
-  fails when the last one is more than 26 hours old, and is `off` until the
-  first backup.
+  fails when the last one is more than 26 hours old. Before the first backup
+  it is `active` when the worker runs the daily backups (`BACKUP_DAILY`), and
+  `off` when backups are turned off.
 
 The worker's own healthcheck in `compose.yaml` runs
 `python manage.py worker_alive`, which fails on the same rule, so
