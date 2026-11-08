@@ -170,6 +170,18 @@ function promptAsk(interactive: boolean): Ask {
       if (!interactive) return initial;
       return unwrap(await p.confirm({ message, initialValue: initial }));
     },
+    ...(interactive
+      ? {
+          async password(message: string) {
+            return unwrap(
+              await p.password({
+                message,
+                validate: (value) => (value?.trim() ? undefined : "Paste the token."),
+              }),
+            );
+          },
+        }
+      : {}),
     step: (message) => p.log.success(message),
   };
 }

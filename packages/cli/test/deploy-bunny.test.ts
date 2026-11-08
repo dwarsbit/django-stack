@@ -14,6 +14,7 @@ import {
   durationSeconds,
   parsePublicImage,
   planApp,
+  pushTarget,
   registryKind,
   rewriteHosts,
 } from "../src/deploy";
@@ -166,6 +167,7 @@ describe("Compose to Bunny", () => {
     const plan = planApp(fixture(), { readFile });
     const body = appRequest(plan, {
       registries: { dockerHub: "1", bunny: "9" },
+      pushRegistry: "9",
       namespace: "12345",
       tag: "abc1234",
       region: "DE",
@@ -212,7 +214,14 @@ describe("Compose to Bunny", () => {
 type Handler = (body: unknown) => unknown;
 
 /** A fake Bunny API: a handler per "METHOD /path", and a log of the calls. */
-function fakeBunny(handlers: Record<string, Handler>, run: CommandRunner) {
+function fakeBunny(
+  handlers: Record<string, Handler>,
+  run: CommandRunner,
+  ghcrToken: { get(owner: string): string | undefined; save(owner: string, token: string): void } = {
+    get: () => undefined,
+    save: () => {},
+  },
+) {
   const calls: { method: string; path: string; body?: unknown; key?: string }[] = [];
   const fetchImpl = (async (input: string, init: RequestInit) => {
     const url = new URL(input);
@@ -231,6 +240,7 @@ function fakeBunny(handlers: Record<string, Handler>, run: CommandRunner) {
     readFile,
     edgeServers: async () => ["203.0.113.1", "203.0.113.2"],
     now: () => new Date("2026-11-06T10:00:00Z"),
+    ghcrToken,
   });
   return { calls, client };
 }
@@ -419,6 +429,73 @@ describe("BunnyClient", () => {
 
     const records = readFileSync(join(directory, BUNNY_DEPLOYS_DIR, ".gitignore"), "utf8");
     expect(records).toBe("*\n");
+  });
+
+  it("pushes to a private ghcr.io package that Bunny pulls with the token", async () => {
+    expect(pushTarget("ghcr.io/acme")).toEqual({ host: "ghcr.io", namespace: "acme" });
+    expect(pushTarget("12345")).toEqual({ host: "registry.bunny.net", namespace: "12345" });
+    const directory = project();
+    const { commands, run } = fakeRunner();
+    let created: Record<string, unknown> | undefined;
+    const saved: string[] = [];
+    const { calls, client } = fakeBunny(
+      {
+        "GET /mc/registries": () => [
+          { id: 1, displayName: "Docker Hub", hostName: "docker.io", isPublic: true },
+          { id: 2, displayName: "GitHub", hostName: "ghcr.io", isPublic: true },
+        ],
+        "POST /mc/registries": () => ({ id: 5, status: "saved" }),
+        "GET /mc/regions/optimal": () => ({ id: "DE" }),
+        "GET /mc/regions": () => [{ id: "DE", name: "Frankfurt" }],
+        "POST /mc/apps": (body) => {
+          created = body as Record<string, unknown>;
+          return { id: "app1" };
+        },
+        "POST /mc/apps/app1/deploy": () => undefined,
+        "GET /mc/apps/app1/endpoints": () => ({ items: [{ displayName: "site", cdn: { pullZoneId: 777 } }] }),
+        "POST /pullzone/777": () => undefined,
+        "GET /pullzone/777": () => ({ Name: "site-mc", Hostnames: [{ Value: "site-mc.b-cdn.net" }] }),
+        "POST /pullzone/777/addHostname": () => undefined,
+        "POST /pullzone/777/edgerules/addOrUpdate": () => undefined,
+        "GET /pullzone/loadFreeCertificate?hostname=example.com": () =>
+          new Response(JSON.stringify({ Message: "DNS not found" }), { status: 400 }),
+      },
+      run,
+      { get: (owner) => (saved.includes(owner) ? "ghp_x" : undefined), save: (owner) => saved.push(owner) },
+    );
+    const ask = {
+      interactive: true,
+      select: async (_message: string, _choices: unknown, initial: unknown) => initial,
+      text: async () => "Acme",
+      password: async () => "ghp_x",
+      step: () => {},
+    } as unknown as Ask;
+    const ids = await client.setup({
+      ask,
+      directory,
+      name: "site",
+      branch: "main",
+      domain: "example.com",
+      env: { SITE_URL: "https://example.com", CADDY_ADDRESS: ":80" },
+      options: {},
+    });
+    expect(ids.environment).toBe("ghcr.io/acme");
+    expect(saved).toEqual(["acme"]);
+    expect(calls.find((item) => item.method === "POST" && item.path === "/mc/registries")?.body).toEqual({
+      displayName: "GitHub acme",
+      type: "gitHub",
+      passwordCredentials: { userName: "acme", password: "ghp_x" },
+    });
+    const login = commands.find((item) => item.args[0] === "login");
+    expect(login?.args).toEqual(["login", "ghcr.io", "--username", "acme", "--password-stdin"]);
+    expect(login?.input).toBe("ghp_x");
+    expect(commands.filter((item) => item.args[0] === "push").map((item) => item.args[1])).toContain(
+      "ghcr.io/acme/site-backend:abc1234",
+    );
+    const proxy = ((created?.containerTemplates ?? []) as Record<string, unknown>[]).find(
+      (item) => item.name === "proxy",
+    );
+    expect(proxy).toMatchObject({ imageRegistryId: "5", imageNamespace: "acme", imageName: "site-proxy" });
   });
 
   it("deploys new images by changing the containers' tags", async () => {

@@ -61,6 +61,8 @@ export interface Ask {
   select<T>(message: string, choices: Choice<T>[], initial?: T): Promise<T>;
   text(message: string, options?: { placeholder?: string; initial?: string }): Promise<string>;
   confirm(message: string, initial?: boolean): Promise<boolean>;
+  /** Asks for a secret without showing it; absent where the CLI may not ask. */
+  password?(message: string): Promise<string>;
   /** Reports progress, such as "Created the project". */
   step(message: string): void;
 }
