@@ -1,6 +1,6 @@
 {
   "name": "@django-stack/svelte",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "description": "Svelte components for DjangoStack frontends: blocks, rich text, images and SEO.",
   "license": "MIT",
   "author": "Leon van der Grient",
