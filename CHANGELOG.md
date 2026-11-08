@@ -18,6 +18,9 @@ the unreleased version; the release workflow releases it.
   `init --database-url`, is used as before, without the question.
 - The documentation moved to https://djangostack.org. The package
   metadata, the READMEs and the README of new projects link there.
+- The docs homepage title is now "The production-ready batteries included
+  Django stack", with "Developer-first Django tooling" as the tagline.
+  The README and the `@django-stack/cli` description follow.
 
 ## 0.11.0 (2026-11-08)
 
