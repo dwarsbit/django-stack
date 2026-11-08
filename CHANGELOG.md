@@ -7,6 +7,15 @@ the unreleased version; the release workflow releases it.
 
 ## 0.12.4 (unreleased)
 
+- **Health checks answer for any host.** Bunny Magic Containers calls
+  `/readyz` on the container's own address, which is not in
+  `ALLOWED_HOSTS`, so Django answered "Invalid HTTP_HOST header" and the
+  container never became ready. The new
+  `django_stack.contrib.health.middleware.HealthCheckMiddleware` serves
+  `/healthz` and `/readyz` before the host check; every other path still
+  checks it. In an existing project, add it to `MIDDLEWARE` in
+  `config/settings.py`, right after `django_stack.logs.RequestIdMiddleware`.
+
 - **Database passwords with special characters.** A database URL pasted
   with a raw `@`, `#`, `/`, `?` or `%` in the password, or written by hand
   in `PRODUCTION_DATABASE_URL`, was used as it was, so Umami and Django

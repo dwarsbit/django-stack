@@ -115,3 +115,16 @@ def test_backup_ping(settings, monkeypatch):
     settings.DJANGO_STACK = {**settings.DJANGO_STACK, "BACKUP_PING_URL": "file:///etc/passwd"}
     tasks.ping_backup()
     assert len(opened) == 1
+
+
+@pytest.mark.parametrize("path", ["/healthz", "/readyz"])
+def test_health_checks_answer_any_host(client, path):
+    # A platform's probe calls the container by its IP, which is not in ALLOWED_HOSTS.
+    response = client.get(path, HTTP_HOST="10.13.220.205:8000")
+    assert response.status_code in (200, 503)
+    assert "status" in response.json()
+
+
+def test_other_paths_still_check_the_host(client):
+    response = client.get("/statusz", HTTP_HOST="10.13.220.205:8000")
+    assert response.status_code == 400
