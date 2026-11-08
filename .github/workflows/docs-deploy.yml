@@ -1,7 +1,8 @@
 name: Deploy docs
 
-# Publishes website/ to GitHub Pages at https://dwarsbit.github.io/django-stack/.
-# Needs Settings > Pages > Source set to "GitHub Actions".
+# Publishes website/ to GitHub Pages at https://djangostack.org/.
+# Needs Settings > Pages > Source set to "GitHub Actions" and the custom
+# domain djangostack.org (website/static/CNAME).
 
 on:
   push:

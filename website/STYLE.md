@@ -69,7 +69,7 @@ and do not alarm. Every caveat says what to do about it.
 - **Links**: link the first mention of a setting, page or concept on a page;
   link text says where it goes ("see the [CLI reference](./cli.md)"), never
   "click here". Pages link to each other with relative file links; the
-  README links to `https://dwarsbit.github.io/django-stack/docs/…`.
+  README links to `https://djangostack.org/docs/…`.
 
 ## 3. Emoji
 

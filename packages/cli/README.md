@@ -27,7 +27,7 @@ Run `dstack help <command>` for the options of a command. Each command
 checks for a newer version once a day; turn that off with
 `--no-update-check` or `DJANGO_STACK_NO_UPDATE_CHECK=1`.
 
-Read the [documentation](https://github.com/dwarsbit/django-stack/tree/main/website/docs) of
+Read the [documentation](https://djangostack.org/) of
 [DjangoStack](https://github.com/dwarsbit/django-stack).
 
 ## License

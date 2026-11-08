@@ -4,7 +4,7 @@
   "description": "Framework-agnostic helpers for DjangoStack frontends: the API client, content helpers, SEO, images, webhooks, error reports and the captcha.",
   "license": "MIT",
   "author": "Leon van der Grient",
-  "homepage": "https://github.com/dwarsbit/django-stack/tree/main/packages/utils#readme",
+  "homepage": "https://djangostack.org/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dwarsbit/django-stack.git",

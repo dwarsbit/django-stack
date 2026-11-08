@@ -24,7 +24,7 @@ Postgres and Umami analytics (Valkey if you want it), run by Docker Compose.
 [Django Content Studio](https://djangocontentstudio.org) is the admin. The
 `dstack` command takes the project from development to deploy.
 
-<p align="center"><strong>Documentation: <a href="https://dwarsbit.github.io/django-stack/">dwarsbit.github.io/django-stack</a></strong></p>
+<p align="center"><strong>Documentation: <a href="https://djangostack.org/">djangostack.org</a></strong></p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="website/static/img/screenshots/dashboard-dark.webp">
@@ -68,19 +68,19 @@ dstack dev
 
 Then open http://localhost:3000 for the site and
 http://localhost:3000/admin/ for the admin. Continue with
-[Getting started](https://dwarsbit.github.io/django-stack/docs/getting-started)
+[Getting started](https://djangostack.org/docs/getting-started)
 in the documentation.
 
 ## Documentation
 
-The full documentation is at [dwarsbit.github.io/django-stack](https://dwarsbit.github.io/django-stack/).
+The full documentation is at [djangostack.org](https://djangostack.org/).
 Good places to start:
 
-- [Getting started](https://dwarsbit.github.io/django-stack/docs/getting-started): create a project and run it
-- [CLI reference](https://dwarsbit.github.io/django-stack/docs/cli): every `dstack` command and flag
-- [Content and the API](https://dwarsbit.github.io/django-stack/docs/content-api): the content model and how the frontend reads it
-- [Deploy to a server](https://dwarsbit.github.io/django-stack/docs/production/server): production with Caddy, HTTPS and backups
-- [Coolify and Dokploy](https://dwarsbit.github.io/django-stack/docs/production/platforms): deploy to a hosting platform
+- [Getting started](https://djangostack.org/docs/getting-started): create a project and run it
+- [CLI reference](https://djangostack.org/docs/cli): every `dstack` command and flag
+- [Content and the API](https://djangostack.org/docs/content-api): the content model and how the frontend reads it
+- [Deploy to a server](https://djangostack.org/docs/production/server): production with Caddy, HTTPS and backups
+- [Coolify and Dokploy](https://djangostack.org/docs/production/platforms): deploy to a hosting platform
 
 ## This repository
 

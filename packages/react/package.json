@@ -4,7 +4,7 @@
   "description": "React components for DjangoStack frontends: blocks, rich text and images.",
   "license": "MIT",
   "author": "Leon van der Grient",
-  "homepage": "https://github.com/dwarsbit/django-stack/tree/main/packages/react#readme",
+  "homepage": "https://djangostack.org/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dwarsbit/django-stack.git",

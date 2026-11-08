@@ -12,7 +12,7 @@ to deploy.
   `@django-stack/vue` on
   npm, `django-stack` on
   PyPI
-- **Docs**: https://dwarsbit.github.io/django-stack/
+- **Docs**: https://djangostack.org/
 - **License**: MIT
 
 ## Design principles

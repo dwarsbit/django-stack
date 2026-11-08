@@ -11,8 +11,8 @@ const config = {
   favicon: "img/favicon.svg",
   // GitHub Pages at its default address until the site has its own domain.
   // With a domain: set url to it, baseUrl to "/" and add static/CNAME.
-  url: "https://dwarsbit.github.io",
-  baseUrl: "/django-stack/",
+  url: "https://djangostack.org",
+  baseUrl: "/",
   organizationName: "dwarsbit",
   projectName: "django-stack",
   onBrokenLinks: "throw",
