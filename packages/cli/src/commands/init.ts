@@ -27,7 +27,7 @@ import {
   type StackValue,
   stackOption,
 } from "../stack";
-import { type Check, checkTools } from "../tools";
+import { type Check, checkTools, leftoverVolumes, removeLeftovers } from "../tools";
 import { command, fail, has, intro, isInteractive, logCheck, secret, unwrap, url } from "../ui";
 
 export interface InitOptions {
@@ -128,6 +128,34 @@ export function checkComputer(checks: Check[] = checkTools()): boolean {
   return !checks.some((check) => !check.ok && !check.warning);
 }
 
+/**
+ * Docker keeps the volumes of a deleted project. A new project with the same
+ * name would start on the old database, whose password is not the new one in
+ * .env: "password authentication failed for user app". Offers to remove them.
+ */
+async function handleLeftovers(name: string, interactive: boolean) {
+  const volumes = leftoverVolumes(name);
+  if (!volumes.length) return;
+  const removeCommand = command("docker compose down --volumes");
+  p.log.warn(
+    `Docker still has the data of an earlier project named ${pc.bold(name)} (${volumes.join(", ")}). The new project gets a new database password, so it cannot start on that database.`,
+  );
+  const remove =
+    interactive &&
+    unwrap(
+      await p.confirm({
+        message: `Remove the data of the earlier ${name}? Its database and uploads are deleted for good.`,
+        initialValue: false,
+      }),
+    );
+  if (remove) {
+    if (removeLeftovers(name, volumes)) p.log.success(`Removed the data of the earlier ${name}.`);
+    else fail("Could not remove it. Stop what uses it, or choose another --name.");
+  } else {
+    p.log.warn(`Run ${removeCommand} in the new project before you start it, or choose another --name.`);
+  }
+}
+
 export async function init(directoryArgument: string | undefined, options: InitOptions) {
   const interactive = isInteractive(options.yes);
   intro("Create a project");
@@ -156,6 +184,8 @@ export async function init(directoryArgument: string | undefined, options: InitO
       await p.text({ message: "Project name", validate: (value) => validateProjectName(value ?? "") }),
     );
   }
+
+  if (dockerReady) await handleLeftovers(name, interactive);
 
   const stack = await chooseStack(options, interactive);
 

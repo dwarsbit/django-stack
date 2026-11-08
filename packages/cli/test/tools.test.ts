@@ -6,8 +6,10 @@ import {
   dockerNotRunning,
   dockerRunning,
   isDockerDown,
+  leftoverVolumes,
   parseVersion,
   type Run,
+  removeLeftovers,
 } from "../src/tools";
 
 /** A command runner that answers from a table of `cmd args` to output. */
@@ -117,5 +119,34 @@ describe("Docker not running", () => {
       "Docker not running. Open Docker Desktop and wait until it says it is running.",
     );
     expect(dockerNotRunning("linux")).toBe("Docker not running. Start it: sudo systemctl start docker");
+  });
+});
+
+describe("leftover project data", () => {
+  const label = "label=com.docker.compose.project=my-site";
+
+  it("lists the volumes of an earlier project with the same name", () => {
+    const run = runner({ [`docker volume ls --quiet --filter ${label}`]: "my-site_pgdata\nmy-site_media" });
+    expect(leftoverVolumes("my-site", run)).toEqual(["my-site_pgdata", "my-site_media"]);
+    expect(
+      leftoverVolumes("my-site", runner({ [`docker volume ls --quiet --filter ${label}`]: "" })),
+    ).toEqual([]);
+    expect(leftoverVolumes("my-site", runner({}))).toEqual([]);
+  });
+
+  it("removes the containers first, then the volumes", () => {
+    const calls: string[] = [];
+    const run: Run = (cmd, args) => {
+      const line = [cmd, ...args].join(" ");
+      calls.push(line);
+      return line.startsWith("docker ps") ? "abc\ndef" : "ok";
+    };
+    expect(removeLeftovers("my-site", ["my-site_pgdata"], run)).toBe(true);
+    expect(calls).toEqual([
+      `docker ps --all --quiet --filter ${label}`,
+      "docker rm --force abc def",
+      "docker volume rm my-site_pgdata",
+    ]);
+    expect(removeLeftovers("my-site", ["my-site_pgdata"], runner({}))).toBe(false);
   });
 });
