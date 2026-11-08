@@ -25,6 +25,8 @@ the unreleased version; the release workflow releases it.
   `@`, `:`, `/` or `#` works as it is. `--database-url` on `production`
   sets it without asking. A `PRODUCTION_DATABASE_URL` in `.env`, from
   `init --database-url`, is used as before, without the question.
+- Form submissions in the admin of new projects are read and delete only:
+  no Create button, and a submission can no longer be edited.
 - The documentation moved to https://djangostack.org. The package
   metadata, the READMEs and the README of new projects link there.
 - The docs homepage title is now "The production-ready batteries included
