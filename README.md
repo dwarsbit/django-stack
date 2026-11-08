@@ -14,8 +14,8 @@
 </p>
 
 <p align="center">
-  <strong>Developer-first Django tooling</strong><br>
-  The production-ready Django, batteries included stack.
+  <strong>The production-ready batteries included Django stack</strong><br>
+  Developer-first Django tooling
 </p>
 
 DjangoStack creates a website project with a Django backend, a frontend,

@@ -155,14 +155,14 @@ export default function Home() {
   const { version, releaseUrl } = siteConfig.customFields;
 
   return (
-    <Layout title="Developer-first Django tooling" description={siteConfig.tagline}>
+    <Layout title="The production-ready batteries included Django stack" description={siteConfig.tagline}>
       <header className="hero-dst">
         <div className="container">
           <div>
             <Link className="hero-release" href={releaseUrl}>
               <b>v{version}</b> What’s new →
             </Link>
-            <h1>Developer-first Django tooling</h1>
+            <h1>The production-ready batteries included Django stack</h1>
             <p className="tagline">{siteConfig.tagline}</p>
             <p className="hero-intro">
               DjangoStack creates a website project with a Django backend, an Astro frontend, Postgres, Valkey

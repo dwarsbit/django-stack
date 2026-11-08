@@ -7,7 +7,7 @@ const releaseUrl = `https://github.com/dwarsbit/django-stack/releases/tag/v${ver
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "DjangoStack",
-  tagline: "The production-ready Django, batteries included stack.",
+  tagline: "Developer-first Django tooling",
   favicon: "img/favicon.svg",
   // GitHub Pages at its default address until the site has its own domain.
   // With a domain: set url to it, baseUrl to "/" and add static/CNAME.
