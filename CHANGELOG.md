@@ -5,6 +5,11 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.11.1 (unreleased)
+
+- The documentation moved to https://djangostack.org. The package
+  metadata, the READMEs and the README of new projects link there.
+
 ## 0.11.0 (2026-11-08)
 
 - **Postgres 18.** `init --postgres latest` now generates Postgres 18,

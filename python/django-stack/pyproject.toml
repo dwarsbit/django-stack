@@ -41,7 +41,9 @@ server = [
 s3 = ["django-storages[s3]>=1.14"]
 
 [project.urls]
-Homepage = "https://github.com/dwarsbit/django-stack"
+Homepage = "https://djangostack.org/"
+Documentation = "https://djangostack.org/docs/getting-started"
+Repository = "https://github.com/dwarsbit/django-stack"
 Source = "https://github.com/dwarsbit/django-stack/tree/main/python/django-stack"
 Issues = "https://github.com/dwarsbit/django-stack/issues"
 

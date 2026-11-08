@@ -90,7 +90,7 @@ commands.
 With the `dstack` command installed (`npm i -g @django-stack/cli`),
 `dstack dev`, `dstack check`, `dstack manage <command>` and `dstack types` do
 the same from any directory in the project. See the
-[CLI reference](https://dwarsbit.github.io/django-stack/docs/cli).
+[CLI reference](https://djangostack.org/docs/cli).
 
 ## Preview and publishing
 
@@ -106,7 +106,7 @@ empties its page cache, so the change shows on the next visit.
 The button opens `/preview` on `SITE_URL`, which your frontend serves; set
 `REVALIDATE_URL` to the endpoint where your frontend empties its page cache,
 and Django calls it when an editor saves. See
-[Preview and revalidation](https://dwarsbit.github.io/django-stack/docs/preview-revalidation).
+[Preview and revalidation](https://djangostack.org/docs/preview-revalidation).
 <!-- @end -->
 <!-- @if templates -->
 The site keeps each page in Django's cache, and empties it when an editor
@@ -122,7 +122,7 @@ counts page views without cookies, and the admin shows them under
 **Analytics**. Umami's own interface is not served: only its tracker and the
 page views pass through the site at `/_a/`. To turn it off, remove
 `analytics` from `COMPOSE_PROFILES` and empty `UMAMI_URL`. See
-[Page analytics](https://dwarsbit.github.io/django-stack/docs/analytics).
+[Page analytics](https://djangostack.org/docs/analytics).
 <!-- @end -->
 
 ## Deploy
@@ -138,7 +138,7 @@ docker compose up -d --build
 The `prod` profile runs production images behind Caddy, which gets the HTTPS
 certificate, and backs up the database every day. Media can go to S3 and the
 database to a managed Postgres. `.github/workflows/deploy.yml` deploys from
-GitHub Actions. The [deployment guide](https://dwarsbit.github.io/django-stack/docs/production/server)
+GitHub Actions. The [deployment guide](https://djangostack.org/docs/production/server)
 has every step.
 
 | Task | Command (on the server) |
