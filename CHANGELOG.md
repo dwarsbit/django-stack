@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.12.2 (unreleased)
+## 0.12.2 (2026-11-08)
 
 - **Bunny deploy finds the public Docker Hub registry.** `dstack deploy
   setup` on Bunny stopped with "Bunny lists no public Docker Hub registry
