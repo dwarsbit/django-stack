@@ -21,6 +21,10 @@ the unreleased version; the release workflow releases it.
 - The docs homepage title is now "The production-ready batteries included
   Django stack", with "Developer-first Django tooling" as the tagline.
   The README and the `@django-stack/cli` description follow.
+- The Status widget on the System page no longer shows when the worker and
+  the backup last ran, so its badges line up. The Daily backup row shows
+  "Active" when the worker runs daily backups but none ran yet, and "Off"
+  only when backups are turned off; `/statusz` reports that as `active`.
 
 ## 0.11.0 (2026-11-08)
 

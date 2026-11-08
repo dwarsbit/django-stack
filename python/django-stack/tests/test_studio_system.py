@@ -32,9 +32,8 @@ def test_status_widget(settings, monkeypatch):
     rows = {row["title"]: row for row in SystemStatusWidget().get_data(None)["content"]}
     assert rows["Database"]["status_variant"] == "success"
     assert rows["Worker"]["status"] == "OK"
-    assert rows["Worker"]["timestamp"] is not None
     assert rows["Daily backup"]["status"] == "Off"
-    assert rows["Daily backup"]["timestamp"] is None
+    assert all("timestamp" not in row for row in rows.values())
 
 
 @pytest.mark.django_db

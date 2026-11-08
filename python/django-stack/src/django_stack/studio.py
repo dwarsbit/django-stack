@@ -51,12 +51,13 @@ def _superuser(request) -> bool:
 STATUS = {
     "ok": (_("OK"), "success"),
     "error": (_("Failing"), "danger"),
+    "active": (_("Active"), "info"),
     "off": (_("Off"), "default"),
 }
 
 
 class SystemStatusWidget(ContentListWidget):
-    """The database, cache, worker and daily backup checks, with when the worker and the backup last ran."""
+    """The database, cache, worker and daily backup checks."""
 
     name = "DjangoStackSystemStatus"
     refresh_interval = 60
@@ -64,23 +65,21 @@ class SystemStatusWidget(ContentListWidget):
     def get_data(self, request):
         checks = health.status()
         rows = [
-            (_("Database"), checks["database"], _("Postgres answers queries."), None),
-            (_("Cache"), checks["cache"], _("The cache stores and returns values."), None),
+            (_("Database"), checks["database"], _("Postgres answers queries.")),
+            (_("Cache"), checks["cache"], _("The cache stores and returns values.")),
             (
                 _("Worker"),
                 checks["worker"],
                 _("Runs the tasks; checks in every minute. Off when tasks run in the request."),
-                health.stamped_at(health.HEARTBEAT_KEY) if checks["worker"] != "off" else None,
             ),
             (
                 _("Daily backup"),
                 checks["backup"],
-                _("Failing when the last backup is more than 26 hours old. Off until the first one."),
-                health.stamped_at(health.BACKUP_KEY) if checks["backup"] != "off" else None,
+                _("Failing when the last backup is more than 26 hours old. Off when backups are turned off."),
             ),
         ]
         content = []
-        for title, result, description, timestamp in rows:
+        for title, result, description in rows:
             label, variant = STATUS[result]
             content.append(
                 {
@@ -88,7 +87,6 @@ class SystemStatusWidget(ContentListWidget):
                     "description": str(description),
                     "status": str(label),
                     "status_variant": variant,
-                    "timestamp": timestamp,
                 }
             )
         return {"title": str(_("Status")), "content": content}

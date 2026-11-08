@@ -39,11 +39,24 @@ def test_worker_heartbeat(worker):
 def test_backup_age(worker):
     from django.core.cache import cache
 
-    cache.delete(health.BACKUP_KEY)
+    cache.delete_many([health.BACKUP_KEY, health.BACKUP_DAILY_KEY])
     assert health.check_backup() == "off"
     health.stamp(health.BACKUP_KEY)
     assert health.check_backup() == "ok"
     assert health.check_backup(now=time.time() + 27 * 3600) == "error"
+
+
+def test_backup_active_before_the_first_one(worker, settings):
+    from django.core.cache import cache
+
+    cache.delete_many([health.BACKUP_KEY, health.BACKUP_DAILY_KEY])
+    settings.DJANGO_STACK = {**settings.DJANGO_STACK, "BACKUP_DAILY": False}
+    tasks.heartbeat.call_local()
+    assert health.check_backup() == "off"
+    settings.DJANGO_STACK = {**settings.DJANGO_STACK, "BACKUP_DAILY": True}
+    tasks.heartbeat.call_local()
+    assert health.check_backup() == "active"
+    assert health.healthy({"backup": "active"})
 
 
 @pytest.mark.django_db
