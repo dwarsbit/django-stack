@@ -126,6 +126,32 @@ export function dockerRunning(runCommand: Run = run): boolean {
   return Boolean(runCommand("docker", ["version", "--format", "{{.Server.Version}}"]));
 }
 
+/**
+ * The Docker volumes of an earlier Compose project with this name, such as
+ * `<name>_pgdata`. A new project with the same name would reuse them, and
+ * Postgres keeps the password of the data it was created with.
+ */
+export function leftoverVolumes(name: string, runCommand: Run = run): string[] {
+  const output = runCommand("docker", [
+    "volume",
+    "ls",
+    "--quiet",
+    "--filter",
+    `label=com.docker.compose.project=${name}`,
+  ]);
+  return (output ?? "").split("\n").filter(Boolean);
+}
+
+/** Removes the containers and volumes of the Compose project with this name. Returns whether it worked. */
+export function removeLeftovers(name: string, volumes: string[], runCommand: Run = run): boolean {
+  const label = `label=com.docker.compose.project=${name}`;
+  const containers = (runCommand("docker", ["ps", "--all", "--quiet", "--filter", label]) ?? "")
+    .split("\n")
+    .filter(Boolean);
+  if (containers.length && runCommand("docker", ["rm", "--force", ...containers]) === undefined) return false;
+  return runCommand("docker", ["volume", "rm", ...volumes]) !== undefined;
+}
+
 /** Docker and Docker Compose, which run the project. */
 export function checkDocker({
   run: runCommand = run,

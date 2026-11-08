@@ -5,6 +5,15 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.1 (unreleased)
+
+- **A clear error for the database of an earlier project.** Docker keeps
+  the volumes of a deleted project, and a new project with the same name
+  started on that old database, whose password is not the one in the new
+  `.env`: "password authentication failed for user app". `init` now finds
+  the data of an earlier project with the same name and offers to remove
+  it, and the backend stops at once with what to do instead of retrying.
+
 ## 0.12.0 (2026-11-08)
 
 - **A dashboard in the admin.** New projects open the admin on a

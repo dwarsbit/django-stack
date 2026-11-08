@@ -66,6 +66,14 @@ When a port is in use, for example by another project, `init` and
 `SITE_PORT`, `BACKEND_PORT`, `MAIL_PORT` or `S3_PORT`, with `SITE_URL` and
 `BACKEND_URL` to match. They print the port they took.
 
+Docker keeps a project's database and uploads in volumes named after the
+project, also when you delete its directory. A new project with the same
+name would start on the old database, whose password is not the new one in
+`.env`, so `init` offers to remove that data. If you kept it, the backend
+stops with "password authentication failed for user app": run
+`docker compose down --volumes` in the project to start over with an empty
+database.
+
 Log in to the admin as `admin` with the password that `init` printed. It is
 also in `.env` as `ADMIN_PASSWORD`. Change it after you log in.
 
