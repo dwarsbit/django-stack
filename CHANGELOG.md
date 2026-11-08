@@ -5,8 +5,17 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.11.1 (unreleased)
+## 0.12.0 (unreleased)
 
+- **Your own Postgres in `dstack production`.** `init` no longer asks for
+  a production database URL; its Database question only picks the Postgres
+  version. `dstack production` now asks whether the server uses the
+  bundled Postgres or your own, and for your own whether you enter a
+  `postgres://` URL or the host, port, database name, user and password
+  separately. Separate values are URL-encoded for you, so a password with
+  `@`, `:`, `/` or `#` works as it is. `--database-url` on `production`
+  sets it without asking. A `PRODUCTION_DATABASE_URL` in `.env`, from
+  `init --database-url`, is used as before, without the question.
 - The documentation moved to https://djangostack.org. The package
   metadata, the READMEs and the README of new projects link there.
 

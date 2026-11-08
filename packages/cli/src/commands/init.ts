@@ -71,15 +71,12 @@ export function choices(key: StackKey, stack: Partial<Stack> = {}) {
 
 /**
  * The stack from, in order of precedence, the flags, the preset, the prompts
- * and the defaults. `askDatabase` asks for the Postgres version together with
- * the external database choice; it returns the version, and the URL for
- * production when there is one.
+ * and the defaults.
  */
 export async function chooseStack(
   options: Pick<InitOptions, "preset" | "fromCli"> & Record<string, unknown>,
   interactive: boolean,
-  askDatabase?: (initial: string) => Promise<{ postgres: string; databaseUrl?: string }>,
-): Promise<{ stack: Stack; databaseUrl?: string }> {
+): Promise<Stack> {
   let preset: Stack | undefined;
   if (options.preset) {
     try {
@@ -89,18 +86,13 @@ export async function chooseStack(
     }
   }
   const stack = { ...DEFAULT_STACK } as Record<string, string>;
-  let databaseUrl: string | undefined;
   for (const key of PROMPT_ORDER) {
     const option = stackOption(key);
     if (options.fromCli(key)) stack[key] = options[key] as string;
     else if (key === "storage" && options.fromCli("localS3") && options.localS3) stack[key] = "s3";
     else if (preset) stack[key] = preset[key];
     else if (!interactive || !applies(key, stack as Stack)) continue;
-    else if (key === "postgres" && askDatabase && !options.databaseUrl) {
-      const answer = await askDatabase(stack[key] as string);
-      if (answer.databaseUrl) databaseUrl = answer.databaseUrl;
-      stack[key] = answer.postgres;
-    } else {
+    else {
       // With S3 in production, suggest the local S3 service in development: the same code path.
       const initialValue = key === "storage" && stack.media === "s3" ? "s3" : stack[key];
       stack[key] = unwrap(
@@ -112,7 +104,7 @@ export async function chooseStack(
       );
     }
   }
-  return { stack: stack as Stack, databaseUrl };
+  return stack as Stack;
 }
 
 function systemTimeZone(): string {
@@ -165,44 +157,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
     );
   }
 
-  const chosen = await chooseStack(options, interactive, async (initial) => {
-    const choice = unwrap(
-      await p.select<string>({
-        message: "Database",
-        initialValue: initial,
-        options: [
-          ...choices("postgres").map((value) => ({
-            ...value,
-            label: `Bundled Postgres, ${value.label.toLowerCase()}`,
-          })),
-          {
-            value: "external",
-            label: "External Postgres in production",
-            hint: "a URL to your server; development runs the bundled one",
-          },
-        ],
-      }),
-    );
-    if (choice !== "external") return { postgres: choice };
-    const databaseUrl = unwrap(
-      await p.text({
-        message: "Postgres URL for production",
-        placeholder: "postgres://user:password@host:5432/name",
-        validate: (value) => (value?.startsWith("postgres") ? undefined : "Enter a postgres:// URL."),
-      }),
-    );
-    // The bundled Postgres in development and the backups' client match the server.
-    const postgres = unwrap(
-      await p.select<string>({
-        message: "Its Postgres version",
-        initialValue: initial,
-        options: choices("postgres"),
-      }),
-    );
-    return { postgres, databaseUrl };
-  });
-  const stack = chosen.stack;
-  const databaseUrl = options.databaseUrl ?? chosen.databaseUrl;
+  const stack = await chooseStack(options, interactive);
 
   // Umami's tracker runs in the frontend's pages; a headless project has none.
   if (!applies("analytics", stack) && stack.analytics !== "off") {
@@ -257,7 +212,7 @@ export async function init(directoryArgument: string | undefined, options: InitO
       name,
       frontend: stack.frontend,
       demoContent,
-      databaseUrl,
+      databaseUrl: options.databaseUrl,
       postgres: stack.postgres,
       localS3: stack.storage === "s3",
       analytics: stack.analytics === "umami",

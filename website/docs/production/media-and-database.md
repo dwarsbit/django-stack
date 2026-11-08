@@ -72,16 +72,21 @@ version DjangoStack tests with.
 Development keeps the bundled Postgres, so your local data never touches
 the server's.
 
-1. Set `PRODUCTION_DATABASE_URL` in `.env`, with `sslmode=require` for a
-   server on another host (`init --database-url` sets it for you):
+1. Run `dstack production` and choose **Your own Postgres**. Enter the
+   host, port, database name, user and password, or a `postgres://` URL.
+   Separate values are URL-encoded for you; in a URL, encode special
+   characters in the password yourself (`@` as `%40`, `/` as `%2F`).
+   `.env.production` gets it as `DATABASE_URL`, with `sslmode=require` for
+   a server on another host, and without `db` in `COMPOSE_PROFILES`.
+
+   Without a terminal, pass it with `--database-url`, or set
+   `PRODUCTION_DATABASE_URL` in `.env` (`init --database-url` does):
 
    ```bash
    PRODUCTION_DATABASE_URL=postgres://user:password@db.example.com:5432/app?sslmode=require
    ```
 
-2. Run `dstack production`: `.env.production` gets it as `DATABASE_URL`,
-   without `db` in `COMPOSE_PROFILES`.
-3. Deploy. The backend migrates the new database.
+2. Deploy. The backend migrates the new database.
 
 To switch a server that already runs, set `DATABASE_URL` in its `.env` and
 remove `db` from `COMPOSE_PROFILES` (`COMPOSE_PROFILES=prod`). `dstack run`

@@ -32,7 +32,7 @@ export async function preset(code: string | undefined, options: PresetOptions) {
     );
     return;
   }
-  const { stack } = await chooseStack(options, isInteractive(options.yes));
+  const stack = await chooseStack(options, isInteractive(options.yes));
   const encoded = encodePreset(stack);
   p.outro(`Create this stack with ${command(`${selfCommand()} init --preset ${encoded}`)}`);
 }

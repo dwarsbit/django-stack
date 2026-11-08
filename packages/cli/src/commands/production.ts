@@ -3,8 +3,8 @@ import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { parseEnv } from "../env";
-import { productionEnv, validateDomain } from "../production";
-import { relativeDirectory } from "../scaffold";
+import { postgresUrl, productionEnv, validateDomain } from "../production";
+import { normalizeDatabaseUrl, relativeDirectory } from "../scaffold";
 import { remainingTodo, SETTING_NAMES, settingsToAsk } from "../settings";
 import { command, fail, intro, isInteractive, secret, unwrap, url } from "../ui";
 import { askSettings, projectContext, writeSettings } from "./settings";
@@ -12,8 +12,84 @@ import { askSettings, projectContext, writeSettings } from "./settings";
 export interface ProductionCommandOptions {
   domain?: string;
   emailUrl?: string;
+  databaseUrl?: string;
   force?: boolean;
   yes?: boolean;
+}
+
+const required = (label: string) => (value: string | undefined) =>
+  value?.trim() ? undefined : `Enter the ${label}.`;
+
+/**
+ * Asks for the server's database: the bundled Postgres, or your own as a URL
+ * or as separate values. Returns the URL of your own, or undefined.
+ */
+export async function askDatabase(): Promise<string | undefined> {
+  const where = unwrap(
+    await p.select<string>({
+      message: "Database on the server",
+      initialValue: "bundled",
+      options: [
+        { value: "bundled", label: "Bundled Postgres", hint: "a container next to the backend" },
+        { value: "external", label: "Your own Postgres", hint: "a managed database or another server" },
+      ],
+    }),
+  );
+  if (where === "bundled") return undefined;
+  const form = unwrap(
+    await p.select<string>({
+      message: "How do you want to enter it?",
+      initialValue: "parts",
+      options: [
+        { value: "parts", label: "Host, port, name, user and password", hint: "any password works" },
+        { value: "url", label: "A postgres:// URL", hint: "special characters in the password URL-encoded" },
+      ],
+    }),
+  );
+  if (form === "url") {
+    const value = unwrap(
+      await p.text({
+        message: "Postgres URL",
+        placeholder: "postgres://user:password@db.example.com:5432/app",
+        validate: (value) => {
+          try {
+            normalizeDatabaseUrl((value ?? "").trim());
+            return undefined;
+          } catch (error) {
+            return (error as Error).message;
+          }
+        },
+      }),
+    );
+    return normalizeDatabaseUrl(value.trim());
+  }
+  const host = unwrap(
+    await p.text({ message: "Host", placeholder: "db.example.com", validate: required("host") }),
+  );
+  const port = unwrap(
+    await p.text({
+      message: "Port",
+      placeholder: "5432",
+      defaultValue: "5432",
+      validate: (value) => {
+        if (!value) return undefined;
+        const port = Number(value);
+        return Number.isInteger(port) && port > 0 && port < 65536 ? undefined : "Enter a port, such as 5432.";
+      },
+    }),
+  );
+  const name = unwrap(
+    await p.text({ message: "Database name", placeholder: "app", validate: required("name") }),
+  );
+  const user = unwrap(await p.text({ message: "User", placeholder: "app", validate: required("user") }));
+  const password = unwrap(await p.password({ message: "Password" }));
+  return postgresUrl({
+    host: host.trim(),
+    port: port.trim(),
+    name: name.trim(),
+    user: user.trim(),
+    password,
+  });
 }
 
 export async function production(directoryArgument: string | undefined, options: ProductionCommandOptions) {
@@ -36,12 +112,24 @@ export async function production(directoryArgument: string | undefined, options:
       }),
     );
   }
+  const devEnv = readFileSync(envPath, "utf8");
+  let databaseUrl = options.databaseUrl;
+  if (databaseUrl) {
+    try {
+      normalizeDatabaseUrl(databaseUrl);
+    } catch (error) {
+      fail((error as Error).message);
+    }
+  } else if (interactive && !parseEnv(devEnv).PRODUCTION_DATABASE_URL) {
+    databaseUrl = await askDatabase();
+  }
   const context = projectContext(directory);
   let result: ReturnType<typeof productionEnv>;
   try {
-    result = productionEnv(readFileSync(envPath, "utf8"), {
+    result = productionEnv(devEnv, {
       domain,
       emailUrl: options.emailUrl,
+      databaseUrl,
       media: context.media,
     });
   } catch (error) {
