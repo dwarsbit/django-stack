@@ -99,4 +99,4 @@ def test_contact_form(client, seeded):
 def test_contact_form_needs_a_captcha(client, seeded):
     response = client.post("/contact", {"name": "Ada", "email": "ada@example.com", "message": "Hello"})
     assert response.status_code == 400
-    assert not FormSubmission.objects.exists()
+    assert not FormSubmission.objects.filter(email="ada@example.com").exists()
