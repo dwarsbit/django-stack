@@ -5,6 +5,15 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.4 (unreleased)
+
+- **Database passwords with special characters.** A database URL pasted
+  with a raw `@`, `#`, `/`, `?` or `%` in the password, or written by hand
+  in `PRODUCTION_DATABASE_URL`, was used as it was, so Umami and Django
+  could not read the password. `init` and `production` now URL-encode the
+  user name and password, and an encoded one stays as it is. Run
+  `dstack production` again to fix `.env.production`.
+
 ## 0.12.3 (2026-11-08)
 
 - **Bunny deploys push to GitHub Container Registry.** Bunny Container
