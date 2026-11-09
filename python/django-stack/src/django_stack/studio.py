@@ -19,10 +19,20 @@ object's path on the site comes from its ``get_absolute_url()``::
     @register(Page)
     class PageStudio(ModelStudio):
         edit_sidebar = ["status", "published_at", PreviewButton()]
+
+``HueyAdapter`` is Content Studio's Huey adapter for the task dashboard,
+without the worker's heartbeat in the recent runs: it runs every minute
+and would push the real tasks out of the list::
+
+    from django_stack.studio import HueyAdapter
+
+    TASKS = HueyAdapter()
 """
 
+from content_studio.contrib import huey as studio_huey
 from content_studio.dashboard import Dashboard
 from content_studio.dashboard.content_list import ContentListWidget
+from content_studio.dashboard.tasks import TaskRow
 from content_studio.extensions import DashboardPage, UserMenuLink
 from content_studio.form import ButtonLink
 from django.apps import apps
@@ -40,6 +50,45 @@ class PreviewButton(ButtonLink):
         get_path = getattr(obj, "get_absolute_url", None)
         path = get_path() if callable(get_path) else "/"
         return preview_url(path)
+
+
+class HueyAdapter(studio_huey.HueyAdapter):
+    """Content Studio's Huey adapter, with ``hidden_tasks`` left out of the recent runs."""
+
+    #: Full Huey task names that never show in the recent runs.
+    hidden_tasks = ("django_stack.tasks.heartbeat",)
+
+    def get_recent_tasks(self, request, limit: int) -> list[TaskRow]:
+        if self.stats is None:
+            return []
+
+        from huey.contrib.stats import HueyEvent
+
+        events = (
+            HueyEvent.select()
+            .where(
+                HueyEvent.queue == self.stats.name,
+                HueyEvent.signal.in_(list(studio_huey.OUTCOMES)),
+                HueyEvent.task.not_in(list(self.hidden_tasks)),
+            )
+            .order_by(HueyEvent.ts.desc(), HueyEvent.id.desc())
+            .limit(limit)
+        )
+        rows = []
+        for event in events:
+            title, description = self.get_run_name(event)
+            status, error = self.get_outcome(event)
+            rows.append(
+                TaskRow(
+                    title=title,
+                    description=description,
+                    status=status,
+                    last_run_at=studio_huey.from_timestamp(event.ts),
+                    duration=studio_huey.seconds(event.duration),
+                    error_message=error,
+                )
+            )
+        return rows
 
 
 def _superuser(request) -> bool:
