@@ -1,6 +1,6 @@
 {
   "name": "@django-stack/react",
-  "version": "0.12.6",
+  "version": "0.12.7",
   "description": "React components for DjangoStack frontends: blocks, rich text and images.",
   "license": "MIT",
   "author": "Leon van der Grient",
