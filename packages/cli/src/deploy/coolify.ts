@@ -18,6 +18,14 @@ import { urlTarget } from "./provider";
  * certificate and forwards to the `proxy` service (Caddy) on port 80.
  */
 
+/**
+ * Keeps the repository on the server during a deploy. Without it Coolify
+ * starts the services from /data/coolify/applications/<uuid>, where the
+ * repository's files are missing: Docker then creates a directory for the
+ * bind-mounted ./Caddyfile and the proxy fails with "not a directory".
+ */
+export const PRESERVE_REPOSITORY = { is_preserve_repository_enabled: true };
+
 /** Variables that put Caddy behind Coolify's proxy. See the docs page on platforms. */
 export const PLATFORM_ENV: Record<string, string> = {
   CADDY_ADDRESS: ":80",
@@ -330,6 +338,7 @@ export class CoolifyClient implements ProviderClient {
       name: context.name,
       description: "DjangoStack",
       instant_deploy: false,
+      ...PRESERVE_REPOSITORY,
       ...(githubApp ? { github_app_uuid: githubApp } : {}),
     };
     const created = await api.post<{ uuid: string }>(
@@ -362,6 +371,11 @@ export class CoolifyClient implements ProviderClient {
   }
 
   async deploy(link: DeployLink, options: { force: boolean }): Promise<string> {
+    // Applications set up before the setting was added get it on their next
+    // deploy. Best effort: a Coolify without it fails at the proxy instead.
+    await this.api
+      .patch(`/applications/${enc(link.application)}`, PRESERVE_REPOSITORY)
+      .catch(() => undefined);
     const query = `uuid=${enc(link.application)}${options.force ? "&force=true" : ""}`;
     const result = await this.api.post<{ deployments?: { deployment_uuid?: string; message?: string }[] }>(
       `/deploy?${query}`,
