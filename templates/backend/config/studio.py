@@ -12,13 +12,12 @@ from content_studio.analytics import (
     AnalyticsStatisticWidget,
     AnalyticsTopPagesWidget,
 )
-from content_studio.contrib.huey import HueyAdapter
 from content_studio.dashboard import Dashboard
 from content_studio.dashboard.activity_log import ActivityLogWidget
-from content_studio.dashboard.tasks import TaskDashboard, TaskStatisticWidget
+from content_studio.dashboard.tasks import TaskDashboard
 from content_studio.extensions import UserMenuLink
 from django_stack.analytics import UmamiProvider
-from django_stack.studio import SystemLink, SystemPage
+from django_stack.studio import HueyAdapter, SystemLink, SystemPage
 
 from content.dashboard import PublishedCountWidget, RecentSubmissionsWidget, SubmissionCountWidget
 from content.models import Page, Post
@@ -42,9 +41,10 @@ class SiteStudio(ContentStudioSite):
     if UmamiProvider.is_configured():
         extensions += [AnalyticsExtension(provider=UmamiProvider()), AnalyticsPage(), AnalyticsLink()]
 
-    # The dashboard at /admin/: what the site has, what came in, what
-    # changed and how the worker is doing. The counters and the form
-    # submissions are in content/dashboard.py; change or remove them there.
+    # The dashboard at /admin/: what the site has, what came in and what
+    # changed; the worker's tasks are on the Tasks page. The counters and
+    # the form submissions are in content/dashboard.py; change or remove
+    # them there.
     dashboard = Dashboard(
         widgets=[
             PublishedCountWidget(Page, "Published pages", icon="ph-bold ph-file-text"),
@@ -55,9 +55,6 @@ class SiteStudio(ContentStudioSite):
             RecentSubmissionsWidget(),
             ActivityLogWidget(),
             *([AnalyticsTopPagesWidget("30d")] if UmamiProvider.is_configured() else []),
-            # The task counts; the tasks themselves are on the Tasks page.
-            TaskStatisticWidget(TASKS, "queued"),
-            TaskStatisticWidget(TASKS, "failed"),
         ]
     )
 

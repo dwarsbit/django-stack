@@ -7,6 +7,15 @@ the unreleased version; the release workflow releases it.
 
 ## 0.12.9 (unreleased)
 
+### Changes
+
+- Changed: the worker's heartbeat, which runs every minute, no longer
+  fills the recent runs of the Tasks page. `django_stack.studio.HueyAdapter`
+  leaves it out. The dashboard no longer shows the queued and failed task
+  counts. In an existing project, import `HueyAdapter` from
+  `django_stack.studio` in `backend/config/studio.py` and remove the two
+  `TaskStatisticWidget` lines.
+
 ### Fixes
 
 - Fixed: `dstack dev` could start the production build of the frontend
