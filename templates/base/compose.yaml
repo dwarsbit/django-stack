@@ -89,9 +89,12 @@ x-worker-health: &worker-health
 
 services:
   # Development ------------------------------------------------------------
+  # The dev images have their own names: a prod build tags
+  # {{project_name}}-backend and -frontend, and must not replace these.
 
   backend:
     profiles: [dev]
+    image: {{project_name}}-backend-dev
     build:
       context: ./backend
       target: dev
@@ -116,6 +119,7 @@ services:
 
   worker:
     profiles: [dev]
+    image: {{project_name}}-backend-dev
     build:
       context: ./backend
       target: dev
@@ -137,6 +141,7 @@ services:
   # @if frontend
   frontend:
     profiles: [dev]
+    image: {{project_name}}-frontend-dev
     build:
       context: ./frontend
       target: dev

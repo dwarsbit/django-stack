@@ -5,6 +5,27 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.9 (unreleased)
+
+### Fixes
+
+- Fixed: `dstack dev` could start the production build of the frontend
+  and crash. The dev services had no `image` key, so Compose named their
+  images `<project>-backend` and `<project>-frontend`, the same names as
+  the prod images; building prod replaced the dev images. The dev
+  services in `compose.yaml` now have their own image names. In an
+  existing project, add an `image` line to the `backend`, `worker` and
+  `frontend` services, then run `docker compose --profile dev build`:
+
+  ```yaml
+    backend:
+      image: <project>-backend-dev
+    worker:
+      image: <project>-backend-dev
+    frontend:
+      image: <project>-frontend-dev
+  ```
+
 ## 0.12.8 (2026-11-09)
 
 ### Fixes

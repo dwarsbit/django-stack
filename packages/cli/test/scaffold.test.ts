@@ -431,6 +431,16 @@ describe("scaffold", () => {
     },
   );
 
+  it("gives the dev images other names than the prod images", () => {
+    const directory = join(tempDir(), "site");
+    scaffold({ directory, name: "site", frontend: "astro", demoContent: true });
+    const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
+    expect(compose.match(/image: site-backend-dev\n/g)).toHaveLength(2);
+    expect(compose).toContain("image: site-frontend-dev\n");
+    expect(compose).toContain("image: ${BACKEND_IMAGE:-site-backend}\n");
+    expect(compose).toContain("image: ${FRONTEND_IMAGE:-site-frontend}\n");
+  });
+
   it.each([
     ["stable", "17", "/var/lib/postgresql/data"],
     ["latest", "18", "/var/lib/postgresql"],
