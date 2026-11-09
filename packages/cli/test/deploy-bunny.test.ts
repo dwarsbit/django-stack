@@ -737,10 +737,28 @@ describe("BunnyClient", () => {
     );
     await client.pushEnv({ ...link, directory }, { SITE_URL: "https://example.com" });
     const frontend = calls.find((item) => item.path === "/mc/apps/app1/containers/c-frontend/env");
-    const body = frontend?.body as { environmentVariables: { name: string }[] } | undefined;
-    const names = (body?.environmentVariables ?? []).map((item) => item.name);
-    expect(names).toContain("API_URL");
-    expect(names).not.toContain("DJANGO_SECRET_KEY");
+    // Bunny takes a flat object of names and values.
+    const body = (frontend?.body ?? {}) as Record<string, unknown>;
+    expect(typeof body.API_URL).toBe("string");
+    expect(body).not.toHaveProperty("DJANGO_SECRET_KEY");
+    expect(body).not.toHaveProperty("environmentVariables");
+  });
+
+  it("prints Bunny's validation errors", async () => {
+    const { client } = fakeBunny(
+      {
+        "GET /mc/apps": () =>
+          new Response(
+            JSON.stringify({
+              title: "Validation Error",
+              errors: [{ field: "FOO", message: "is invalid" }, { message: "bad body" }],
+            }),
+            { status: 400 },
+          ),
+      },
+      fakeRunner().run,
+    );
+    await expect(client.verify()).rejects.toThrow("Validation Error; FOO: is invalid; bad body");
   });
 
   it("shows the domain and whether its certificate is active", async () => {

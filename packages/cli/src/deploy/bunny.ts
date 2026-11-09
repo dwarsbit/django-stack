@@ -266,7 +266,15 @@ function errorText(data: unknown): string {
       .map((item) => text(item))
       .filter(Boolean);
     const errors = value.errors;
-    if (errors && typeof errors === "object")
+    if (Array.isArray(errors))
+      for (const item of errors) {
+        if (item && typeof item === "object") {
+          const { field, message } = item as Json;
+          const said = text(message) ?? JSON.stringify(item);
+          parts.push(text(field) ? `${text(field)}: ${said}` : said);
+        } else parts.push(String(item));
+      }
+    else if (errors && typeof errors === "object")
       for (const [key, messages] of Object.entries(errors as Json))
         parts.push(`${key}: ${Array.isArray(messages) ? messages.join(" ") : String(messages)}`);
     if (parts.length) return parts.join("; ");
@@ -1155,7 +1163,7 @@ export class BunnyClient implements ProviderClient {
       await this.api.mc(
         "PUT",
         `/apps/${encodeURIComponent(appId)}/containers/${encodeURIComponent(item.id)}/env`,
-        { environmentVariables: envList(container.env) },
+        { ...container.env },
       );
     }
     await this.retag(
@@ -1179,7 +1187,7 @@ export class BunnyClient implements ProviderClient {
       await this.api.mc(
         "PUT",
         `/apps/${encodeURIComponent(link.project)}/containers/${encodeURIComponent(remote.id)}/env`,
-        { environmentVariables: envList(container.env) },
+        { ...container.env },
       );
     }
   }

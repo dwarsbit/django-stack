@@ -5,6 +5,14 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.6 (unreleased)
+
+- **Bunny variables are sent in the shape Bunny takes.** `dstack deploy
+  env push`, and setup when it attaches an existing app, sent the
+  variables as a list, and Bunny answered "Validation Error". They are
+  now sent as one object of names and values. Bunny's validation errors
+  now show the field and the message instead of `[object Object]`.
+
 ## 0.12.5 (2026-11-09)
 
 - **Bunny setup attaches an existing app.** `dstack deploy setup` wrote
