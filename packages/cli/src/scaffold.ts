@@ -152,9 +152,16 @@ export interface ScaffoldResult {
   files: number;
 }
 
-/** Umami's database URL: the project's database, with Umami's tables in the `umami` schema. */
+/**
+ * Umami's database URL: the project's database, with Umami's tables in the
+ * `umami` schema. Umami connects with node-postgres, which reads
+ * `sslmode=require` as verify-full, so a managed Postgres with a self-signed
+ * certificate fails; `uselibpqcompat=true` gives `sslmode` libpq's meaning,
+ * the one Django's psycopg uses (Prisma's migrations ignore it).
+ */
 export function umamiDatabaseUrl(databaseUrl: string): string {
   const url = new URL(encodeDatabaseUserinfo(databaseUrl));
+  if (url.searchParams.has("sslmode")) url.searchParams.set("uselibpqcompat", "true");
   url.searchParams.set("schema", "umami");
   return url.toString();
 }

@@ -73,7 +73,7 @@ secrets.
 | `UMAMI_WEBSITE_ID` | The ID of the site in Umami, a UUID. The frontend puts it in the tracker. |
 | `UMAMI_ADMIN_PASSWORD` | The password of Umami's `admin` user. The backend reads the numbers with it. |
 | `UMAMI_APP_SECRET` | Signs Umami's login tokens. |
-| `UMAMI_DATABASE_URL` | Umami's database: `DATABASE_URL` with `?schema=umami`. |
+| `UMAMI_DATABASE_URL` | Umami's database: `DATABASE_URL` with `?schema=umami`, and `uselibpqcompat=true` when it sets an `sslmode`, so `sslmode=require` accepts a self-signed certificate as it does for Django. |
 
 ## Turn analytics off or on
 

@@ -89,7 +89,10 @@ the server's.
 2. Deploy. The backend migrates the new database.
 
 To switch a server that already runs, set `DATABASE_URL` in its `.env` and
-remove `db` from `COMPOSE_PROFILES` (`COMPOSE_PROFILES=prod`). `dstack run`
+remove `db` from `COMPOSE_PROFILES` (`COMPOSE_PROFILES=prod`, or
+`prod,analytics` with Umami). With Umami, also set `UMAMI_DATABASE_URL` to
+the same URL with `&uselibpqcompat=true&schema=umami` at the end; running
+`dstack production` again does both for you. `dstack run`
 on your machine keeps the bundled Postgres either way.
 
 To move existing content to the new database, back up the old one and
