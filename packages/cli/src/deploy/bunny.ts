@@ -780,16 +780,61 @@ export class BunnyClient implements ProviderClient {
     return (await this.api.request<Json>("GET", `/pullzone/${encodeURIComponent(id)}`)) ?? {};
   }
 
-  /** The custom hostname, its certificate and a cache bypass for pages that must not be cached. */
-  async setupPullZone(id: string, domain: string, step: (message: string) => void): Promise<void> {
+  /** The pull zone of this account that has `domain` as a custom hostname, if any. */
+  async pullZoneWithHostname(domain: string): Promise<PullZoneRef | undefined> {
+    const wanted = domain.toLowerCase();
+    let zones: Json[];
+    try {
+      zones = listOf(
+        await this.api.request("GET", `/pullzone?search=${encodeURIComponent(domain)}&perPage=1000`),
+      );
+    } catch {
+      return undefined;
+    }
+    for (const zone of zones) {
+      if (!listOf(zone.Hostnames).some((item) => text(item.Value)?.toLowerCase() === wanted)) continue;
+      const id = text(zone.Id);
+      if (id) return { id, name: text(zone.Name) };
+    }
+    return undefined;
+  }
+
+  /**
+   * The custom hostname, its certificate and a cache bypass for pages that must not be cached.
+   * `move` is the pull zone the user agreed to take the hostname from.
+   */
+  async setupPullZone(
+    id: string,
+    domain: string,
+    step: (message: string) => void,
+    move?: PullZoneRef,
+  ): Promise<void> {
     const zone = `/pullzone/${encodeURIComponent(id)}`;
     // Django checks the Host header against the site's domain, so the CDN forwards it.
     await this.api.request("POST", zone, { AddHostHeader: true });
-    const current = await this.pullZone(id);
-    const hostnames = listOf(current.Hostnames).map((item) => text(item.Value)?.toLowerCase());
-    if (!hostnames.includes(domain.toLowerCase())) {
-      await this.api.request("POST", `${zone}/addHostname`, { Hostname: domain });
-      step(`Added ${domain} to the CDN pull zone`);
+    if (!(await this.hasHostname(id, domain))) {
+      if (move && move.id !== id) {
+        await this.api.request("DELETE", `/pullzone/${encodeURIComponent(move.id)}/removeHostname`, {
+          Hostname: domain,
+        });
+        step(`Removed ${domain} from the CDN pull zone ${zoneName(move)}`);
+      }
+      try {
+        await this.api.request("POST", `${zone}/addHostname`, { Hostname: domain });
+        step(`Added ${domain} to the CDN pull zone`);
+      } catch (error) {
+        if (
+          !(error instanceof BunnyError && error.status === 400 && /already registered/i.test(error.message))
+        )
+          throw error;
+        // Added meanwhile, or the hostname is on another pull zone.
+        if (!(await this.hasHostname(id, domain))) {
+          const other = await this.pullZoneWithHostname(domain);
+          throw new Error(
+            `${hostnameTaken(domain, other)} The new app is created but has no domain: delete it in the Bunny dashboard, then run dstack deploy setup --force.`,
+          );
+        }
+      }
     }
     // The admin, the API and the analytics tracker are never served from the edge cache.
     await this.api.request("POST", `${zone}/edgerules/addOrUpdate`, {
@@ -808,6 +853,11 @@ export class BunnyClient implements ProviderClient {
       Enabled: true,
     });
     await this.certificate(id, domain);
+  }
+
+  private async hasHostname(id: string, domain: string): Promise<boolean> {
+    const zone = await this.pullZone(id);
+    return listOf(zone.Hostnames).some((item) => text(item.Value)?.toLowerCase() === domain.toLowerCase());
   }
 
   /** Requests the free certificate once DNS points at the CDN; returns whether it is active. */
@@ -891,6 +941,18 @@ export class BunnyClient implements ProviderClient {
       ask.step(
         `Bunny runs the app in a gVisor sandbox; not applied from compose.yaml: ${local.ignored.join(", ")}`,
       );
+
+    // A domain can be on one pull zone only; an earlier app usually still has it.
+    const taken = await this.pullZoneWithHostname(context.domain);
+    if (taken) {
+      const reason = hostnameTaken(context.domain, taken);
+      if (!ask.interactive) throw new Error(reason);
+      const move = await ask.confirm(
+        `${context.domain} is on the CDN pull zone ${zoneName(taken)}, probably from an earlier deploy. Move it to the new app?`,
+        true,
+      );
+      if (!move) throw new Error(reason);
+    }
 
     const registry = await ask.select(
       "Image registry",
@@ -989,7 +1051,7 @@ export class BunnyClient implements ProviderClient {
       throw new Error(
         `Bunny has not created the CDN endpoint of app ${appId} yet. Run dstack deploy setup --force later.`,
       );
-    await this.setupPullZone(zone, context.domain, ask.step);
+    await this.setupPullZone(zone, context.domain, ask.step, taken);
     const cname = await this.cname(zone);
     ask.step(
       `Add this DNS record: ${context.domain} CNAME ${cname ?? "the pull zone's b-cdn.net address"}${
@@ -1218,6 +1280,22 @@ export class BunnyClient implements ProviderClient {
     }
     return { state, detail: details.join(", "), domains, url: dashboardUrl(link) };
   }
+}
+
+interface PullZoneRef {
+  id: string;
+  name?: string;
+}
+
+function zoneName(zone: PullZoneRef): string {
+  return zone.name ? `${zone.name} (${zone.id})` : zone.id;
+}
+
+/** Why Bunny refuses `domain`, and what to do about it. */
+function hostnameTaken(domain: string, zone: PullZoneRef | undefined): string {
+  return zone
+    ? `${domain} is already on the CDN pull zone ${zoneName(zone)}. Remove it there (Bunny dashboard › CDN › ${zone.name ?? zone.id} › Hostnames), or delete the old app, or run dstack deploy setup in a terminal to move it.`
+    : `Bunny says ${domain} is already registered, but not on a pull zone of this account. Remove it from the account that has it.`;
 }
 
 function missingContainer(name: string): string {

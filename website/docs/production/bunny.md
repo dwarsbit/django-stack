@@ -82,6 +82,10 @@ your machine and an S3 bucket for uploads and backups.
    dstack deploy setup --provider bunny
    ```
 
+   A domain can be on one pull zone only. When it is still on the pull
+   zone of an earlier app, setup asks, before it creates anything, to move
+   it to the new app. Delete the earlier app afterwards.
+
 5. Add the DNS record it prints, a `CNAME` from `example.com` to the pull
    zone's `b-cdn.net` address. An apex domain such as `example.com` needs
    [Bunny DNS](https://bunny.net/dns/), which flattens the `CNAME`; with
