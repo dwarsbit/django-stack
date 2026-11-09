@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## Unreleased
+## 0.12.5 (unreleased)
 
 - **Bunny setup attaches an existing app.** `dstack deploy setup` wrote
   `.dstack/deploy.json` only when every step succeeded, so a setup that
