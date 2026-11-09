@@ -82,9 +82,14 @@ your machine and an S3 bucket for uploads and backups.
    dstack deploy setup --provider bunny
    ```
 
+   When an app with the project's name already exists, for example from
+   a setup that stopped halfway, setup attaches it: it pushes the images,
+   points the app's containers at them and gives them the variables,
+   instead of creating another app.
+
    A domain can be on one pull zone only. When it is still on the pull
-   zone of an earlier app, setup asks, before it creates anything, to move
-   it to the new app. Delete the earlier app afterwards.
+   zone of another app, setup asks, before it creates anything, to move
+   it. Delete that app afterwards if you no longer need it.
 
 5. Add the DNS record it prints, a `CNAME` from `example.com` to the pull
    zone's `b-cdn.net` address. An apex domain such as `example.com` needs
@@ -113,6 +118,7 @@ dashboard, under the app; `dstack deploy status` links to it.
 | `--registry <registry>` | Where the images are pushed: `ghcr` (GitHub Container Registry, the default) or `bunny` (Bunny Container Registry, in preview, which logs in with the account API key). |
 | `--ghcr-owner <owner>` | The GitHub user or organization of the images on ghcr.io. Asked for when it is not given. |
 | `--account <id>` | With `--registry bunny`, the account id, the namespace in Bunny Container Registry. Asked for when Bunny does not list it. |
+| `--app <app>` | An existing app to attach, by name or id, or `new` to create one. Default: the app with the project's name, so running setup again does not add another app. In a terminal, setup lets you pick from the account's apps. |
 
 ## Variables
 

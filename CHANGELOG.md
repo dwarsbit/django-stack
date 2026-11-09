@@ -7,6 +7,13 @@ the unreleased version; the release workflow releases it.
 
 ## Unreleased
 
+- **Bunny setup attaches an existing app.** `dstack deploy setup` wrote
+  `.dstack/deploy.json` only when every step succeeded, so a setup that
+  stopped halfway left an app behind, and the next setup created another.
+  Setup now attaches the app with the project's name, or the one you pick
+  in a terminal or pass with `--app <name or id>`; `--app new` creates a
+  new one.
+
 - **Bunny setup handles a domain that is already registered.** When the
   domain was still on the pull zone of an earlier app, Bunny answered
   "The hostname is already registered" after setup had created the new

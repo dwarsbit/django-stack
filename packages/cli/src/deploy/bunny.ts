@@ -25,6 +25,7 @@ import { uncommittedReason } from "./link";
 import type {
   AppState,
   AppStatus,
+  Ask,
   DeployLink,
   Deployment,
   DeploymentStatus,
@@ -362,7 +363,7 @@ export function imageFields(
 /** The body of POST /apps for a planned app. */
 export function appRequest(plan: AppPlan, options: AppRequestOptions) {
   return {
-    name: plan.name.replace(/[^A-Za-z0-9-\s]+/g, "-").slice(0, 100),
+    name: appName(plan.name),
     runtimeType: "shared",
     // A pod with Postgres and Valkey cannot be replicated: one instance in one region.
     autoScaling: { min: 1, max: 1 },
@@ -831,7 +832,7 @@ export class BunnyClient implements ProviderClient {
         if (!(await this.hasHostname(id, domain))) {
           const other = await this.pullZoneWithHostname(domain);
           throw new Error(
-            `${hostnameTaken(domain, other)} The new app is created but has no domain: delete it in the Bunny dashboard, then run dstack deploy setup --force.`,
+            `${hostnameTaken(domain, other)} Then run dstack deploy setup --force again; it attaches the app it created.`,
           );
         }
       }
@@ -942,13 +943,18 @@ export class BunnyClient implements ProviderClient {
         `Bunny runs the app in a gVisor sandbox; not applied from compose.yaml: ${local.ignored.join(", ")}`,
       );
 
+    // An earlier setup may have created the app already; attach it instead of adding another.
+    const existing = await this.chooseApp(appName(local.name), options.app, ask);
+    const existingZone = existing ? await this.pullZoneId(existing.id) : undefined;
+
     // A domain can be on one pull zone only; an earlier app usually still has it.
-    const taken = await this.pullZoneWithHostname(context.domain);
+    let taken = await this.pullZoneWithHostname(context.domain);
+    if (taken && taken.id === existingZone) taken = undefined;
     if (taken) {
       const reason = hostnameTaken(context.domain, taken);
       if (!ask.interactive) throw new Error(reason);
       const move = await ask.confirm(
-        `${context.domain} is on the CDN pull zone ${zoneName(taken)}, probably from an earlier deploy. Move it to the new app?`,
+        `${context.domain} is on the CDN pull zone ${zoneName(taken)}, probably from an earlier deploy. Move it to ${existing ? "this" : "the new"} app?`,
         true,
       );
       if (!move) throw new Error(reason);
@@ -1002,7 +1008,7 @@ export class BunnyClient implements ProviderClient {
     }
 
     let region = options.region;
-    if (!region) {
+    if (!region && !existing) {
       const optimal = text(
         findKey(await this.api.mc("GET", "/regions/optimal").catch(() => undefined), /^id$|regionid/i),
       );
@@ -1012,7 +1018,7 @@ export class BunnyClient implements ProviderClient {
       if (regions.length) region = await ask.select("Region", regions, optimal ?? regions[0]?.value);
       else region = optimal;
     }
-    if (!region) throw new Error("Pass --region, such as DE.");
+    if (!region && !existing) throw new Error("Pass --region, such as DE.");
 
     const { commit, message } = await this.commit(directory);
     const uncommitted = uncommittedReason(directory);
@@ -1024,32 +1030,40 @@ export class BunnyClient implements ProviderClient {
       ask.step(line);
     });
 
-    const created = await this.api.mc<Json>(
-      "POST",
-      "/apps",
-      appRequest(plan, {
-        registries,
-        pushRegistry,
-        namespace: target.namespace,
-        tag: commit,
-        region,
-        volumeSize,
-      }),
-    );
-    const appId = text(created?.id);
-    if (!appId) throw new Error("Bunny created the app but returned no id.");
-    ask.step(`Created the app ${plan.name} in ${region}`);
-    try {
-      await this.api.mc("POST", `/apps/${encodeURIComponent(appId)}/deploy`);
-    } catch (error) {
-      // Some accounts deploy a new app right away; a conflict means it already runs.
-      if (!(error instanceof BunnyError && [400, 409].includes(error.status))) throw error;
+    let appId: string;
+    if (existing) {
+      appId = existing.id;
+      await this.attach(appId, plan, target, commit);
+      ask.step(`Attached the app ${existing.name ?? appId} and rolled out ${commit}`);
+    } else {
+      const created = await this.api.mc<Json>(
+        "POST",
+        "/apps",
+        appRequest(plan, {
+          registries,
+          pushRegistry,
+          namespace: target.namespace,
+          tag: commit,
+          region: region as string,
+          volumeSize,
+        }),
+      );
+      const id = text(created?.id);
+      if (!id) throw new Error("Bunny created the app but returned no id.");
+      appId = id;
+      ask.step(`Created the app ${plan.name} in ${region}`);
+      try {
+        await this.api.mc("POST", `/apps/${encodeURIComponent(appId)}/deploy`);
+      } catch (error) {
+        // Some accounts deploy a new app right away; a conflict means it already runs.
+        if (!(error instanceof BunnyError && [400, 409].includes(error.status))) throw error;
+      }
     }
 
-    const zone = await this.pullZoneId(appId);
+    const zone = existingZone ?? (await this.pullZoneId(appId));
     if (!zone)
       throw new Error(
-        `Bunny has not created the CDN endpoint of app ${appId} yet. Run dstack deploy setup --force later.`,
+        `Bunny has not created the CDN endpoint of app ${appId} yet. Run dstack deploy setup --force later; it attaches this app.`,
       );
     await this.setupPullZone(zone, context.domain, ask.step, taken);
     const cname = await this.cname(zone);
@@ -1071,6 +1085,85 @@ export class BunnyClient implements ProviderClient {
       environment: target.host === BUNNY_REGISTRY ? target.namespace : `${target.host}/${target.namespace}`,
       application: zone,
     };
+  }
+
+  /**
+   * The app to attach: `--app` (an id, a name, or "new"), or one chosen from the account's apps.
+   * Without a terminal, an app with the project's name is attached.
+   */
+  private async chooseApp(
+    name: string,
+    flag: string | undefined,
+    ask: Ask,
+  ): Promise<{ id: string; name?: string } | undefined> {
+    if (flag === "new") return undefined;
+    const apps = listOf(await this.api.mc("GET", "/apps"))
+      .map((item) => ({ id: text(item.id) ?? "", name: text(item.name) }))
+      .filter((item) => item.id);
+    if (flag) {
+      const found = apps.filter((item) => item.id === flag || item.name === flag);
+      if (found.length === 1) return found[0];
+      throw new Error(
+        found.length
+          ? `There are ${found.length} apps named ${flag} on Bunny. Pass --app with the id of one of them: ${found.map((item) => item.id).join(", ")}.`
+          : `There is no app ${flag} on Bunny. Pass --app with the name or id of an app, or --app new.`,
+      );
+    }
+    const same = apps.filter((item) => item.name?.toLowerCase() === name.toLowerCase());
+    if (!ask.interactive) {
+      if (same.length > 1)
+        throw new Error(
+          `There are ${same.length} apps named ${name} on Bunny. Pass --app with the id of the one to attach (${same.map((item) => item.id).join(", ")}), or --app new.`,
+        );
+      return same[0];
+    }
+    if (!apps.length) return undefined;
+    const choice = await ask.select(
+      "App on Bunny",
+      [
+        { value: "", label: "Create a new app" },
+        ...apps.map((item) => ({
+          value: item.id,
+          label: item.name ?? item.id,
+          hint: same.includes(item) ? `${item.id}, the project's name` : item.id,
+        })),
+      ],
+      same[0]?.id ?? "",
+    );
+    return apps.find((item) => item.id === choice);
+  }
+
+  /** Points an existing app at freshly pushed images and gives its containers the variables. */
+  private async attach(appId: string, plan: AppPlan, target: PushTarget, tag: string) {
+    const remote = appContainers(await this.api.mc("GET", `/apps/${encodeURIComponent(appId)}`));
+    for (const container of plan.containers) {
+      const item = remote.find((entry) => entry.name === container.name);
+      if (!item)
+        throw new Error(
+          `The app on Bunny has no container ${container.name}, so it was not set up for this compose.yaml. Pass --app new to create one.`,
+        );
+      if (
+        container.image.source === "push" &&
+        item.imageNamespace?.toLowerCase() !== target.namespace.toLowerCase()
+      )
+        throw new Error(
+          `The app on Bunny pulls ${container.name} from ${item.imageNamespace ?? "another registry"}, not ${target.host}/${target.namespace}. Choose the same registry, or pass --app new.`,
+        );
+    }
+    for (const container of plan.containers) {
+      const item = remote.find((entry) => entry.name === container.name) as BunnyContainer;
+      await this.api.mc(
+        "PUT",
+        `/apps/${encodeURIComponent(appId)}/containers/${encodeURIComponent(item.id)}/env`,
+        { environmentVariables: envList(container.env) },
+      );
+    }
+    await this.retag(
+      { project: appId } as DeployLink,
+      remote,
+      plan.containers.filter((container) => container.image.source === "push").map((item) => item.name),
+      tag,
+    );
   }
 
   async pushEnv(link: DeployLink, env: Record<string, string>): Promise<void> {
@@ -1282,6 +1375,11 @@ export class BunnyClient implements ProviderClient {
   }
 }
 
+/** The app's name on Bunny. */
+function appName(name: string): string {
+  return name.replace(/[^A-Za-z0-9-\s]+/g, "-").slice(0, 100);
+}
+
 interface PullZoneRef {
   id: string;
   name?: string;
@@ -1362,6 +1460,11 @@ export const bunny: DeployProvider = {
     { name: "registry", description: "Bunny: where the images are pushed, ghcr or bunny (default: ghcr)" },
     { name: "ghcrOwner", description: "Bunny: the GitHub user or organization of the ghcr.io images" },
     { name: "account", description: "Bunny: the account id, the namespace in Bunny Container Registry" },
+    {
+      name: "app",
+      description:
+        "Bunny: an existing app to attach, by name or id, or new (default: the app with the project's name)",
+    },
   ],
   printsDns: true,
   connect: (_target, token) => {

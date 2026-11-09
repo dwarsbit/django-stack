@@ -393,6 +393,7 @@ for a server over SSH and Bunny, when you have uncommitted changes (commit them)
 | `--registry <registry>` | Where Bunny's images are pushed: `ghcr` (GitHub Container Registry, the default) or `bunny` (Bunny Container Registry). |
 | `--ghcr-owner <owner>` | The GitHub user or organization of the images on ghcr.io. Asked for when it is not given. |
 | `--account <id>` | The Bunny account id, the namespace in Bunny Container Registry. Asked for when Bunny does not list it. |
+| `--app <app>` | The Bunny app to attach, by name or id, or `new`. Default: the app with the project's name; in a terminal, a choice of the account's apps. |
 | `--deploy`, `--no-deploy` | Deploy when done, or don't ask. |
 | `--force` | Set up again, replacing `.dstack/deploy.json`. |
 | `-y`, `--yes` | Don't ask; use the flags and the defaults. |

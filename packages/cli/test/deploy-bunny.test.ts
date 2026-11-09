@@ -361,6 +361,7 @@ describe("BunnyClient", () => {
           { id: 1, displayName: "Docker Hub", hostName: "docker.io", isPublic: true },
           { id: 9, displayName: "Bunny", hostName: "registry.bunny.net" },
         ],
+        "GET /mc/apps": () => [],
         "GET /mc/regions/optimal": () => ({ id: "DE" }),
         "GET /mc/regions": () => [{ id: "DE", name: "Frankfurt" }],
         "POST /mc/apps": (body) => {
@@ -439,6 +440,7 @@ describe("BunnyClient", () => {
           { id: 1, displayName: "Docker Hub", hostName: "docker.io", isPublic: true },
           { id: 9, displayName: "Bunny", hostName: "registry.bunny.net" },
         ],
+        "GET /mc/apps": () => [],
         "GET /mc/regions/optimal": () => ({ id: "DE" }),
         "GET /mc/regions": () => [{ id: "DE", name: "Frankfurt" }],
         "POST /mc/apps": () => ({ id: "app1" }),
@@ -504,6 +506,60 @@ describe("BunnyClient", () => {
       }
     });
 
+    it("attaches the app with the project's name instead of creating another", async () => {
+      const app = {
+        id: "app0",
+        name: "site",
+        containerTemplates: ["backend", "frontend", "proxy", "db", "cache", "worker"].map((name) => ({
+          id: `c-${name}`,
+          name,
+          imageNamespace: ["db", "cache"].includes(name) ? "library" : "12345",
+          imageTag: "old",
+        })),
+      };
+      const { calls, client } = fakeBunny(
+        handlers({
+          "GET /mc/apps": () => [{ id: "app0", name: "site" }],
+          "GET /mc/apps/app0": () => app,
+          "GET /mc/apps/app0/endpoints": () => ({ items: [{ cdn: { pullZoneId: 777 } }] }),
+          // The domain is on this app's own pull zone already: nothing to move.
+          [search]: () => ({ Items: [{ Id: 777, Name: "site-mc", Hostnames: [{ Value: "example.com" }] }] }),
+          "GET /pullzone/777": () => ({ Name: "site-mc", Hostnames: [{ Value: "example.com" }] }),
+          ...Object.fromEntries(
+            app.containerTemplates.flatMap((item) => [
+              [`PUT /mc/apps/app0/containers/${item.id}/env`, () => undefined],
+              [`PATCH /mc/apps/app0/containers/${item.id}`, () => undefined],
+            ]),
+          ),
+        }),
+        fakeRunner().run,
+      );
+      const { ask, steps } = asker(false);
+      const ids = await client.setup(context(ask));
+      expect(ids).toEqual({ project: "app0", environment: "12345", application: "777" });
+      expect(calls.some((item) => item.method === "POST" && item.path === "/mc/apps")).toBe(false);
+      expect(calls.some((item) => item.path.endsWith("/addHostname"))).toBe(false);
+      const patched = calls.filter((item) => item.method === "PATCH").map((item) => item.path);
+      expect(patched).toHaveLength(4);
+      expect(patched).not.toContain("/mc/apps/app0/containers/c-db");
+      expect(patched).not.toContain("/mc/apps/app0/containers/c-cache");
+      expect(calls.filter((item) => item.method === "PUT")).toHaveLength(app.containerTemplates.length);
+      expect(steps.join("\n")).toContain("Attached the app site");
+    });
+
+    it("asks for --app without a terminal when several apps have the project's name", async () => {
+      const { client } = fakeBunny(
+        handlers({
+          "GET /mc/apps": () => [
+            { id: "a1", name: "site" },
+            { id: "a2", name: "site" },
+          ],
+        }),
+        fakeRunner().run,
+      );
+      await expect(client.setup(context(asker(false).ask))).rejects.toThrow(/Pass --app .*a1, a2/);
+    });
+
     it("explains a hostname Bunny refuses that is not on a pull zone of the account", async () => {
       const { client } = fakeBunny(
         handlers({
@@ -532,6 +588,7 @@ describe("BunnyClient", () => {
           { id: 2, displayName: "GitHub", hostName: "ghcr.io", isPublic: true },
         ],
         "POST /mc/registries": () => ({ id: 5, status: "saved" }),
+        "GET /mc/apps": () => [],
         "GET /mc/regions/optimal": () => ({ id: "DE" }),
         "GET /mc/regions": () => [{ id: "DE", name: "Frankfurt" }],
         "POST /mc/apps": (body) => {
