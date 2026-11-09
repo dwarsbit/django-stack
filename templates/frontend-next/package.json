@@ -13,9 +13,9 @@
   },
   "dependencies": {
     "@django-headless/client": "^1.1.1",
-    "@django-stack/next": "^0.12.7",
-    "@django-stack/react": "^0.12.7",
-    "@django-stack/utils": "^0.12.7",
+    "@django-stack/next": "^0.12.8",
+    "@django-stack/react": "^0.12.8",
+    "@django-stack/utils": "^0.12.8",
     "next": "^16.4.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

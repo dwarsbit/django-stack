@@ -1,6 +1,6 @@
 {
   "name": "@django-stack/utils",
-  "version": "0.12.7",
+  "version": "0.12.8",
   "description": "Framework-agnostic helpers for DjangoStack frontends: the API client, content helpers, SEO, images, webhooks, error reports and the captcha.",
   "license": "MIT",
   "author": "Leon van der Grient",
