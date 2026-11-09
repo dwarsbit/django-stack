@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.12.6 (unreleased)
+## 0.12.6 (2026-11-09)
 
 - **Bunny variables are sent in the shape Bunny takes.** `dstack deploy
   env push`, and setup when it attaches an existing app, sent the
