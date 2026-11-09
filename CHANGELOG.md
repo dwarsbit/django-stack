@@ -5,6 +5,22 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## Unreleased
+
+- **Bunny setup attaches an existing app.** `dstack deploy setup` wrote
+  `.dstack/deploy.json` only when every step succeeded, so a setup that
+  stopped halfway left an app behind, and the next setup created another.
+  Setup now attaches the app with the project's name, or the one you pick
+  in a terminal or pass with `--app <name or id>`; `--app new` creates a
+  new one.
+
+- **Bunny setup handles a domain that is already registered.** When the
+  domain was still on the pull zone of an earlier app, Bunny answered
+  "The hostname is already registered" after setup had created the new
+  app. `dstack deploy setup --provider bunny` now checks the domain before
+  it creates anything and offers to move it to the new app; without a
+  terminal, it stops and says which pull zone has it.
+
 ## 0.12.4 (2026-11-08)
 
 - **Health checks answer for any host.** Bunny Magic Containers calls

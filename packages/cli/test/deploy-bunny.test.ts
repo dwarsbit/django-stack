@@ -361,6 +361,7 @@ describe("BunnyClient", () => {
           { id: 1, displayName: "Docker Hub", hostName: "docker.io", isPublic: true },
           { id: 9, displayName: "Bunny", hostName: "registry.bunny.net" },
         ],
+        "GET /mc/apps": () => [],
         "GET /mc/regions/optimal": () => ({ id: "DE" }),
         "GET /mc/regions": () => [{ id: "DE", name: "Frankfurt" }],
         "POST /mc/apps": (body) => {
@@ -431,6 +432,148 @@ describe("BunnyClient", () => {
     expect(records).toBe("*\n");
   });
 
+  describe("a domain that is already on another pull zone", () => {
+    const search = "GET /pullzone?search=example.com&perPage=1000";
+    function handlers(extra: Record<string, Handler>): Record<string, Handler> {
+      return {
+        "GET /mc/registries": () => [
+          { id: 1, displayName: "Docker Hub", hostName: "docker.io", isPublic: true },
+          { id: 9, displayName: "Bunny", hostName: "registry.bunny.net" },
+        ],
+        "GET /mc/apps": () => [],
+        "GET /mc/regions/optimal": () => ({ id: "DE" }),
+        "GET /mc/regions": () => [{ id: "DE", name: "Frankfurt" }],
+        "POST /mc/apps": () => ({ id: "app1" }),
+        "POST /mc/apps/app1/deploy": () => undefined,
+        "GET /mc/apps/app1/endpoints": () => ({ items: [{ cdn: { pullZoneId: 777 } }] }),
+        "POST /pullzone/777": () => undefined,
+        "GET /pullzone/777": () => ({ Name: "site-mc", Hostnames: [{ Value: "site-mc.b-cdn.net" }] }),
+        "POST /pullzone/777/addHostname": () => undefined,
+        "POST /pullzone/777/edgerules/addOrUpdate": () => undefined,
+        ...extra,
+      };
+    }
+    function asker(interactive: boolean, answer = true) {
+      const steps: string[] = [];
+      const ask = {
+        interactive,
+        select: async (_message: string, _choices: unknown, initial: unknown) => initial,
+        confirm: async () => answer,
+        text: async () => {
+          throw new Error("asked");
+        },
+        step: (message: string) => steps.push(message),
+      } as unknown as Ask;
+      return { ask, steps };
+    }
+    const context = (ask: Ask) => ({
+      ask,
+      directory: project(),
+      name: "site",
+      branch: "main",
+      domain: "example.com",
+      env: { SITE_URL: "https://example.com", CADDY_ADDRESS: ":80" },
+      options: { account: "12345" },
+    });
+    const oldZone = () => ({
+      Items: [
+        { Id: 555, Name: "old-mc", Hostnames: [{ Value: "old-mc.b-cdn.net" }, { Value: "Example.com" }] },
+      ],
+    });
+
+    it("moves it from the old pull zone when the user agrees", async () => {
+      const { calls, client } = fakeBunny(
+        handlers({ [search]: oldZone, "DELETE /pullzone/555/removeHostname": () => undefined }),
+        fakeRunner().run,
+      );
+      const { ask, steps } = asker(true);
+      await client.setup(context(ask));
+      const remove = calls.findIndex((item) => item.path === "/pullzone/555/removeHostname");
+      const add = calls.findIndex((item) => item.path === "/pullzone/777/addHostname");
+      expect(calls[remove]?.body).toEqual({ Hostname: "example.com" });
+      expect(remove).toBeGreaterThan(-1);
+      expect(add).toBeGreaterThan(remove);
+      expect(steps.join("\n")).toContain("Removed example.com from the CDN pull zone old-mc (555)");
+    });
+
+    it("stops before creating anything without a terminal, or when the user declines", async () => {
+      for (const { ask } of [asker(false), asker(true, false)]) {
+        const { calls, client } = fakeBunny(handlers({ [search]: oldZone }), fakeRunner().run);
+        await expect(client.setup(context(ask))).rejects.toThrow(
+          /example\.com is already on the CDN pull zone old-mc \(555\)\. Remove it there/,
+        );
+        expect(calls.some((item) => item.path === "/mc/apps" && item.method === "POST")).toBe(false);
+      }
+    });
+
+    it("attaches the app with the project's name instead of creating another", async () => {
+      const app = {
+        id: "app0",
+        name: "site",
+        containerTemplates: ["backend", "frontend", "proxy", "db", "cache", "worker"].map((name) => ({
+          id: `c-${name}`,
+          name,
+          imageNamespace: ["db", "cache"].includes(name) ? "library" : "12345",
+          imageTag: "old",
+        })),
+      };
+      const { calls, client } = fakeBunny(
+        handlers({
+          "GET /mc/apps": () => [{ id: "app0", name: "site" }],
+          "GET /mc/apps/app0": () => app,
+          "GET /mc/apps/app0/endpoints": () => ({ items: [{ cdn: { pullZoneId: 777 } }] }),
+          // The domain is on this app's own pull zone already: nothing to move.
+          [search]: () => ({ Items: [{ Id: 777, Name: "site-mc", Hostnames: [{ Value: "example.com" }] }] }),
+          "GET /pullzone/777": () => ({ Name: "site-mc", Hostnames: [{ Value: "example.com" }] }),
+          ...Object.fromEntries(
+            app.containerTemplates.flatMap((item) => [
+              [`PUT /mc/apps/app0/containers/${item.id}/env`, () => undefined],
+              [`PATCH /mc/apps/app0/containers/${item.id}`, () => undefined],
+            ]),
+          ),
+        }),
+        fakeRunner().run,
+      );
+      const { ask, steps } = asker(false);
+      const ids = await client.setup(context(ask));
+      expect(ids).toEqual({ project: "app0", environment: "12345", application: "777" });
+      expect(calls.some((item) => item.method === "POST" && item.path === "/mc/apps")).toBe(false);
+      expect(calls.some((item) => item.path.endsWith("/addHostname"))).toBe(false);
+      const patched = calls.filter((item) => item.method === "PATCH").map((item) => item.path);
+      expect(patched).toHaveLength(4);
+      expect(patched).not.toContain("/mc/apps/app0/containers/c-db");
+      expect(patched).not.toContain("/mc/apps/app0/containers/c-cache");
+      expect(calls.filter((item) => item.method === "PUT")).toHaveLength(app.containerTemplates.length);
+      expect(steps.join("\n")).toContain("Attached the app site");
+    });
+
+    it("asks for --app without a terminal when several apps have the project's name", async () => {
+      const { client } = fakeBunny(
+        handlers({
+          "GET /mc/apps": () => [
+            { id: "a1", name: "site" },
+            { id: "a2", name: "site" },
+          ],
+        }),
+        fakeRunner().run,
+      );
+      await expect(client.setup(context(asker(false).ask))).rejects.toThrow(/Pass --app .*a1, a2/);
+    });
+
+    it("explains a hostname Bunny refuses that is not on a pull zone of the account", async () => {
+      const { client } = fakeBunny(
+        handlers({
+          "POST /pullzone/777/addHostname": () =>
+            new Response(JSON.stringify({ Message: "The hostname is already registered." }), { status: 400 }),
+        }),
+        fakeRunner().run,
+      );
+      await expect(client.setup(context(asker(true).ask))).rejects.toThrow(
+        /already registered, but not on a pull zone of this account/,
+      );
+    });
+  });
+
   it("pushes to a private ghcr.io package that Bunny pulls with the token", async () => {
     expect(pushTarget("ghcr.io/acme")).toEqual({ host: "ghcr.io", namespace: "acme" });
     expect(pushTarget("12345")).toEqual({ host: "registry.bunny.net", namespace: "12345" });
@@ -445,6 +588,7 @@ describe("BunnyClient", () => {
           { id: 2, displayName: "GitHub", hostName: "ghcr.io", isPublic: true },
         ],
         "POST /mc/registries": () => ({ id: 5, status: "saved" }),
+        "GET /mc/apps": () => [],
         "GET /mc/regions/optimal": () => ({ id: "DE" }),
         "GET /mc/regions": () => [{ id: "DE", name: "Frankfurt" }],
         "POST /mc/apps": (body) => {
