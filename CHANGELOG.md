@@ -7,6 +7,14 @@ the unreleased version; the release workflow releases it.
 
 ## 0.12.5 (2026-11-09)
 
+- **Umami works with a managed Postgres that has a self-signed
+  certificate.** Umami's database client read `sslmode=require` as "verify
+  the certificate", so it failed with "self-signed certificate" where
+  Django connected fine. `UMAMI_DATABASE_URL` now gets
+  `uselibpqcompat=true` next to `sslmode`, which gives it the meaning
+  Postgres itself uses: encrypted, not verified. Run `dstack production`
+  again, or add `&uselibpqcompat=true` to `UMAMI_DATABASE_URL` on the server.
+
 - **Bunny setup attaches an existing app.** `dstack deploy setup` wrote
   `.dstack/deploy.json` only when every step succeeded, so a setup that
   stopped halfway left an app behind, and the next setup created another.

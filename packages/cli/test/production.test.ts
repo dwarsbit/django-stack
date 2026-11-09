@@ -70,7 +70,9 @@ describe("productionEnv", () => {
     const text = devEnv({ databaseUrl: "postgres://u:p@db.example.com/app", analytics: true });
     const prod = parseEnv(productionEnv(text, { domain: "example.com" }).text);
     expect(prod.COMPOSE_PROFILES).toBe("prod,analytics");
-    expect(prod.UMAMI_DATABASE_URL).toBe("postgres://u:p@db.example.com/app?sslmode=require&schema=umami");
+    expect(prod.UMAMI_DATABASE_URL).toBe(
+      "postgres://u:p@db.example.com/app?sslmode=require&uselibpqcompat=true&schema=umami",
+    );
   });
 
   it("uses a database URL given to production instead of the bundled one", () => {
