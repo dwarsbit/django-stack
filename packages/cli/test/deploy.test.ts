@@ -328,6 +328,7 @@ describe("CoolifyClient", () => {
       docker_compose_location: "/compose.yaml",
       docker_compose_domains: [{ name: "proxy", domain: "https://example.com:80" }],
       instant_deploy: false,
+      is_preserve_repository_enabled: true,
     });
     const env = calls.find((call) => call.path.endsWith("/envs/bulk"))?.body as { data: { key: string }[] };
     expect(env.data.map((item) => item.key)).toContain("CADDY_ADDRESS");
@@ -408,6 +409,7 @@ describe("CoolifyClient", () => {
       "token",
       fakeFetch(
         {
+          "PATCH /applications/a1": { uuid: "a1" },
           "POST /deploy?uuid=a1&force=true": {
             deployments: [{ message: "queued", resource_uuid: "a1", deployment_uuid: "d1" }],
           },
@@ -435,6 +437,9 @@ describe("CoolifyClient", () => {
       ),
     );
     expect(await client.deploy(link, { force: true })).toBe("d1");
+    expect(calls.find((call) => call.method === "PATCH" && call.path === "/applications/a1")?.body).toEqual({
+      is_preserve_repository_enabled: true,
+    });
     expect(await client.deployment(link, "d1")).toMatchObject({
       id: "d1",
       status: "building",

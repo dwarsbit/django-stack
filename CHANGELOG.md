@@ -5,6 +5,18 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.7 (unreleased)
+
+### Fixes
+
+- Fixed: on Coolify the `proxy` service failed to start with "not a
+  directory" on `/etc/caddy/Caddyfile`, because Coolify starts the
+  services from a directory without the repository's files. `dstack
+  deploy setup` now turns on Coolify's **Preserve repository during
+  deployment**, and `dstack deploy` turns it on for an application set up
+  before. For an application you set up by hand, turn it on in Coolify
+  and deploy again.
+
 ## 0.12.6 (2026-11-09)
 
 - **Bunny variables are sent in the shape Bunny takes.** `dstack deploy

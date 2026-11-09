@@ -108,8 +108,9 @@ server from there.
    ```
 
 3. Set up the project in Coolify. It asks for the API key, creates the
-   project and the application, gives the `proxy` service the domain and
-   uploads `.env.production` with the variables above:
+   project and the application, gives the `proxy` service the domain,
+   turns on **Preserve repository during deployment** so Caddy finds the
+   `Caddyfile`, and uploads `.env.production` with the variables above:
 
    ```bash
    dstack deploy setup --url https://coolify.example.com
@@ -132,7 +133,17 @@ To set up the resource by hand instead:
 2. Under **Environment Variables**, add the variables from above.
 3. Under **Domains**, give the `proxy` service `https://example.com:80`:
    the port tells Coolify's proxy where Caddy listens.
-4. Deploy.
+4. Turn on **Preserve repository during deployment** (under **General** ›
+   **Build pipeline** or **Advanced**). Coolify starts the services from its
+   own directory on the server, and without the repository there the
+   `proxy` service cannot mount `./Caddyfile`.
+5. Deploy.
+
+If the `proxy` service fails with "not a directory" on
+`/etc/caddy/Caddyfile`, the setting of step 4 is off: turn it on and deploy
+again. When it still fails, delete the empty `Caddyfile` directory Docker
+left on the server, `/data/coolify/applications/<uuid>/Caddyfile`, and
+deploy again.
 
 If a service you expect does not start, check that `COMPOSE_PROFILES` is
 set: without it, Compose starts only the cache.
