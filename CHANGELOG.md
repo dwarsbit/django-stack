@@ -5,6 +5,21 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.8 (unreleased)
+
+### Fixes
+
+- Fixed: on Coolify the site answered 502 because Caddy could not resolve
+  `frontend` or `backend`. Coolify puts a service without a `networks`
+  key on its own network only, while those names are aliases on the
+  `default` network. The `proxy` and `worker-prod` services in
+  `compose.yaml` now list `networks: [default]`. In an existing project,
+  add these lines to both services and deploy again:
+
+  ```yaml
+      networks: [default]
+  ```
+
 ## 0.12.7 (2026-11-09)
 
 ### Fixes
