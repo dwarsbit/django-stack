@@ -109,8 +109,8 @@ server from there.
 
 3. Set up the project in Coolify. It asks for the API key, creates the
    project and the application, gives the `proxy` service the domain,
-   turns on **Preserve repository during deployment** so Caddy finds the
-   `Caddyfile`, and uploads `.env.production` with the variables above:
+   turns on **Preserve repository during deployment** so Caddy finds
+   `caddy/Caddyfile`, and uploads `.env.production` with the variables above:
 
    ```bash
    dstack deploy setup --url https://coolify.example.com
@@ -136,14 +136,19 @@ To set up the resource by hand instead:
 4. Turn on **Preserve repository during deployment** (under **General** ›
    **Build pipeline** or **Advanced**). Coolify starts the services from its
    own directory on the server, and without the repository there the
-   `proxy` service cannot mount `./Caddyfile`.
+   `proxy` service cannot mount `./caddy`.
 5. Deploy.
 
-If the `proxy` service fails with "not a directory" on
-`/etc/caddy/Caddyfile`, the setting of step 4 is off: turn it on and deploy
-again. When it still fails, delete the empty `Caddyfile` directory Docker
-left on the server, `/data/coolify/applications/<uuid>/Caddyfile`, and
-deploy again.
+If Caddy does not start because `/etc/caddy/Caddyfile` is missing, the
+setting of step 4 is off: turn it on and deploy again.
+
+A project created by DjangoStack 0.12.9 or older mounts `./Caddyfile`
+itself, and Coolify creates that path as a directory before it copies the
+repository, so the deploy fails with "cannot overwrite directory
+"Caddyfile"". Move the file to `caddy/Caddyfile`, mount
+`./caddy:/etc/caddy:ro` in the `proxy` service of `compose.yaml`, push,
+and delete the directory on the server:
+`rm -rf /data/coolify/applications/<uuid>/Caddyfile`.
 
 If a service you expect does not start, check that `COMPOSE_PROFILES` is
 set: without it, Compose starts only the cache.

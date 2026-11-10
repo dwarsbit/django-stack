@@ -280,7 +280,9 @@ services:
       CADDY_ADDRESS: ${CADDY_ADDRESS:-${SITE_URL}}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # The directory, not the file: Coolify creates every bind-mounted path
+      # as a directory before it copies the repository there.
+      - ./caddy:/etc/caddy:ro
       - media:/srv/media:ro
       - caddy_data:/data
       - caddy_config:/config

@@ -28,6 +28,18 @@ the unreleased version; the release workflow releases it.
 - Fixed: the generated `.github/workflows/deploy.yml` wrote the SSH key
   and the registry token into its scripts; it now passes them as
   environment variables.
+- Fixed: the first deploy on Coolify failed with "cannot overwrite
+  directory "Caddyfile" with non-directory". Coolify creates the source of
+  every bind mount as a directory before it copies the repository, so the
+  bind-mounted `./Caddyfile` became a directory. The Caddyfile is now in
+  `caddy/Caddyfile`, and the `proxy` service mounts the `./caddy`
+  directory at `/etc/caddy`. `dstack deploy` on Bunny and Railway reads
+  the files of a mounted directory. In an existing project, move
+  `Caddyfile` to `caddy/Caddyfile`, change the `proxy` volume in
+  `compose.yaml` to `./caddy:/etc/caddy:ro`, and in
+  `.github/workflows/deploy.yml` copy `caddy` with `scp -r` instead of
+  `Caddyfile`. On a Coolify server where the deploy already failed, delete
+  `/data/coolify/applications/<uuid>/Caddyfile`.
 
 ## 0.12.9 (2026-11-09)
 

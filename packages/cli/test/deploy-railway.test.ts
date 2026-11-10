@@ -34,12 +34,14 @@ function fixture(): ComposeProject {
 }
 
 const readFile = (path: string) => {
-  if (path === "/project/Caddyfile") return CADDYFILE;
+  if (path === "/project/caddy/Caddyfile") return CADDYFILE;
   if (path.endsWith("/Dockerfile")) return DOCKERFILE;
   throw new Error("not a file");
 };
 
-const options = { directory: "/project", readFile };
+const listFiles = (path: string) => (path === "/project/caddy" ? ["Caddyfile"] : undefined);
+
+const options = { directory: "/project", readFile, listFiles };
 
 describe("Compose to Railway", () => {
   it("reads helpers", () => {
@@ -147,7 +149,7 @@ function fakeRailway(handlers: Record<string, Handler>) {
     return new Response(JSON.stringify({ data: { [field]: handler(body.variables) } }), { status: 200 });
   }) as unknown as typeof fetch;
   const run: CommandRunner = async () => ({ code: 0, stdout: JSON.stringify(fixture()), stderr: "" });
-  const client = new RailwayClient("token", fetchImpl, { run, readFile });
+  const client = new RailwayClient("token", fetchImpl, { run, readFile, listFiles });
   client.pollMs = 0;
   return { calls, client };
 }

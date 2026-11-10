@@ -27,7 +27,7 @@ for the domain.
 
 | Service | On Bunny |
 |---------|----------|
-| `proxy` | Caddy with the project's `Caddyfile` copied into the image, the app's only public endpoint |
+| `proxy` | Caddy with the project's `caddy/Caddyfile` copied into the image, the app's only public endpoint |
 | `backend-prod`, `worker-prod`, `frontend-prod` | The production images, built for `linux/amd64` and pushed to a private package on GitHub Container Registry |
 | `db` | Postgres from Docker Hub with the `pgdata` volume |
 | `cache` | Valkey from Docker Hub, without a volume, with the `valkey` profile only |

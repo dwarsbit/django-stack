@@ -8,7 +8,7 @@
  */
 
 import { posix, relative, sep } from "node:path";
-import type { ComposeProject, ComposeService } from "./bunny-compose";
+import { boundFiles, type ComposeProject, type ComposeService } from "./bunny-compose";
 
 export interface RailwayServicePlan {
   /** The Compose service. */
@@ -45,6 +45,8 @@ export interface RailwayPlanOptions {
   directory: string;
   /** Reads a file of the project; throws when it is not a readable file. */
   readFile(path: string): string;
+  /** Lists the files of a bind-mounted directory, or undefined when the path is not a directory. */
+  listFiles?(path: string): string[] | undefined;
 }
 
 /** Volumes not needed on Railway: its edge holds the certificate, uploads and backups go to S3. */
@@ -173,17 +175,17 @@ export function planRailway(project: ComposeProject, options: RailwayPlanOptions
     if (!binds.length) continue;
     files.set(
       service,
-      binds.map((mount) => {
-        let content: string;
+      binds.flatMap((mount) => {
+        let found: ReturnType<typeof boundFiles>;
         try {
-          content = options.readFile(mount.source ?? "");
+          found = boundFiles(mount, options);
         } catch {
           throw new Error(
-            `${service} bind-mounts ${mount.source}, which is not a file; Railway has no bind mounts, so only files can be passed to the service.`,
+            `${service} bind-mounts ${mount.source}, which is not a readable file or directory; Railway has no bind mounts, so only files can be passed to the service.`,
           );
         }
-        texts.push(content);
-        return { target: mount.target, content };
+        for (const file of found) texts.push(file.content);
+        return found.map(({ target, content }) => ({ target, content }));
       }),
     );
   }
