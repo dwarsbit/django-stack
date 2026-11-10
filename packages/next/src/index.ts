@@ -42,9 +42,9 @@ export function revalidateHandler(options: { secret?: string; tags?: string[] } 
   };
 }
 
-/** Only paths on this site, never another origin. */
+/** Only paths on this site, never another origin: browsers read `/\evil.com` as `//evil.com`. */
 function localPath(path: string | null): string {
-  return path?.startsWith("/") && !path.startsWith("//") ? path : "/";
+  return path && /^\/(?![/\\])/.test(path) ? path : "/";
 }
 
 /**

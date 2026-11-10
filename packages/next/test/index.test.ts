@@ -65,6 +65,11 @@ describe("preview", () => {
     expect(response.headers.get("Location")).toBe("/");
     expect(response.headers.get("Set-Cookie")).toContain(`${PREVIEW_COOKIE}=${token}`);
 
+    const backslash = await handler(new Request(`http://site/preview?token=${token}&path=/%5Cevil.example`));
+    expect(backslash.headers.get("Location")).toBe("/");
+    const local = await handler(new Request(`http://site/preview?token=${token}&path=/about`));
+    expect(local.headers.get("Location")).toBe("/about");
+
     const invalid = await handler(new Request("http://site/preview?token=1.abc&path=/about"));
     expect(invalid.status).toBe(401);
   });
