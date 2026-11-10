@@ -303,8 +303,8 @@
       "volumes": [
         {
           "type": "bind",
-          "source": "/project/Caddyfile",
-          "target": "/etc/caddy/Caddyfile",
+          "source": "/project/caddy",
+          "target": "/etc/caddy",
           "read_only": true,
           "bind": {}
         },

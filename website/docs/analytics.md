@@ -93,8 +93,8 @@ A project created with `--analytics off` has the `umami` service, the route
 and the admin code already; `dstack config --analytics umami` fills in the
 variables. A project created by an older CLI has none of them: create a
 project with the same frontend and copy the `umami` service, its entries in
-`x-backend-depends` and `x-frontend-env`, the `/_a/` block of the
-`Caddyfile`, the `setup_umami` lines of `backend/entrypoint.sh`, the
+`x-backend-depends` and `x-frontend-env`, the `/_a/` block of
+`caddy/Caddyfile`, the `setup_umami` lines of `backend/entrypoint.sh`, the
 analytics lines of `backend/config/studio.py`, and the tracker and the
 `/_a/` proxy of the frontend. Then run `dstack config --analytics umami`.
 

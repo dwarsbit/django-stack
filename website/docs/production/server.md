@@ -183,7 +183,7 @@ builds. Set it up once:
 4. Run the workflow from the Actions tab. To deploy every push to `main`,
    add `push: { branches: [main] }` under `on:` in the workflow.
 
-The workflow copies `compose.yaml` and the `Caddyfile` to the server; the
+The workflow copies `compose.yaml` and `caddy/Caddyfile` to the server; the
 server keeps its own `.env`. The images are named after the commit, so a
 rollback is running the workflow again on an older commit.
 

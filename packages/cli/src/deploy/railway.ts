@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { listDirectoryFiles } from "./bind-files";
 import { type CommandRunner, resolveCompose, systemRunner } from "./bunny";
 import type { Fetch } from "./coolify";
 import type {
@@ -203,6 +204,8 @@ function find<T extends { id: string; name: string }>(items: T[], wanted: string
 
 export interface RailwayClientOptions {
   run?: CommandRunner;
+  /** Lists the files of a directory that compose.yaml bind-mounts. */
+  listFiles?: (path: string) => string[] | undefined;
   /** Reads a file that compose.yaml bind-mounts or builds. */
   readFile?: (path: string) => string;
 }
@@ -211,11 +214,13 @@ export class RailwayClient implements ProviderClient {
   readonly api: RailwayApi;
   private readonly run: CommandRunner;
   private readonly readFile: (path: string) => string;
+  private readonly listFiles: (path: string) => string[] | undefined;
 
   constructor(token: string, fetchImpl?: Fetch, options: RailwayClientOptions = {}) {
     this.api = new RailwayApi(token, fetchImpl);
     this.run = options.run ?? systemRunner;
     this.readFile = options.readFile ?? ((path) => readFileSync(path, "utf8"));
+    this.listFiles = options.listFiles ?? listDirectoryFiles;
   }
 
   /** How long `deploy` and `rollback` wait between looks for a new deployment; tests set it to 0. */
@@ -231,7 +236,7 @@ export class RailwayClient implements ProviderClient {
 
   async plan(directory: string, env: Record<string, string>): Promise<RailwayPlan> {
     const project = await resolveCompose(this.run, directory, env);
-    return planRailway(project, { directory, readFile: this.readFile });
+    return planRailway(project, { directory, readFile: this.readFile, listFiles: this.listFiles });
   }
 
   async project(id: string): Promise<RailwayProject> {

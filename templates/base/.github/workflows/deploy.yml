@@ -60,9 +60,9 @@ jobs:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ssh_cmd="ssh -i $HOME/.ssh/id_deploy"
-          # The Compose file and the Caddyfile come from the repository; the
+          # The Compose file and caddy/Caddyfile come from the repository; the
           # server keeps its own .env.
-          scp -i ~/.ssh/id_deploy compose.yaml Caddyfile "$TARGET:$DEPLOY_PATH/"
+          scp -r -i ~/.ssh/id_deploy compose.yaml caddy "$TARGET:$DEPLOY_PATH/"
           $ssh_cmd "$TARGET" "
             set -e
             cd '$DEPLOY_PATH'

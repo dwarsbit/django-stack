@@ -21,8 +21,8 @@ import { urlTarget } from "./provider";
 /**
  * Keeps the repository on the server during a deploy. Without it Coolify
  * starts the services from /data/coolify/applications/<uuid>, where the
- * repository's files are missing: Docker then creates a directory for the
- * bind-mounted ./Caddyfile and the proxy fails with "not a directory".
+ * repository's files are missing: Docker then creates an empty directory for
+ * the bind-mounted ./caddy and Caddy finds no Caddyfile.
  */
 export const PRESERVE_REPOSITORY = { is_preserve_repository_enabled: true };
 
