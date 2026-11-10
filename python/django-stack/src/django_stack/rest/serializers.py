@@ -11,6 +11,10 @@ The serializer of the generated routes: Django Headless's
 - A Content Studio ``BlockField`` is serialized as a list of
   ``{id, type, value}``, with related media items as objects and blocks
   inside blocks resolved the same way.
+- Related objects with a draft state, expanded with ``?expand=`` or linked
+  from a block, are left out unless they are published or the request may
+  see drafts (``PublishedFilter``): ``null`` for a single relation, missing
+  from a list.
 """
 
 from __future__ import annotations
@@ -20,6 +24,32 @@ from typing import Any
 from django.db import models
 from django.utils.module_loading import import_string
 from headless.rest.serializers import FlexibleSerializer
+from rest_framework.serializers import ListSerializer
+
+from .filters import can_see_drafts, is_publishable
+
+
+def hidden_draft(value, request) -> bool:
+    """Whether ``value`` is an unpublished object that ``request`` may not see."""
+    if not isinstance(value, models.Model) or not is_publishable(type(value)):
+        return False
+    if can_see_drafts(request):
+        return False
+    is_published = getattr(value, "is_published", None)
+    if isinstance(is_published, bool):
+        return not is_published
+    return not type(value)._default_manager.all().published().filter(pk=value.pk).exists()
+
+
+def visible(related, request):
+    """The objects of a related manager that ``request`` may see."""
+    queryset = related.all()
+    if not is_publishable(queryset.model) or can_see_drafts(request):
+        return queryset
+    if hasattr(queryset.model, "is_published"):
+        # In Python, so the objects prefetched for ?expand= are used.
+        return [item for item in queryset if item.is_published]
+    return queryset.published()
 
 
 def get_media_model():
@@ -88,6 +118,8 @@ def serialize_value(value, request=None):
     if isinstance(value, BlockList):
         return serialize_blocks(value, request)
     if isinstance(value, models.Model):
+        if hidden_draft(value, request):
+            return None
         if is_media_model(type(value)):
             return serialize_media(value, request)
         related = {"id": value.pk, "label": str(value)}
@@ -142,7 +174,28 @@ def needs_captcha(context) -> bool:
     return getattr(view, "action", None) == "create" and is_public_create(view)
 
 
+class StackListSerializer(ListSerializer):
+    """Related objects (``?expand=`` of a to-many relation), without the drafts a request may not see."""
+
+    def to_representation(self, data):
+        if isinstance(data, models.manager.BaseManager):
+            data = visible(data, self.context.get("request"))
+        return super().to_representation(data)
+
+
 class StackSerializer(FlexibleSerializer):
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        serializer = super().many_init(*args, **kwargs)
+        if type(serializer) is ListSerializer:
+            serializer.__class__ = StackListSerializer
+        return serializer
+
+    def get_attribute(self, instance):
+        # An expanded single relation, such as ?expand=parent: null for a hidden draft.
+        value = super().get_attribute(instance)
+        return None if hidden_draft(value, self.context.get("request")) else value
+
     def get_fields(self):
         fields = super().get_fields()
         if needs_captcha(self.context):

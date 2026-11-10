@@ -25,7 +25,10 @@ action. Add a block in `backend/content/blocks.py` and a component for it in
 `frontend/src/components/blocks/`.
 
 Pages and posts are drafts until they are published. The API only returns
-published content, except to a preview request.
+published content, except to a preview request or the full-access key. That
+holds for relations too: `?expand=` leaves drafts out (a single relation is
+`null`), and a filter across a relation into pages or posts, such as
+`/api/content.author?posts__title=Hello`, answers 400.
 
 ## Access
 

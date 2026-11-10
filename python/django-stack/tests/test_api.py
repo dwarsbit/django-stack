@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from django_stack.preview import make_preview_token
 from django_stack.signing import verify_webhook
-from tests.testapp.models import Article, Message
+from tests.testapp.models import Article, Message, Writer
 
 pytestmark = pytest.mark.django_db
 
@@ -57,6 +57,39 @@ def test_preview_token_shows_drafts(read_client, articles):
 
 def test_write_key_sees_everything(write_client, articles):
     assert slugs(write_client.get("/api/testapp.article")) == ["draft", "later", "live"]
+
+
+def test_expanded_relations_hide_drafts(read_client, write_client):
+    writer = Writer.objects.create(name="Ann")
+    live = Article.objects.create(title="Live", slug="live", status="published", writer=writer)
+    draft = Article.objects.create(title="Draft", slug="draft", writer=writer)
+    Article.objects.create(title="Child", slug="child", status="published", parent=draft)
+    live.parent = draft
+    live.save()
+
+    def expanded(client, path):
+        return client.get(path).json()["data"][0]
+
+    articles = expanded(read_client, "/api/testapp.writer?expand=articles")["articles"]
+    assert [item["slug"] for item in articles] == ["live"]
+    assert expanded(read_client, "/api/testapp.article?slug=child&expand=parent")["parent"] is None
+    token = {"X-Preview-Token": make_preview_token()}
+    response = read_client.get("/api/testapp.writer?expand=articles", headers=token)
+    assert sorted(item["slug"] for item in response.json()["data"][0]["articles"]) == ["draft", "live"]
+    articles = expanded(write_client, "/api/testapp.writer?expand=articles")["articles"]
+    assert sorted(item["slug"] for item in articles) == ["draft", "live"]
+    parent = expanded(write_client, "/api/testapp.article?slug=child&expand=parent")["parent"]
+    assert parent["slug"] == "draft"
+
+
+def test_filters_do_not_cross_into_drafts(read_client, write_client):
+    writer = Writer.objects.create(name="Ann")
+    Article.objects.create(title="Secret", slug="secret", writer=writer)
+    assert read_client.get("/api/testapp.writer?articles__title__startswith=Secret").status_code == 400
+    assert read_client.get("/api/testapp.writer?~articles__title=Secret").status_code == 400
+    assert read_client.get("/api/testapp.article?writer__name=Ann").status_code == 200
+    response = write_client.get("/api/testapp.writer?articles__title__startswith=Secret")
+    assert response.json()["pagination"]["count"] == 1
 
 
 def test_public_create(client, read_client, write_client, no_captcha):
