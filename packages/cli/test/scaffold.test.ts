@@ -325,7 +325,7 @@ describe("scaffold", () => {
     const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
     expect(compose).not.toMatch(/frontend(-prod|-env|_node_modules|:)/);
     expect(compose).toContain('SITE_PORT:-3000}:8000"');
-    const caddy = readFileSync(join(directory, "Caddyfile"), "utf8");
+    const caddy = readFileSync(join(directory, "caddy/Caddyfile"), "utf8");
     expect(caddy).not.toMatch(/frontend:3000/);
     expect(caddy).toContain("reverse_proxy backend:8000");
     expect(readFileSync(join(directory, "backend", "config", "urls.py"), "utf8")).toContain(
@@ -345,7 +345,7 @@ describe("scaffold", () => {
       "AGENTS.md",
       "SECURITY.md",
       "compose.yaml",
-      "Caddyfile",
+      "caddy/Caddyfile",
       ".env.example",
     ]) {
       const text = readFileSync(join(directory, file), "utf8");
@@ -364,7 +364,7 @@ describe("scaffold", () => {
     const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
     expect(compose).not.toMatch(/frontend(-prod|-env|_node_modules|:)/);
     expect(compose).toContain('SITE_PORT:-3000}:8000"');
-    const caddy = readFileSync(join(directory, "Caddyfile"), "utf8");
+    const caddy = readFileSync(join(directory, "caddy/Caddyfile"), "utf8");
     expect(caddy).not.toMatch(/frontend:3000/);
     expect(caddy).toContain("reverse_proxy umami:3000");
     expect(caddy).toContain("reverse_proxy backend:8000");
@@ -394,7 +394,7 @@ describe("scaffold", () => {
       "AGENTS.md",
       "SECURITY.md",
       "compose.yaml",
-      "Caddyfile",
+      "caddy/Caddyfile",
       ".env.example",
     ]) {
       const text = readFileSync(join(directory, file), "utf8");
@@ -410,7 +410,13 @@ describe("scaffold", () => {
   it("keeps a frontend project's blocks without the markers", () => {
     const directory = join(tempDir(), "site");
     scaffold({ directory, name: "site", frontend: "astro", demoContent: true });
-    for (const file of ["README.md", "AGENTS.md", "compose.yaml", "Caddyfile", "backend/config/urls.py"]) {
+    for (const file of [
+      "README.md",
+      "AGENTS.md",
+      "compose.yaml",
+      "caddy/Caddyfile",
+      "backend/config/urls.py",
+    ]) {
       expect(readFileSync(join(directory, file), "utf8"), file).not.toMatch(/@if|@end/);
     }
     expect(readFileSync(join(directory, "compose.yaml"), "utf8")).toContain("frontend-prod:");

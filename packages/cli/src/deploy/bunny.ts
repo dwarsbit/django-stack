@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseEnv } from "../env";
 import { dockerNotRunning, isDockerDown } from "../tools";
+import { listDirectoryFiles } from "./bind-files";
 import {
   type AppPlan,
   type ComposeProject,
@@ -492,6 +493,8 @@ export interface BunnyClientOptions {
   /** Reads the Bunny edge server addresses for TRUSTED_PROXIES. */
   edgeServers?: () => Promise<string[]>;
   now?: () => Date;
+  /** Lists the files of a directory that compose.yaml bind-mounts. */
+  listFiles?: (path: string) => string[] | undefined;
   /** Reads a file that compose.yaml bind-mounts. */
   readFile?: (path: string) => string;
   /** Reads and saves the GitHub token for ghcr.io, per owner. */
@@ -511,6 +514,7 @@ export class BunnyClient implements ProviderClient {
   private readonly run: CommandRunner;
   private readonly now: () => Date;
   private readonly readFile: (path: string) => string;
+  private readonly listFiles: (path: string) => string[] | undefined;
   private readonly edgeServersImpl: () => Promise<string[]>;
   private readonly ghcrToken: NonNullable<BunnyClientOptions["ghcrToken"]>;
 
@@ -524,6 +528,7 @@ export class BunnyClient implements ProviderClient {
     this.run = options.run ?? systemRunner;
     this.now = options.now ?? (() => new Date());
     this.readFile = options.readFile ?? ((path) => readFileSync(path, "utf8"));
+    this.listFiles = options.listFiles ?? listDirectoryFiles;
     this.edgeServersImpl = options.edgeServers ?? (() => this.defaultEdgeServers());
     this.ghcrToken = options.ghcrToken ?? savedGhcrToken;
   }
@@ -586,7 +591,7 @@ export class BunnyClient implements ProviderClient {
 
   async plan(directory: string, env: Record<string, string>): Promise<AppPlan> {
     const project = await this.composeConfig(directory, env);
-    return planApp(project, { readFile: this.readFile });
+    return planApp(project, { readFile: this.readFile, listFiles: this.listFiles });
   }
 
   /** The login for a push target: the API key for Bunny, the saved GitHub token for ghcr.io. */

@@ -117,6 +117,28 @@ export interface AppPlan {
 export interface PlanOptions {
   /** Reads a bind-mounted file; throws when it is not a readable file. */
   readFile(path: string): string;
+  /** Lists the files of a bind-mounted directory, or undefined when the path is not a directory. */
+  listFiles?(path: string): string[] | undefined;
+}
+
+/**
+ * The files of a bind mount: the file itself, or each file of a bind-mounted
+ * directory at the same path under the target. Throws when a file cannot be read.
+ */
+export function boundFiles(
+  mount: ComposeVolumeMount,
+  options: Pick<PlanOptions, "readFile" | "listFiles">,
+): { source: string; target: string; content: string }[] {
+  const source = mount.source ?? "";
+  const listed = options.listFiles?.(source);
+  if (!listed) return [{ source, target: mount.target, content: options.readFile(source) }];
+  const base = source.replace(/[\\/]+$/, "");
+  const target = mount.target.replace(/\/+$/, "");
+  return listed.map((file) => ({
+    source: `${base}/${file}`,
+    target: `${target}/${file}`,
+    content: options.readFile(`${base}/${file}`),
+  }));
 }
 
 /** Volumes that are not needed on Bunny: its CDN holds the certificate, uploads and backups go to S3. */
@@ -294,17 +316,17 @@ export function planApp(project: ComposeProject, options: PlanOptions): AppPlan 
       throw new Error(
         `${service} bind-mounts ${binds[0]?.source}; Bunny has no bind mounts. Copy the file into the image in its Dockerfile.`,
       );
-    const files = binds.map((mount) => {
-      let content: string;
+    const files = binds.flatMap((mount) => {
+      let found: ReturnType<typeof boundFiles>;
       try {
-        content = options.readFile(mount.source ?? "");
+        found = boundFiles(mount, options);
       } catch {
         throw new Error(
-          `${service} bind-mounts ${mount.source}, which is not a file; Bunny has no bind mounts, so only files can be copied into the image.`,
+          `${service} bind-mounts ${mount.source}, which is not a readable file or directory; Bunny has no bind mounts, so only files can be copied into the image.`,
         );
       }
-      texts.push(content);
-      return { source: mount.source ?? "", target: mount.target, content };
+      for (const file of found) texts.push(file.content);
+      return found;
     });
     const repository = repositoryName(`${project.name}-${service.replace(/-prod$/, "")}`);
     builds.set(repository, { kind: "bake", repository, from: definition.image, files });

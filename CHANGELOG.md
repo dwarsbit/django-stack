@@ -5,6 +5,23 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.10 (unreleased)
+
+### Fixes
+
+- Fixed: the first deploy on Coolify failed with "cannot overwrite
+  directory "Caddyfile" with non-directory". Coolify creates the source of
+  every bind mount as a directory before it copies the repository, so the
+  bind-mounted `./Caddyfile` became a directory. The Caddyfile is now in
+  `caddy/Caddyfile`, and the `proxy` service mounts the `./caddy`
+  directory at `/etc/caddy`. `dstack deploy` on Bunny and Railway reads
+  the files of a mounted directory. In an existing project, move
+  `Caddyfile` to `caddy/Caddyfile`, change the `proxy` volume in
+  `compose.yaml` to `./caddy:/etc/caddy:ro`, and in
+  `.github/workflows/deploy.yml` copy `caddy` with `scp -r` instead of
+  `Caddyfile`. On a Coolify server where the deploy already failed, delete
+  `/data/coolify/applications/<uuid>/Caddyfile`.
+
 ## 0.12.9 (2026-11-09)
 
 ### Changes

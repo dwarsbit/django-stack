@@ -65,7 +65,7 @@ frontend/                the {{frontend_label}} site; frontend/AGENTS.md lists i
   src/lib/headless.ts    generated API types; do not edit, run `{{pm_run}} generate:types`
 <!-- @end -->
 compose.yaml             every service; COMPOSE_PROFILES in .env picks dev or prod
-Caddyfile                the prod profile's reverse proxy and HTTPS
+caddy/Caddyfile          the prod profile's reverse proxy and HTTPS
 .github/workflows/deploy.yml  optional deploy to a server over SSH
 .env                     secrets and settings; never commit, never print
 ```

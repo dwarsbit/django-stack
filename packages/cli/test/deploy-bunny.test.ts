@@ -35,9 +35,11 @@ function fixture(): ComposeProject {
 }
 
 const readFile = (path: string) => {
-  if (path === "/project/Caddyfile") return CADDYFILE;
+  if (path === "/project/caddy/Caddyfile") return CADDYFILE;
   throw new Error("not a file");
 };
+
+const listFiles = (path: string) => (path === "/project/caddy" ? ["Caddyfile"] : undefined);
 
 describe("Compose to Bunny", () => {
   it("reads durations and public images", () => {
@@ -71,7 +73,7 @@ describe("Compose to Bunny", () => {
   });
 
   it("plans one pod from the template", () => {
-    const plan = planApp(fixture(), { readFile });
+    const plan = planApp(fixture(), { readFile, listFiles });
     const byName = Object.fromEntries(plan.containers.map((item) => [item.name, item]));
     expect(Object.keys(byName).sort()).toEqual(["backend", "cache", "db", "frontend", "proxy", "worker"]);
     expect(byName.backend?.ports).toEqual([8000]);
@@ -126,7 +128,7 @@ describe("Compose to Bunny", () => {
     const project = fixture();
     for (const service of Object.values(project.services))
       if (service.environment?.S3_BUCKET !== undefined) service.environment.S3_BUCKET = "";
-    expect(() => planApp(project, { readFile })).toThrow(/S3/);
+    expect(() => planApp(project, { readFile, listFiles })).toThrow(/S3/);
   });
 
   it("refuses two services on one port, and moves Umami", () => {
@@ -137,7 +139,7 @@ describe("Compose to Bunny", () => {
     };
     if (project.services["backend-prod"]?.environment)
       project.services["backend-prod"].environment.UMAMI_URL = "http://umami:3000";
-    const plan = planApp(project, { readFile });
+    const plan = planApp(project, { readFile, listFiles });
     const umami = plan.containers.find((item) => item.name === "umami");
     expect(umami?.ports).toEqual([3001]);
     expect(umami?.env.PORT).toBe("3001");
@@ -148,7 +150,7 @@ describe("Compose to Bunny", () => {
     project.services.other = { image: "nginx:1", environment: {} };
     if (project.services["backend-prod"]?.environment)
       project.services["backend-prod"].environment.OTHER_URL = "http://other:8000";
-    expect(() => planApp(project, { readFile })).toThrow(/both listen on port 8000/);
+    expect(() => planApp(project, { readFile, listFiles })).toThrow(/both listen on port 8000/);
   });
 
   it("refuses more volumes than Bunny allows", () => {
@@ -160,11 +162,11 @@ describe("Compose to Bunny", () => {
         { type: "volume", source: "two", target: "/two" },
       ],
     };
-    expect(() => planApp(project, { readFile })).toThrow(/2 volumes per app/);
+    expect(() => planApp(project, { readFile, listFiles })).toThrow(/2 volumes per app/);
   });
 
   it("builds the app request", () => {
-    const plan = planApp(fixture(), { readFile });
+    const plan = planApp(fixture(), { readFile, listFiles });
     const body = appRequest(plan, {
       registries: { dockerHub: "1", bunny: "9" },
       pushRegistry: "9",
@@ -238,6 +240,7 @@ function fakeBunny(
   const client = new BunnyClient("key", fetchImpl, {
     run,
     readFile,
+    listFiles,
     edgeServers: async () => ["203.0.113.1", "203.0.113.2"],
     now: () => new Date("2026-11-06T10:00:00Z"),
     ghcrToken,
