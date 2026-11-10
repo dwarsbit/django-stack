@@ -34,8 +34,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Secrets reach the scripts as environment variables, never as text in them.
       - name: Log in to the container registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
 
       - name: Build and push the images
         run: |
@@ -47,11 +50,14 @@ jobs:
           # @end
 
       - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
+          umask 077
           mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy
-          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
       - name: Deploy
         env:
@@ -66,7 +72,7 @@ jobs:
           $ssh_cmd "$TARGET" "
             set -e
             cd '$DEPLOY_PATH'
-            echo '$REGISTRY_TOKEN' | docker login ghcr.io --username '${{ github.actor }}' --password-stdin
+            echo '$REGISTRY_TOKEN' | docker login ghcr.io --username '$GITHUB_ACTOR' --password-stdin
             # @if frontend
             export BACKEND_IMAGE='${BACKEND_IMAGE,,}' FRONTEND_IMAGE='${FRONTEND_IMAGE,,}'
             # @end
