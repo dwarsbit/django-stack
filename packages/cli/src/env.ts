@@ -1,3 +1,15 @@
+import { chmodSync, writeFileSync } from "node:fs";
+
+/**
+ * Writes a file only its owner can read, such as a .env with secrets. The
+ * mode of writeFileSync only applies to a new file, so an existing one is
+ * tightened as well.
+ */
+export function writePrivateFile(path: string, text: string) {
+  writeFileSync(path, text, { mode: 0o600 });
+  chmodSync(path, 0o600);
+}
+
 /** Reads a .env file: KEY=value lines, comments and blank lines ignored. */
 export function parseEnv(text: string): Record<string, string> {
   const values: Record<string, string> = {};

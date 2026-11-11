@@ -2,7 +2,7 @@
   import "../app.css";
   import { page } from "$app/state";
   import { Image, RichText, Seo } from "@django-stack/svelte";
-  import { linkHref } from "@django-stack/utils";
+  import { linkHref, safeHref } from "@django-stack/utils";
 
   let { data, children } = $props();
   const path = $derived(page.url.pathname);
@@ -61,7 +61,7 @@
         <a href={linkHref(item)}>{item.value.label}</a>
       {/each}
       {#each Object.entries(data.settings?.social_links ?? {}) as [name, url] (name)}
-        <a href={url} rel="me">{name}</a>
+        <a href={safeHref(String(url))} rel="me">{name}</a>
       {/each}
     </nav>
   </div>

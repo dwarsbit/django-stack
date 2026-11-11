@@ -1,4 +1,4 @@
-import { reportError } from "@django-stack/utils";
+import { reportError, verifyPreviewToken } from "@django-stack/utils";
 import { redirect } from "@sveltejs/kit";
 import type { Handle, HandleServerError } from "@sveltejs/kit/hooks";
 import { getContent, PREVIEW_COOKIE } from "#lib/server/api.ts";
@@ -31,7 +31,9 @@ const MEDIA_DIRECTIVES = `img-src 'self' data:${MEDIA_ORIGINS}; media-src 'self'
 
 export const handle: Handle = async ({ event, resolve }) => {
   const { request, url, cookies } = event;
-  const preview = cookies.get(PREVIEW_COOKIE) !== undefined;
+  // Only a valid token skips the cache: any other cookie value would let
+  // every request through to Django.
+  const preview = await verifyPreviewToken(process.env.PREVIEW_SECRET, cookies.get(PREVIEW_COOKIE));
   const cacheable = request.method === "GET" && !preview && !dev && !url.pathname.startsWith("/_app/");
   const key = url.pathname + url.search;
 

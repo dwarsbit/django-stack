@@ -1,8 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { parseEnv, quoteEnvValue, setEnvValues } from "../env";
+import { parseEnv, quoteEnvValue, setEnvValues, writePrivateFile } from "../env";
 import { findProjectDirectory, parseProfiles, projectStack, readProject } from "../project";
 import { parseAssignments, type SettingContext, type SettingGroup, settingsToAsk } from "../settings";
 import { command, fail, intro, isInteractive, unwrap } from "../ui";
@@ -72,7 +72,7 @@ export function writeSettings(path: string, values: Record<string, string>) {
   const quoted = Object.fromEntries(
     Object.entries(values).map(([name, value]) => [name, quoteEnvValue(value)]),
   );
-  writeFileSync(path, setEnvValues(readFileSync(path, "utf8"), quoted), { mode: 0o600 });
+  writePrivateFile(path, setEnvValues(readFileSync(path, "utf8"), quoted));
 }
 
 /** The production `.env` of a project: `--file`, `.env.production`, or `.env` on a server. */

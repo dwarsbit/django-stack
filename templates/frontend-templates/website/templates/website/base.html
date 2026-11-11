@@ -35,7 +35,7 @@
         {% if site.footer_text %}<div class="footer-text">{{ site.footer_text|safe }}</div>{% endif %}
         <nav aria-label="Footer">
           {% for item in footer_menu.items.blocks %}<a href="{{ item|link_href }}">{{ item.value.label }}</a>{% endfor %}
-          {% for name, url in site.social_links.items %}<a href="{{ url }}" rel="me">{{ name }}</a>{% endfor %}
+          {% for name, url in site.social_links.items %}<a href="{{ url|safe_href }}" rel="me">{{ name }}</a>{% endfor %}
         </nav>
       </div>
     </footer>

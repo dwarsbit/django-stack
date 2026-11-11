@@ -1,3 +1,4 @@
+import { safeHref } from "@django-stack/utils";
 import type { NitroFetchRequest } from "nitropack";
 
 /**
@@ -15,8 +16,11 @@ export async function useContent<R extends NitroFetchRequest>(url: R, query?: ()
     if (statusCode === 404) {
       const target = await $fetch("/_content/redirect", { query: { path: route.path } }).catch(() => null);
       if (target) {
+        // A redirect may go to a full URL; Nuxt only follows those with `external`.
+        const location = safeHref(target.new_path);
+        const external = /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(location);
         await nuxtApp.runWithContext(() =>
-          navigateTo(target.new_path, { redirectCode: target.permanent ? 301 : 302 }),
+          navigateTo(location, { redirectCode: target.permanent ? 301 : 302, external }),
         );
         return result;
       }

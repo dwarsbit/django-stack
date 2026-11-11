@@ -1,6 +1,6 @@
 import "./globals.css";
 import { Image, RichText } from "@django-stack/react";
-import { linkHref } from "@django-stack/utils";
+import { linkHref, safeHref } from "@django-stack/utils";
 import type { Metadata } from "next";
 import Script from "next/script";
 import { NavLink } from "@/components/NavLink";
@@ -58,7 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </a>
               ))}
               {Object.entries(settings?.social_links ?? {}).map(([name, url]) => (
-                <a key={name} href={url} rel="me">
+                <a key={name} href={safeHref(String(url))} rel="me">
                   {name}
                 </a>
               ))}

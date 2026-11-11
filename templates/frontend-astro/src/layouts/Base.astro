@@ -1,5 +1,5 @@
 ---
-import { linkHref, type SeoInput } from "@django-stack/utils";
+import { linkHref, type SeoInput, safeHref } from "@django-stack/utils";
 import Image from "../components/Image.astro";
 import RichText from "../components/RichText.astro";
 import Seo from "../components/Seo.astro";
@@ -70,7 +70,7 @@ const analytics = process.env.UMAMI_WEBSITE_ID;
         <RichText html={settings?.footer_text} class="footer-text" />
         <nav aria-label="Footer">
           {footerMenu?.items.map((item) => <a href={linkHref(item)}>{item.value.label}</a>)}
-          {Object.entries(settings?.social_links ?? {}).map(([name, url]) => <a href={url} rel="me">{name}</a>)}
+          {Object.entries(settings?.social_links ?? {}).map(([name, url]) => <a href={safeHref(String(url))} rel="me">{name}</a>)}
         </nav>
       </div>
     </footer>

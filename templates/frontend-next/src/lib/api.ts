@@ -6,7 +6,7 @@
 import "server-only";
 
 import { contentFetchInit, PREVIEW_COOKIE, toMetadata } from "@django-stack/next";
-import { createClient, createContent, type SeoInput, seo } from "@django-stack/utils";
+import { createClient, createContent, type SeoInput, seo, verifyPreviewToken } from "@django-stack/utils";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
@@ -16,9 +16,13 @@ export { PREVIEW_COOKIE };
 
 export const SITE_URL = (process.env.SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
-/** The preview token, when the visitor opened a preview link. */
+/**
+ * The preview token, when the visitor opened a preview link. Only a valid
+ * one counts: any other cookie value would skip the cache on every request.
+ */
 export async function previewToken(): Promise<string | null> {
-  return (await cookies()).get(PREVIEW_COOKIE)?.value ?? null;
+  const token = (await cookies()).get(PREVIEW_COOKIE)?.value ?? null;
+  return (await verifyPreviewToken(process.env.PREVIEW_SECRET, token)) ? token : null;
 }
 
 /**

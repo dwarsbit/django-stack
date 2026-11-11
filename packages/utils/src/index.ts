@@ -20,6 +20,7 @@ export {
   DEFAULT_LABELS,
   type GetPostsOptions,
   linkHref,
+  safeHref,
 } from "./content";
 export {
   type ErrorContext,

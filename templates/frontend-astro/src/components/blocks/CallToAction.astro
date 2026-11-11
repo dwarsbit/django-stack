@@ -1,5 +1,5 @@
 ---
-import type { CallToActionBlock } from "@django-stack/utils";
+import { type CallToActionBlock, safeHref } from "@django-stack/utils";
 
 const { block } = Astro.props as { block: CallToActionBlock };
 ---
@@ -7,7 +7,7 @@ const { block } = Astro.props as { block: CallToActionBlock };
 <aside class="cta">
   <h2>{block.value.title}</h2>
   {block.value.text && <p>{block.value.text}</p>}
-  <a class="button" href={block.value.button_url}>{block.value.button_label}</a>
+  <a class="button" href={safeHref(block.value.button_url)}>{block.value.button_label}</a>
 </aside>
 
 <style>

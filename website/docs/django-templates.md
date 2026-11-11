@@ -69,7 +69,8 @@ can take up to `SITE_CACHE_TTL` to show everywhere.
 - `{% seo %}` renders the title, the description, the canonical URL and the
   Open Graph tags; empty fields fall back to the site settings.
 - `{{ item|link_href }}` is the URL of a menu link; `is_current` marks the
-  current page in the menu.
+  current page in the menu. `{{ url|safe_href }}` is a link an editor typed,
+  with `/` in place of one that would run script, such as `javascript:`.
 
 ## Security
 

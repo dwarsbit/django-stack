@@ -67,6 +67,13 @@ def test_tasks_in_the_database():
     assert s["TASKS"]["default"]["BACKEND"] == "huey.contrib.djhuey.tasks_backend.HueyBackend"
 
 
+@pytest.mark.parametrize("scheme", ["postgresql", "pgsql", "postgis"])
+def test_tasks_in_the_database_with_every_postgres_scheme(scheme):
+    s = run({"DATABASE_URL": f"{scheme}://app:pw@db/app", "TASKS_URL": "db://"})
+    assert s["HUEY"]["database"] == "psycopg3://app:pw@db/app"
+    assert s["HUEY_STATS"] == {"database": "psycopg3://app:pw@db/app"}
+
+
 def test_tasks_in_a_sqlite_database():
     s = run({"DATABASE_URL": "sqlite:////srv/app/db.sqlite3", "TASKS_URL": "db://"})
     assert s["HUEY"]["database"] == "sqlite:////srv/app/db.sqlite3"

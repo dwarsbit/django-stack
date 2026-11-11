@@ -7,6 +7,7 @@ import {
   loadCaptcha,
   type Media,
   type QuoteBlock as QuoteBlockData,
+  safeHref,
   type TextBlock as TextBlockData,
 } from "@django-stack/utils";
 import { type Component, defineComponent, h, onMounted, type PropType } from "vue";
@@ -104,7 +105,11 @@ export const CallToActionBlock = defineComponent({
       h("aside", { class: "cta" }, [
         h("h2", props.block.value.title),
         props.block.value.text ? h("p", props.block.value.text) : null,
-        h("a", { class: "button", href: props.block.value.button_url }, props.block.value.button_label),
+        h(
+          "a",
+          { class: "button", href: safeHref(props.block.value.button_url) },
+          props.block.value.button_label,
+        ),
       ]);
   },
 });

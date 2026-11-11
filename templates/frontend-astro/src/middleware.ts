@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { reportError } from "@django-stack/utils";
+import { reportError, verifyPreviewToken } from "@django-stack/utils";
 import { getContent, PREVIEW_COOKIE } from "./lib/api";
 import { getCached, store } from "./lib/cache";
 
@@ -29,7 +29,9 @@ const MEDIA_DIRECTIVES = `img-src 'self' data:${MEDIA_ORIGINS}; media-src 'self'
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, url, cookies } = context;
-  const preview = cookies.has(PREVIEW_COOKIE);
+  // Only a valid token skips the cache: any other cookie value would let
+  // every request through to Django.
+  const preview = await verifyPreviewToken(process.env.PREVIEW_SECRET, cookies.get(PREVIEW_COOKIE)?.value);
   const cacheable =
     request.method === "GET" && !preview && !import.meta.env.DEV && !url.pathname.startsWith("/_");
   const key = url.pathname + url.search;
