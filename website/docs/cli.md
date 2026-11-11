@@ -232,7 +232,10 @@ It prints the output of each check that fails and exits with status 1.
    `COMPOSE_FILE=compose.yaml:compose.ports.yaml` to the production `.env`
    files on this machine that need it (`.env.run`, and `.env` on a server of
    your own). It prints what to change by hand on the server or the
-   platform.
+   platform. It also adds `networks: [default]` to the production services
+   of `compose.yaml` that have no `networks`, and an error page that calls
+   no API to an Astro (`src/pages/500.astro`) or Next.js
+   (`src/app/global-error.tsx`) frontend that has none.
 2. With [uv](https://docs.astral.sh/uv/) installed, upgrades `django-stack`,
    `django-headless` and `django-content-studio` in `backend/uv.lock`.
    `--all` upgrades every backend package.

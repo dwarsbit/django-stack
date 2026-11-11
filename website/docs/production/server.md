@@ -209,6 +209,18 @@ take down the server:
 Change them under `deploy.resources.limits` in `compose.yaml`. With more
 memory, add backend workers with `--workers` in `backend/Dockerfile`.
 
+### Database connections
+
+The bundled Postgres accepts 100 connections. The backend runs on ASGI,
+where Django keeps no persistent connections: each request opens one and
+closes it when it ends, so the backend holds at most one per request in
+progress. Umami's pool holds up to 10 more. To reuse connections instead
+of opening one per request, set `DATABASE_POOL=1` in `.env`: each backend
+worker and the task worker then keep a pool of at most
+`DATABASE_POOL_SIZE` (4) connections, and requests wait for a free one.
+More workers need more connections, so keep workers times the pool size,
+plus Umami's 10, under 100.
+
 ## Troubleshooting
 
 - **No certificate**: the DNS record must point at the server and ports 80
