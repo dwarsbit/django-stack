@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.14.0 (unreleased)
+## 0.14.0 (2026-11-11)
 
 - **Database connection pool.** Set `DATABASE_POOL=1` in `.env` to reuse
   Postgres connections through psycopg's connection pool, with at most
