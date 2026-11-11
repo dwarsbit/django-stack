@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Image, RichText } from "@django-stack/vue";
-import { linkHref } from "@django-stack/utils";
+import { linkHref, safeHref } from "@django-stack/utils";
 
 const { data } = await useLayoutContent();
 const route = useRoute();
@@ -48,7 +48,7 @@ useHead(() => ({
         <NuxtLink v-for="item in data?.footerMenu?.items ?? []" :key="item.id" :to="linkHref(item)">
           {{ item.value.label }}
         </NuxtLink>
-        <a v-for="(url, name) in data?.settings?.social_links ?? {}" :key="name" :href="url" rel="me">{{ name }}</a>
+        <a v-for="(url, name) in data?.settings?.social_links ?? {}" :key="name" :href="safeHref(String(url))" rel="me">{{ name }}</a>
       </nav>
     </div>
   </footer>
