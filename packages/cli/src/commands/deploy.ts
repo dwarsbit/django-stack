@@ -15,6 +15,7 @@ import {
   gitBranch,
   gitRemote,
   httpsRepository,
+  insecureUrlWarning,
   LINK_FILE,
   PROVIDERS,
   type ProviderClient,
@@ -107,6 +108,8 @@ async function askToken(provider: DeployProvider, instance: string): Promise<str
 
 /** Checks a key and saves it; returns it. */
 async function login(provider: DeployProvider, instance: string, token: string): Promise<string> {
+  const insecure = insecureUrlWarning(instance);
+  if (insecure) p.log.warn(insecure);
   const spinner = p.spinner();
   spinner.start(`Checking the key with ${instance}`);
   const version = await attempt(provider.connect(instance, token).verify(), spinner);

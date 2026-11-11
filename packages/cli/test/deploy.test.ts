@@ -15,6 +15,7 @@ import {
   deploymentStatus,
   getToken,
   httpsRepository,
+  insecureUrlWarning,
   normalizeUrl,
   PLATFORM_ENV,
   parseLog,
@@ -34,6 +35,16 @@ function tempDir(): string {
   mkdirSync(directory, { recursive: true });
   return directory;
 }
+
+describe("insecureUrlWarning", () => {
+  it("warns for http:// to another host only", () => {
+    expect(insecureUrlWarning("http://203.0.113.5:8000")).toContain("unencrypted");
+    expect(insecureUrlWarning("http://10.0.0.2:8000")).toContain("unencrypted");
+    expect(insecureUrlWarning("https://coolify.example.com")).toBeUndefined();
+    expect(insecureUrlWarning("http://localhost:8000")).toBeUndefined();
+    expect(insecureUrlWarning("http://127.0.0.1:3000")).toBeUndefined();
+  });
+});
 
 describe("normalizeUrl", () => {
   it("adds https and drops paths and slashes", () => {

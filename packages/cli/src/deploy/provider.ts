@@ -157,6 +157,22 @@ export function urlTarget(name: string, placeholder: string): ProviderTarget {
   return { label: `${name} URL`, placeholder, normalize: normalizeUrl };
 }
 
+/**
+ * A warning for an instance URL that sends the API key unencrypted: http://
+ * to a host other than this machine. Undefined for https:// and loopback.
+ */
+export function insecureUrlWarning(url: string): string | undefined {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return undefined;
+  }
+  if (parsed.protocol !== "http:") return undefined;
+  if (["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname)) return undefined;
+  return `${url} is plain http://, so the API key goes over the network unencrypted. Put the platform behind https:// if you can.`;
+}
+
 /** Normalizes an instance URL: https by default, no trailing slash or path. */
 export function normalizeUrl(value: string): string {
   const trimmed = value.trim();
