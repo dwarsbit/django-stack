@@ -17,9 +17,11 @@ import {
   httpsRepository,
   insecureUrlWarning,
   LINK_FILE,
+  lastTarget,
   PROVIDERS,
   type ProviderClient,
   readLink,
+  rememberTarget,
   saveToken,
   uncommittedReason,
   unpushedReason,
@@ -231,6 +233,7 @@ export async function deploySetup(options: SetupCommandOptions) {
       await p.text({
         message: provider.target.label,
         placeholder: provider.target.placeholder,
+        initialValue: lastTarget(provider.id),
         validate: (value) => {
           try {
             provider.target.normalize(value ?? "");
@@ -290,6 +293,7 @@ export async function deploySetup(options: SetupCommandOptions) {
   );
   const link: DeployLink = { provider: provider.id, url: instance, ...ids, directory: project.directory };
   writeLink(project.directory, link);
+  rememberTarget(provider.id, instance);
   p.log.success(
     `Wrote ${pc.bold(LINK_FILE)}. It holds no secrets; commit it so others deploy to the same place.`,
   );
@@ -574,7 +578,11 @@ async function loginTarget(
   if (!instance) {
     if (!interactive) fail(`Pass --url, the address of your ${provider.name}.`);
     instance = unwrap(
-      await p.text({ message: provider.target.label, placeholder: provider.target.placeholder }),
+      await p.text({
+        message: provider.target.label,
+        placeholder: provider.target.placeholder,
+        initialValue: lastTarget(provider.id),
+      }),
     );
   }
   try {
@@ -598,6 +606,7 @@ export async function deployLogin(
     token = await askToken(provider, instance);
   }
   await login(provider, instance, token);
+  rememberTarget(provider.id, instance);
   p.outro(pc.green("Done"));
 }
 

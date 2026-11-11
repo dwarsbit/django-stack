@@ -131,3 +131,34 @@ export function deleteToken(provider: string, url: string): boolean {
   }
   return removeFromFile(account) || removed;
 }
+
+/**
+ * The last target of each provider, such as the Coolify address, so setup
+ * and login offer it again. Not a secret: ~/.config/dstack/targets.json.
+ */
+export function targetsFile(): string {
+  return join(dirname(credentialsFile()), "targets.json");
+}
+
+function readTargets(): Record<string, string> {
+  try {
+    const values = JSON.parse(readFileSync(targetsFile(), "utf8")) as unknown;
+    return values && typeof values === "object" ? (values as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function lastTarget(provider: string): string | undefined {
+  const value = readTargets()[provider];
+  return typeof value === "string" && value ? value : undefined;
+}
+
+/** Remembers a target; never fails a command over it. */
+export function rememberTarget(provider: string, target: string) {
+  try {
+    const path = targetsFile();
+    mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+    writeFileSync(path, `${JSON.stringify({ ...readTargets(), [provider]: target }, null, 2)}\n`);
+  } catch {}
+}

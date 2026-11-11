@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -16,10 +16,12 @@ import {
   getToken,
   httpsRepository,
   insecureUrlWarning,
+  lastTarget,
   normalizeUrl,
   PLATFORM_ENV,
   parseLog,
   readLink,
+  rememberTarget,
   saveToken,
   setKeyring,
   uncommittedReason,
@@ -135,6 +137,16 @@ describe("credentials", () => {
     expect(getToken("coolify", url, "DSTACK_TEST_TOKEN")?.source).toBe("file");
     expect(deleteToken("coolify", url)).toBe(true);
     expect(getToken("coolify", url, "DSTACK_TEST_TOKEN")).toBeUndefined();
+  });
+
+  it("remembers the last target of each provider", () => {
+    expect(lastTarget("coolify")).toBeUndefined();
+    rememberTarget("coolify", url);
+    rememberTarget("dokploy", "https://dokploy.example.com");
+    rememberTarget("coolify", "https://other.example.com");
+    expect(lastTarget("coolify")).toBe("https://other.example.com");
+    expect(lastTarget("dokploy")).toBe("https://dokploy.example.com");
+    expect(existsSync(credentialsFile())).toBe(false);
   });
 
   it("lets the environment variable win", () => {
