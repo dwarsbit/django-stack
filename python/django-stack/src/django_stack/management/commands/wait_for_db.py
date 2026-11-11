@@ -17,6 +17,19 @@ STALE_VOLUME_HELP = (
 )
 
 
+def check_connection():
+    """Open a connection, around the pool when DATABASE_POOL is on.
+
+    A pool retries a failed connection in the background and only reports a
+    timeout, which hides the reason and the password help below.
+    """
+    if connection.vendor == "postgresql" and connection.settings_dict["OPTIONS"].get("pool"):
+        with connection.wrap_database_errors:
+            connection.Database.connect(**connection.get_connection_params()).close()
+    else:
+        connection.ensure_connection()
+
+
 class Command(BaseCommand):
     help = "Wait until the database accepts connections."
 
@@ -27,7 +40,7 @@ class Command(BaseCommand):
         deadline = time.monotonic() + timeout
         while True:
             try:
-                connection.ensure_connection()
+                check_connection()
                 return
             except OperationalError as error:
                 if "password authentication failed" in str(error):

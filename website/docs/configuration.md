@@ -22,6 +22,8 @@ kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
 | `DJANGO_SECRET_KEY` | Django's secret key. Required. |
 | `DJANGO_DEBUG` | `1` in development, `0` in production. |
 | `DATABASE_URL` | `postgres://user:password@host:5432/name`, or `sqlite:///path`. |
+| `DATABASE_POOL` | `1` to reuse database connections through psycopg's connection pool, one per backend process. Off by default: each request opens its own connection and closes it at the end. |
+| `DATABASE_POOL_SIZE` | The most connections the pool of one process opens: `4` by default. Requests wait for a free one. |
 | `PRODUCTION_DATABASE_URL` | An external Postgres for the server. `dstack production` makes it `DATABASE_URL` in `.env.production` and leaves out `db`; development keeps the bundled Postgres. |
 | `CACHE_URL` | `db://` for a table in the database, `redis://` or `valkey://` for Valkey, `locmem://` for a cache per process. |
 | `TASKS_URL` | Where the worker's task queue is: `db://` (tables in the database), `redis://cache:6379/1` (Valkey) or `immediate://` (no worker: tasks run in the request, and there are no daily backups). Without it, the queue is in a Redis `CACHE_URL`, as in projects from before 0.7. |

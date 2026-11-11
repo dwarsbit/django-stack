@@ -81,7 +81,10 @@ def parse_database_url(url: str) -> dict:
             "PASSWORD": unquote(parts.password or ""),
             "HOST": unquote(parts.hostname or ""),
             "PORT": str(parts.port or ""),
-            "CONN_MAX_AGE": 60,
+            # No persistent connections: under ASGI every request runs in a
+            # new thread, so a kept connection is never reused and they pile
+            # up until Postgres refuses more. DATABASE_POOL reuses them.
+            "CONN_MAX_AGE": 0,
             "CONN_HEALTH_CHECKS": True,
         }
         if options:

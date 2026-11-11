@@ -5,6 +5,36 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.14.0 (unreleased)
+
+- **Database connection pool.** Set `DATABASE_POOL=1` in `.env` to reuse
+  Postgres connections through psycopg's connection pool, with at most
+  `DATABASE_POOL_SIZE` (4) connections per backend process. The `server`
+  extra of `django-stack` now installs `psycopg[pool]`; `dstack update`
+  brings it into an existing project.
+
+### Fixes
+
+- Fixed: under traffic, Postgres refused connections with
+  `FATAL: sorry, too many clients already` and pages answered 500. Django
+  kept every connection for 60 seconds, but under ASGI each request runs
+  in a new thread, so a kept connection was never reused and they piled
+  up past Postgres's 100. `DATABASE_URL` now sets `CONN_MAX_AGE` to 0:
+  each request closes its connection when it ends. Run `dstack update` to
+  get the new `django-stack`, and remove a
+  `DATABASES["default"]["CONN_MAX_AGE"] = 0` workaround from
+  `settings.py` if you added one. (#94)
+- Fixed: when a page failed to render, such as when the database was
+  down, the Astro frontend answered with an empty 500 without a
+  `Content-Type`, which iOS Safari offered as a file download. New Astro
+  projects get `src/pages/500.astro` and new Next.js projects
+  `src/app/global-error.tsx`: error pages that call no API, so they show
+  even when the backend fails. `dstack update` adds the page to an existing project
+  that has none.
+- Fixed: `manage.py wait_for_db` with `DATABASE_POOL=1` hid a wrong
+  password behind a 30-second pool timeout; it now connects without the
+  pool and reports it at once.
+
 ## 0.13.1 (2026-11-11)
 
 ### Fixes

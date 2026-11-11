@@ -1,8 +1,9 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { parseEnv, writePrivateFile } from "./env";
 import { PORTS_COMPOSE_FILE, SERVER_COMPOSE_FILE, setComposeFile } from "./production";
 import { RUN_ENV } from "./project";
+import { defaultTemplatesDir } from "./scaffold";
 
 /** compose.ports.yaml as `init` writes it. */
 export const PORTS_COMPOSE = `# The host ports of Caddy, for a server without a platform's proxy. Load it
@@ -132,5 +133,34 @@ export function migrateDefaultNetwork(directory: string): Migration {
   if (!added.length) return result;
   writeFileSync(path, next);
   result.changed.push(`Put ${added.join(", ")} on the default network in compose.yaml.`);
+  return result;
+}
+
+/** The error pages that call no API, by frontend: the file that marks the frontend, then the page. */
+const ERROR_PAGES = [
+  { marker: "astro.config.mjs", page: "src/pages/500.astro", template: "frontend-astro", others: [] },
+  {
+    marker: "next.config.ts",
+    page: "src/app/global-error.tsx",
+    template: "frontend-next",
+    others: ["src/app/global-error.jsx", "src/app/global-error.js"],
+  },
+];
+
+/**
+ * Adds the error page of the frontend that renders without the API, so a
+ * failing backend or database shows a page instead of an empty 500 (which
+ * some browsers offer as a download). A page the project has is kept.
+ */
+export function migrateErrorPages(directory: string, templatesDir = defaultTemplatesDir()): Migration {
+  const result: Migration = { changed: [], todo: [] };
+  const frontend = join(directory, "frontend");
+  for (const { marker, page, template, others } of ERROR_PAGES) {
+    if (!existsSync(join(frontend, marker))) continue;
+    if (!existsSync(join(frontend, dirname(page)))) continue;
+    if ([page, ...others].some((name) => existsSync(join(frontend, name)))) continue;
+    copyFileSync(join(templatesDir, template, page), join(frontend, page));
+    result.changed.push(`Added frontend/${page}, an error page that renders without the API.`);
+  }
   return result;
 }
