@@ -6,7 +6,7 @@ import pc from "picocolors";
 import { applyStack, SWITCHABLE, setManifestPreset } from "../config";
 import { runDoctor } from "../doctor";
 import { setEnvValues, writePrivateFile } from "../env";
-import { migrateDefaultNetwork, migrateProxyPorts } from "../migrate";
+import { migrateDefaultNetwork, migrateErrorPages, migrateProxyPorts } from "../migrate";
 import { chooseFreePorts, DEV_PORTS, describeMove, envPorts, portValues } from "../ports";
 import { productionEnv } from "../production";
 import {
@@ -354,7 +354,11 @@ export async function update(
 ) {
   intro("Update");
   const directory = open(options).directory;
-  const migrations = [migrateProxyPorts(directory), migrateDefaultNetwork(directory)];
+  const migrations = [
+    migrateProxyPorts(directory),
+    migrateDefaultNetwork(directory),
+    migrateErrorPages(directory),
+  ];
   for (const line of migrations.flatMap((migration) => migration.changed)) p.log.success(line);
   const todo = migrations.flatMap((migration) => migration.todo);
   if (todo.length) p.note(todo.map((item) => `${pc.yellow("•")} ${item}`).join("\n"), "Change by hand");

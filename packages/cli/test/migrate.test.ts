@@ -1,9 +1,16 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { parseEnv } from "../src";
-import { addDefaultNetwork, migrateDefaultNetwork, migrateProxyPorts, PORTS_COMPOSE } from "../src/migrate";
+import {
+  addDefaultNetwork,
+  migrateDefaultNetwork,
+  migrateErrorPages,
+  migrateProxyPorts,
+  PORTS_COMPOSE,
+} from "../src/migrate";
 
 const root = mkdtempSync(join(tmpdir(), "django-stack-migrate-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -121,5 +128,47 @@ describe("migrateDefaultNetwork", () => {
     const template = readFileSync(join(__dirname, "../../../templates/base/compose.yaml"), "utf8");
     const directory = project({ "compose.yaml": template });
     expect(migrateDefaultNetwork(directory).changed).toEqual([]);
+  });
+});
+
+describe("migrateErrorPages", () => {
+  const templates = fileURLToPath(new URL("../templates", import.meta.url));
+
+  function frontend(files: string[]): string {
+    const directory = mkdtempSync(join(root, "p"));
+    for (const name of files) {
+      mkdirSync(dirname(join(directory, "frontend", name)), { recursive: true });
+      writeFileSync(join(directory, "frontend", name), "");
+    }
+    return directory;
+  }
+
+  it("adds the Astro 500 page", () => {
+    const directory = frontend(["astro.config.mjs", "src/pages/index.astro"]);
+    expect(migrateErrorPages(directory, templates).changed).toEqual([
+      "Added frontend/src/pages/500.astro, an error page that renders without the API.",
+    ]);
+    expect(readFileSync(join(directory, "frontend/src/pages/500.astro"), "utf8")).toBe(
+      readFileSync(join(templates, "frontend-astro/src/pages/500.astro"), "utf8"),
+    );
+  });
+
+  it("adds the Next.js global error page", () => {
+    const directory = frontend(["next.config.ts", "src/app/page.tsx"]);
+    migrateErrorPages(directory, templates);
+    expect(existsSync(join(directory, "frontend/src/app/global-error.tsx"))).toBe(true);
+  });
+
+  it("keeps a page the project has", () => {
+    const directory = frontend(["astro.config.mjs", "src/pages/500.astro"]);
+    expect(migrateErrorPages(directory, templates).changed).toEqual([]);
+    expect(readFileSync(join(directory, "frontend/src/pages/500.astro"), "utf8")).toBe("");
+    const next = frontend(["next.config.ts", "src/app/global-error.js"]);
+    expect(migrateErrorPages(next, templates).changed).toEqual([]);
+  });
+
+  it("leaves other frontends alone", () => {
+    expect(migrateErrorPages(frontend(["nuxt.config.ts", "src/app.vue"]), templates).changed).toEqual([]);
+    expect(migrateErrorPages(mkdtempSync(join(root, "p")), templates).changed).toEqual([]);
   });
 });
