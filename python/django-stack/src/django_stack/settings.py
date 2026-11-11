@@ -97,6 +97,8 @@ def _merge(defaults: dict, overrides: Any) -> dict:
 
 
 REDIS_SCHEMES = ("redis", "rediss", "valkey", "valkeys")
+# The Postgres schemes parse_database_url reads.
+POSTGRES_SCHEMES = ("postgres", "postgresql", "pgsql", "postgis")
 
 
 def _scheme(url: str | None) -> str:
@@ -124,7 +126,7 @@ def task_settings(
         }
     elif scheme == "db":
         database_scheme = _scheme(database_url)
-        if database_scheme in ("postgres", "postgresql"):
+        if database_scheme in POSTGRES_SCHEMES:
             database = "psycopg3:" + database_url.split(":", 1)[1]
         elif database_scheme == "sqlite":
             database = "sqlite:///" + parse_database_url(database_url)["NAME"]
@@ -202,7 +204,7 @@ def configure(
     s.update(task_settings(e.str("TASKS_URL"), cache_url, database_url, project_name, e))
     # Task statistics for the admin's task page: in Postgres, so the web and
     # worker containers share them (the default is a SQLite file per container).
-    if database_url.split(":", 1)[0] in ("postgres", "postgresql") and "HUEY_STATS" not in namespace:
+    if _scheme(database_url) in POSTGRES_SCHEMES and "HUEY_STATS" not in namespace:
         s["HUEY_STATS"] = {"database": "psycopg3:" + database_url.split(":", 1)[1]}
 
     # Mail
