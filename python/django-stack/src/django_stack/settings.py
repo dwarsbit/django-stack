@@ -22,7 +22,8 @@ The variables, all optional unless noted:
 ``DJANGO_SECRET_KEY`` (required), ``DJANGO_DEBUG``, ``SITE_URL`` (the public
 URL of the frontend), ``BACKEND_URL`` (the public URL of Django; defaults
 to ``SITE_URL``), ``ALLOWED_HOSTS`` (extra hosts, comma separated),
-``DATABASE_URL``, ``CACHE_URL``, ``EMAIL_URL``, ``DEFAULT_FROM_EMAIL``,
+``DATABASE_URL``, ``DATABASE_POOL`` and ``DATABASE_POOL_SIZE``, ``CACHE_URL``,
+``EMAIL_URL``, ``DEFAULT_FROM_EMAIL``,
 ``MEDIA_URL``, ``S3_BUCKET`` and the other ``S3_*`` variables,
 ``API_SECRET_KEY`` (full access), ``API_READ_KEY`` (read-only),
 ``PREVIEW_SECRET``, ``REVALIDATE_URL``, ``REVALIDATE_SECRET``,
@@ -148,6 +149,19 @@ def task_settings(
     }
 
 
+def database_pool(database: dict[str, Any], e: Env) -> dict[str, Any]:
+    """The DATABASES entry with psycopg's connection pool, for DATABASE_POOL=1."""
+    if database["ENGINE"] == "django.db.backends.sqlite3":
+        return database
+    if not _installed("psycopg_pool"):
+        raise ImproperlyConfigured("DATABASE_POOL=1 needs psycopg_pool; install django-stack[server].")
+    size = e.int("DATABASE_POOL_SIZE", 4)
+    if size is None or size < 1:
+        raise ImproperlyConfigured("DATABASE_POOL_SIZE must be 1 or more.")
+    options = {**database.get("OPTIONS", {}), "pool": {"min_size": 1, "max_size": size}}
+    return {**database, "OPTIONS": options}
+
+
 def configure(
     namespace: MutableMapping[str, Any],
     *,
@@ -186,6 +200,8 @@ def configure(
     # Database
     database_url = e.str("DATABASE_URL", f"sqlite:///{base_dir / 'db.sqlite3'}")
     s["DATABASES"] = {"default": parse_database_url(database_url)}
+    if e.bool("DATABASE_POOL", False):
+        s["DATABASES"]["default"] = database_pool(s["DATABASES"]["default"], e)
     s["DEFAULT_AUTO_FIELD"] = "django.db.models.BigAutoField"
 
     # Cache: shared by Content Studio (login throttles, sessions, presence)

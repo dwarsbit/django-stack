@@ -55,3 +55,8 @@ def test_env_values():
         env.str("MISSING", required=True)
     with pytest.raises(ImproperlyConfigured):
         Env({"FLAG": "maybe"}).bool("FLAG")
+
+
+def test_postgres_url_has_no_persistent_connections():
+    # Under ASGI a kept connection is never reused and they pile up (#94).
+    assert parse_database_url("postgres://app:pw@db/app")["CONN_MAX_AGE"] == 0

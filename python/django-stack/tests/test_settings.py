@@ -152,3 +152,26 @@ def test_backup_settings():
     assert stack["BACKUP_KEEP"] == 7
     assert stack["BACKUP_S3"]["access_key"] == "key"
     assert stack["BACKUP_DIR"] == "/srv/app/backups"
+
+
+def test_database_pool(monkeypatch):
+    monkeypatch.setattr("django_stack.settings._installed", lambda module: True)
+    database = run({"DATABASE_URL": "postgres://app:pw@db/app?sslmode=require", "DATABASE_POOL": "1"})[
+        "DATABASES"
+    ]["default"]
+    assert database["CONN_MAX_AGE"] == 0
+    assert database["OPTIONS"] == {"sslmode": "require", "pool": {"min_size": 1, "max_size": 4}}
+    sized = run({"DATABASE_URL": "postgres://app:pw@db/app", "DATABASE_POOL": "1", "DATABASE_POOL_SIZE": "8"})
+    assert sized["DATABASES"]["default"]["OPTIONS"]["pool"]["max_size"] == 8
+    assert "OPTIONS" not in run({"DATABASE_URL": "postgres://app:pw@db/app"})["DATABASES"]["default"]
+    # SQLite has no pool; the setting is ignored.
+    assert "OPTIONS" not in run({"DATABASE_POOL": "1"})["DATABASES"]["default"]
+
+
+def test_database_pool_needs_psycopg_pool(monkeypatch):
+    monkeypatch.setattr("django_stack.settings._installed", lambda module: False)
+    with pytest.raises(ImproperlyConfigured, match="psycopg_pool"):
+        run({"DATABASE_URL": "postgres://app:pw@db/app", "DATABASE_POOL": "1"})
+    monkeypatch.setattr("django_stack.settings._installed", lambda module: True)
+    with pytest.raises(ImproperlyConfigured, match="DATABASE_POOL_SIZE"):
+        run({"DATABASE_URL": "postgres://app:pw@db/app", "DATABASE_POOL": "1", "DATABASE_POOL_SIZE": "0"})

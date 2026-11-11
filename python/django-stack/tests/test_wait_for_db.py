@@ -26,3 +26,21 @@ def test_waits_while_the_database_starts():
     ):
         call_command("wait_for_db")
     assert connect.call_count == 2
+
+
+def test_checks_around_the_pool():
+    # A pool hides the reason behind a timeout, so the check connects directly.
+    from django.db import connection
+
+    error = connection.Database.OperationalError('FATAL:  password authentication failed for user "app"')
+    with (
+        mock.patch.object(connection, "vendor", "postgresql"),
+        mock.patch.dict(connection.settings_dict, {"OPTIONS": {"pool": True}}),
+        mock.patch.object(connection, "get_connection_params", return_value={}),
+        mock.patch.object(connection.Database, "connect", side_effect=error) as connect,
+        mock.patch("django.db.connection.ensure_connection") as ensure,
+        pytest.raises(CommandError, match="docker compose down --volumes"),
+    ):
+        call_command("wait_for_db")
+    connect.assert_called_once()
+    ensure.assert_not_called()
