@@ -79,3 +79,58 @@ export function migrateProxyPorts(directory: string): Migration {
   );
   return result;
 }
+
+/** The production services that reach others by name, and the ones they reach. */
+const DEFAULT_NETWORK_SERVICES = ["proxy", "worker-prod", "umami", "db", "cache"];
+
+const DEFAULT_NETWORK = `    # Explicit, so Coolify and Dokploy keep this service on the network where
+    # the backend and frontend aliases live.
+    networks: [default]
+`;
+
+/**
+ * Adds `networks: [default]` to a service of compose.yaml without a networks
+ * key. Returns the text unchanged when the service is missing or has one.
+ */
+export function addDefaultNetwork(compose: string, service: string): string {
+  const lines = compose.split("\n");
+  // After `services:`: x-backend-depends names services at the same indent.
+  const start = lines.indexOf(`  ${service}:`, lines.indexOf("services:") + 1);
+  if (start < 0) return compose;
+  // The service ends at the next line that is not indented by four spaces:
+  // the next service, its comment, or a top-level key.
+  let end = start + 1;
+  const inside = (line: string | undefined) => line !== undefined && (line.startsWith("    ") || line === "");
+  while (inside(lines[end])) end++;
+  while (end > start + 1 && lines[end - 1] === "") end--;
+  const body = lines.slice(start + 1, end);
+  if (body.some((line) => /^ {4}networks:/.test(line))) return compose;
+  const before = body.findIndex((line) => /^ {4}(deploy|logging|restart):/.test(line));
+  const at = before < 0 ? end : start + 1 + before;
+  lines.splice(at, 0, ...DEFAULT_NETWORK.trimEnd().split("\n"));
+  return lines.join("\n");
+}
+
+/**
+ * Puts the production services of compose.yaml on the default network
+ * explicitly. Coolify and Dokploy attach every service to a network of
+ * their own; one without a networks key then loses `default`, so Caddy
+ * and the worker could not resolve `frontend` or `backend`.
+ */
+export function migrateDefaultNetwork(directory: string): Migration {
+  const result: Migration = { changed: [], todo: [] };
+  const path = join(directory, "compose.yaml");
+  if (!existsSync(path)) return result;
+  const compose = readFileSync(path, "utf8");
+  let next = compose;
+  const added: string[] = [];
+  for (const service of DEFAULT_NETWORK_SERVICES) {
+    const changed = addDefaultNetwork(next, service);
+    if (changed !== next) added.push(service);
+    next = changed;
+  }
+  if (!added.length) return result;
+  writeFileSync(path, next);
+  result.changed.push(`Put ${added.join(", ")} on the default network in compose.yaml.`);
+  return result;
+}

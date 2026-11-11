@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { parseEnv } from "../src";
-import { migrateProxyPorts, PORTS_COMPOSE } from "../src/migrate";
+import { addDefaultNetwork, migrateDefaultNetwork, migrateProxyPorts, PORTS_COMPOSE } from "../src/migrate";
 
 const root = mkdtempSync(join(tmpdir(), "django-stack-migrate-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -60,5 +60,66 @@ describe("migrateProxyPorts", () => {
     expect(readFileSync(join(directory, "compose.yaml"), "utf8")).toBe(changed);
     expect(existsSync(join(directory, "compose.ports.yaml"))).toBe(false);
     expect(result.todo).toHaveLength(1);
+  });
+});
+
+const OLD_SERVICES = `x-depends: &depends
+  db:
+    condition: service_healthy
+
+services:
+  worker-prod:
+    profiles: [prod]
+    healthcheck: *worker-health
+    deploy:
+      replicas: \${TASK_WORKERS:-1}
+    restart: unless-stopped
+
+  # HTTPS for SITE_URL.
+  proxy:
+    profiles: [prod]
+    volumes:
+      - ./caddy:/etc/caddy:ro
+    depends_on:
+      backend-prod:
+        condition: service_healthy
+    logging: *logging
+    restart: unless-stopped
+
+  db:
+    profiles: [db]
+    image: postgres:17-alpine
+
+volumes:
+  pgdata:
+`;
+
+describe("migrateDefaultNetwork", () => {
+  it("puts the production services on the default network", () => {
+    const directory = project({ "compose.yaml": OLD_SERVICES });
+    const result = migrateDefaultNetwork(directory);
+    const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
+    expect(compose).toContain("      replicas: ${TASK_WORKERS:-1}\n    restart: unless-stopped\n\n  # HTTPS");
+    expect(compose).toContain("    healthcheck: *worker-health\n    # Explicit,");
+    expect(compose).toContain("aliases live.\n    networks: [default]\n    deploy:\n");
+    expect(compose).toContain("aliases live.\n    networks: [default]\n    logging: *logging\n");
+    expect(compose).toContain("    image: postgres:17-alpine\n    # Explicit,");
+    expect(compose).toContain("    networks: [default]\n\nvolumes:\n");
+    expect(compose.match(/networks: \[default\]/g)).toHaveLength(3);
+    expect(result.changed).toEqual(["Put proxy, worker-prod, db on the default network in compose.yaml."]);
+
+    expect(migrateDefaultNetwork(directory)).toEqual({ changed: [], todo: [] });
+  });
+
+  it("leaves services that list networks", () => {
+    const compose = "services:\n  proxy:\n    networks:\n      - web\n    restart: always\n";
+    expect(addDefaultNetwork(compose, "proxy")).toBe(compose);
+    expect(addDefaultNetwork(compose, "worker-prod")).toBe(compose);
+  });
+
+  it("finds nothing to change in the template", () => {
+    const template = readFileSync(join(__dirname, "../../../templates/base/compose.yaml"), "utf8");
+    const directory = project({ "compose.yaml": template });
+    expect(migrateDefaultNetwork(directory).changed).toEqual([]);
   });
 });
