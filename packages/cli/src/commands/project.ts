@@ -5,7 +5,7 @@ import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { applyStack, SWITCHABLE, setManifestPreset } from "../config";
 import { runDoctor } from "../doctor";
-import { setEnvValues } from "../env";
+import { setEnvValues, writePrivateFile } from "../env";
 import { chooseFreePorts, DEV_PORTS, describeMove, envPorts, portValues } from "../ports";
 import { productionEnv } from "../production";
 import {
@@ -66,7 +66,7 @@ function ensureRunEnv(project: Project): Project {
       // Its own data on this machine, never the server's external database.
       bundledDatabase: true,
     });
-    writeFileSync(path, result.text, { mode: 0o600 });
+    writePrivateFile(path, result.text);
     p.log.success(
       `Wrote ${pc.bold(RUN_ENV)}: the prod profile at ${url(`https://${RUN_DOMAIN}`)}, with its own secrets and data.`,
     );
@@ -116,9 +116,7 @@ async function freeDevPorts(project: Project): Promise<Project> {
       );
   }
   const envPath = join(project.directory, ".env");
-  writeFileSync(envPath, setEnvValues(readFileSync(envPath, "utf8"), portValues(project.env, ports)), {
-    mode: 0o600,
-  });
+  writePrivateFile(envPath, setEnvValues(readFileSync(envPath, "utf8"), portValues(project.env, ports)));
   for (const move of moves) p.log.info(`${describeMove(move)} Saved in .env.`);
   return readProject(project.directory);
 }
@@ -472,7 +470,7 @@ export async function config(options: ConfigOptions) {
     return;
   }
   const envText = readFileSync(envPath, "utf8");
-  if (result.env !== envText) writeFileSync(envPath, result.env, { mode: 0o600 });
+  if (result.env !== envText) writePrivateFile(envPath, result.env);
   if (settingsText !== undefined) writeFileSync(settingsPath, settingsText);
   const manifestPath = join(project.directory, "package.json");
   if (existsSync(manifestPath))

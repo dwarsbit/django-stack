@@ -1,4 +1,4 @@
-import { parseEnv, setEnvValues } from "./env";
+import { parseEnv, quoteEnvValue, setEnvValues } from "./env";
 import { normalizeDatabaseUrl, umamiDatabaseUrl } from "./scaffold";
 import { generateProjectSecrets } from "./secrets";
 
@@ -116,7 +116,8 @@ export function productionEnv(devEnv: string, options: ProductionOptions): Produ
   }
 
   if (options.emailUrl) {
-    values.EMAIL_URL = options.emailUrl;
+    // Quoted where needed, so Compose reads a $ or # in the password literally.
+    values.EMAIL_URL = quoteEnvValue(options.emailUrl);
   } else if (!current.EMAIL_URL || current.EMAIL_URL.includes("mailpit")) {
     values.EMAIL_URL = "smtp+tls://user:password@smtp.example.com:587";
     todo.push("Set EMAIL_URL to your SMTP server, so password resets and notifications are sent.");

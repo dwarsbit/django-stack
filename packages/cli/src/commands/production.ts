@@ -1,8 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { parseEnv } from "../env";
+import { parseEnv, writePrivateFile } from "../env";
 import { postgresUrl, productionEnv, validateDomain } from "../production";
 import { normalizeDatabaseUrl, relativeDirectory } from "../scaffold";
 import { remainingTodo, SETTING_NAMES, settingsToAsk } from "../settings";
@@ -135,7 +135,7 @@ export async function production(directoryArgument: string | undefined, options:
   } catch (error) {
     fail((error as Error).message);
   }
-  writeFileSync(target, result.text, { mode: 0o600 });
+  writePrivateFile(target, result.text);
   p.log.success(`Wrote ${pc.bold(relativeDirectory(target))} with new secrets for the server.`);
 
   let todo = result.todo;

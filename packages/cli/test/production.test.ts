@@ -1,8 +1,9 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { parseEnv, productionEnv, scaffold, validateDomain } from "../src";
+import { writePrivateFile } from "../src/env";
 import { postgresUrl } from "../src/production";
 
 const root = mkdtempSync(join(tmpdir(), "django-stack-prod-"));
@@ -64,6 +65,15 @@ describe("productionEnv", () => {
     expect(prod.S3_ENDPOINT_URL).toBe("");
     expect(prod.EMAIL_URL).toBe("smtp+tls://u:p@mail.example.com:587");
     expect(result.todo.join(" ")).toContain("S3_");
+  });
+
+  it("quotes an SMTP URL with $ or # so Compose reads it literally", () => {
+    const result = productionEnv(devEnv(), {
+      domain: "example.com",
+      emailUrl: "smtp+tls://u:pa$$w#rd@mail.example.com:587",
+    });
+    expect(result.text).toContain("EMAIL_URL='smtp+tls://u:pa$$w#rd@mail.example.com:587'");
+    expect(parseEnv(result.text).EMAIL_URL).toBe("smtp+tls://u:pa$$w#rd@mail.example.com:587");
   });
 
   it("puts Umami's tables in a schema of the external database", () => {
@@ -129,5 +139,15 @@ describe("postgresUrl", () => {
     expect(postgresUrl({ host: "localhost", port: "6543", name: "app", user: "app" })).toBe(
       "postgres://app@localhost:6543/app",
     );
+  });
+});
+
+describe("writePrivateFile", () => {
+  it("makes an existing file readable by its owner only", () => {
+    const path = join(root, "existing.env");
+    writeFileSync(path, "A=1\n", { mode: 0o644 });
+    writePrivateFile(path, "A=2\n");
+    expect(readFileSync(path, "utf8")).toBe("A=2\n");
+    if (process.platform !== "win32") expect(statSync(path).mode & 0o777).toBe(0o600);
   });
 });
