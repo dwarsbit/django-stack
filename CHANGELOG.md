@@ -34,6 +34,9 @@ the unreleased version; the release workflow releases it.
   "password authentication failed for user app".
 - Fixed: the deploy check for tasks that run in the request shared the id
   `django_stack.W006` with the Umami check; it is now `django_stack.W007`.
+- Fixed: `TASKS_URL=db://` refused a `postgis://` or `pgsql://`
+  `DATABASE_URL`, and the task statistics then went to a SQLite file per
+  container.
 - `dstack deploy login` warns when the platform's URL is plain `http://`,
   because the API key then travels unencrypted.
 - The GitHub Actions of the repository and of the generated deploy workflow
