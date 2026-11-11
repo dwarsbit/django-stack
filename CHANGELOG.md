@@ -5,6 +5,15 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.12.11 (unreleased)
+
+### Improvements
+
+- `dstack deploy setup` and `dstack deploy login` remember the last
+  address of each platform, such as your Coolify, and offer it again, so you
+  press Enter instead of typing it for every project. It is saved in
+  `~/.config/dstack/targets.json`.
+
 ## 0.12.10 (2026-11-11)
 
 ### Fixes

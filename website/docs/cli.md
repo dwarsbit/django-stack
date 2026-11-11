@@ -379,7 +379,7 @@ for a server over SSH and Bunny, when you have uncommitted changes (commit them)
 | Option | Description |
 |--------|-------------|
 | `--provider <provider>` | `coolify`, `dokploy`, `ssh`, `bunny` or `railway`. Asked for when it is not given; with `--yes`, `coolify`. |
-| `--url <url>` | The platform's address, such as `https://coolify.example.com`, or the server, such as `deploy@example.com` or `deploy@example.com:2222`. |
+| `--url <url>` | The platform's address, such as `https://coolify.example.com`, or the server, such as `deploy@example.com` or `deploy@example.com:2222`. Without it, the CLI asks and offers the last address you used with that platform. |
 | `--repository <url>` | The git repository the platform builds. Default: the `origin` remote, as an `https` URL. |
 | `--branch <branch>` | The branch to deploy. Default: the current branch. |
 | `--server <server>` | The Coolify or Dokploy server, by name or id. Asked for when there are several. For Dokploy, `dokploy` is its own server, the default. |
