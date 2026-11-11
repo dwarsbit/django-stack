@@ -101,7 +101,12 @@ It writes `.env.production` from your `.env` with:
 - debug off and new secrets for everything: the secret key, the API keys,
   the preview and revalidation secrets, the admin password and, for the
   bundled database, the database password,
-- your `EMAIL_URL` and a `DEFAULT_FROM_EMAIL` on the domain.
+- your `EMAIL_URL` and a `DEFAULT_FROM_EMAIL` on the domain,
+- `COMPOSE_FILE=compose.yaml:compose.ports.yaml`, so `docker compose`
+  also loads `compose.ports.yaml`, which publishes Caddy's ports 80 and
+  443. `compose.yaml` publishes no ports, so that several projects can
+  share a server behind a platform's proxy; without this line the site is
+  not reachable.
 
 It then offers to ask for the settings it cannot know: `ADMIN_EMAIL`, the
 SMTP server when you did not pass `--email-url`, and the `S3_*` variables
@@ -183,8 +188,9 @@ builds. Set it up once:
 4. Run the workflow from the Actions tab. To deploy every push to `main`,
    add `push: { branches: [main] }` under `on:` in the workflow.
 
-The workflow copies `compose.yaml` and `caddy/Caddyfile` to the server; the
-server keeps its own `.env`. The images are named after the commit, so a
+The workflow copies `compose.yaml`, `compose.ports.yaml` and
+`caddy/Caddyfile` to the server; the server keeps its own `.env`, with
+`COMPOSE_FILE` from `dstack production`. The images are named after the commit, so a
 rollback is running the workflow again on an older commit.
 
 ## Resources

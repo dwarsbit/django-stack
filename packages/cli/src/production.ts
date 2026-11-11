@@ -2,6 +2,25 @@ import { parseEnv, quoteEnvValue, setEnvValues } from "./env";
 import { normalizeDatabaseUrl, umamiDatabaseUrl } from "./scaffold";
 import { generateProjectSecrets } from "./secrets";
 
+/** The Compose file with Caddy's host ports, for a server without a platform's proxy. */
+export const PORTS_COMPOSE_FILE = "compose.ports.yaml";
+
+/** COMPOSE_FILE on a server of your own: compose.yaml with Caddy's host ports. */
+export const SERVER_COMPOSE_FILE = `compose.yaml:${PORTS_COMPOSE_FILE}`;
+
+/**
+ * Sets COMPOSE_FILE in a .env text, next to COMPOSE_PROFILES, so Compose
+ * loads compose.ports.yaml; with `undefined`, removes it.
+ */
+export function setComposeFile(text: string, value: string | undefined): string {
+  const line = /^COMPOSE_FILE=.*$\n?/m;
+  if (value === undefined) return text.replace(line, "");
+  if (line.test(text)) return setEnvValues(text, { COMPOSE_FILE: value });
+  const profiles = /^COMPOSE_PROFILES=.*$/m;
+  if (profiles.test(text)) return text.replace(profiles, (match) => `${match}\nCOMPOSE_FILE=${value}`);
+  return setEnvValues(text, { COMPOSE_FILE: value });
+}
+
 export interface ProductionOptions {
   /** The domain the site runs on, such as example.com. */
   domain: string;
@@ -13,6 +32,11 @@ export interface ProductionOptions {
   bundledDatabase?: boolean;
   /** An external Postgres for the server; it takes the place of PRODUCTION_DATABASE_URL. */
   databaseUrl?: string;
+  /**
+   * Behind a platform's proxy (Coolify, Dokploy), which reaches Caddy over
+   * the Docker network: no COMPOSE_FILE, so no host ports are published.
+   */
+  platform?: boolean;
 }
 
 /**
@@ -148,5 +172,9 @@ export function productionEnv(devEnv: string, options: ProductionOptions): Produ
     todo.push("Set SEED_DEMO_CONTENT=0 unless the site should start with the demo pages and posts.");
   }
 
-  return { text: setEnvValues(devEnv, values), adminPassword: values.ADMIN_PASSWORD ?? "", todo };
+  const text = setComposeFile(
+    setEnvValues(devEnv, values),
+    options.platform ? undefined : SERVER_COMPOSE_FILE,
+  );
+  return { text, adminPassword: values.ADMIN_PASSWORD ?? "", todo };
 }

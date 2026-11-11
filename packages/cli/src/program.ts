@@ -322,6 +322,8 @@ export function createProgram(): Command {
     .option("--domain <domain>", "The domain of the site, such as example.com")
     .option("--email-url <url>", "The SMTP server, such as smtp+tls://user:pass@host:587")
     .option("--database-url <url>", "Your own Postgres for the server instead of the bundled one")
+    .option("--platform", "Behind Coolify's or Dokploy's proxy: publish no host ports")
+    .option("--server", "On a server of your own: publish ports 80 and 443 (the default)")
     .option("--force", "Overwrite an existing .env.production")
     .option("-y, --yes", "Don't ask; fail when --domain is missing")
     .action(production);

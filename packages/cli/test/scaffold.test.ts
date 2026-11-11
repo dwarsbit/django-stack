@@ -26,6 +26,7 @@ import {
   usesValkey,
   validateProjectName,
 } from "../src";
+import { PORTS_COMPOSE } from "../src/migrate";
 import {
   frontendPackageManager,
   packageManagerValues,
@@ -184,6 +185,9 @@ describe("scaffold", () => {
 
     const compose = readFileSync(join(directory, "compose.yaml"), "utf8");
     expect(compose).toContain("name: my-site");
+    // Only compose.ports.yaml publishes the proxy's host ports.
+    expect(compose).not.toContain("HTTP_PORT");
+    expect(readFileSync(join(directory, "compose.ports.yaml"), "utf8")).toBe(PORTS_COMPOSE);
     expect(compose).not.toMatch(/\{\{[a-z_]+\}\}/);
     expect(readFileSync(join(directory, "backend/pyproject.toml"), "utf8")).toContain(
       'name = "my-site-backend"',

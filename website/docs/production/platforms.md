@@ -18,10 +18,10 @@ platforms themselves.
 
 ## Settings for both
 
-Create the settings with the CLI, as for a server:
+Create the settings with the CLI, for a platform:
 
 ```bash
-dstack production --domain example.com \
+dstack production --platform --domain example.com \
   --email-url smtp+tls://user:password@smtp.example.com:587
 ```
 
@@ -33,10 +33,14 @@ trusts the platform's proxy:
 CADDY_ADDRESS=:80
 TRUSTED_PROXIES=private_ranges
 NUM_PROXIES=2
-# Keep Caddy off the ports of the platform's proxy.
-HTTP_PORT=127.0.0.1:8080
-HTTPS_PORT=127.0.0.1:8443
 ```
+
+The platform's proxy reaches the `proxy` service over the Docker network,
+on port 80, so `compose.yaml` publishes no host ports and several projects
+can run on one server. Leave out `COMPOSE_FILE`: it loads
+`compose.ports.yaml`, which publishes ports 80 and 443 for a server of
+your own, and a second project on the server would then fail with
+`port is already allocated`.
 
 `NUM_PROXIES=2` tells Django that two proxies forward each request (the
 platform's and Caddy), so it sees the client's address and the `https`
@@ -53,7 +57,7 @@ on its server from there.
 2. Write the settings for the domain:
 
    ```bash
-   dstack production --domain example.com \
+   dstack production --platform --domain example.com \
      --email-url smtp+tls://user:password@smtp.example.com:587
    ```
 
@@ -103,7 +107,7 @@ server from there.
 2. Write the settings for the domain:
 
    ```bash
-   dstack production --domain example.com \
+   dstack production --platform --domain example.com \
      --email-url smtp+tls://user:password@smtp.example.com:587
    ```
 
@@ -132,7 +136,8 @@ To set up the resource by hand instead:
    pack and `/compose.yaml` as the file.
 2. Under **Environment Variables**, add the variables from above.
 3. Under **Domains**, give the `proxy` service `https://example.com:80`:
-   the port tells Coolify's proxy where Caddy listens.
+   the domain goes on the `proxy` service, and the port tells Coolify's
+   proxy that Caddy listens on port 80.
 4. Turn on **Preserve repository during deployment** (under **General** ›
    **Build pipeline** or **Advanced**). Coolify starts the services from its
    own directory on the server, and without the repository there the

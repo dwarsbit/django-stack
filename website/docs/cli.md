@@ -227,19 +227,25 @@ It prints the output of each check that fails and exits with status 1.
 
 ### `update`
 
-1. With [uv](https://docs.astral.sh/uv/) installed, upgrades `django-stack`,
+1. In a project whose `compose.yaml` still publishes the `proxy` service's
+   ports, moves them to `compose.ports.yaml` and adds
+   `COMPOSE_FILE=compose.yaml:compose.ports.yaml` to the production `.env`
+   files on this machine that need it (`.env.run`, and `.env` on a server of
+   your own). It prints what to change by hand on the server or the
+   platform.
+2. With [uv](https://docs.astral.sh/uv/) installed, upgrades `django-stack`,
    `django-headless` and `django-content-studio` in `backend/uv.lock`.
    `--all` upgrades every backend package.
-2. Upgrades the `@django-stack` packages in the frontend's lockfile
+3. Upgrades the `@django-stack` packages in the frontend's lockfile
    (`pnpm-lock.yaml`, `package-lock.json` or `bun.lock`) with its package
    manager, within the ranges in `frontend/package.json`. `--all` upgrades
    every frontend package.
-3. Pulls the newer images of the services (Postgres, Valkey, Caddy and the
+4. Pulls the newer images of the services (Postgres, Valkey, Caddy and the
    others) and rebuilds the backend and frontend images on fresh base
    images. `--no-cache` rebuilds them from scratch.
-4. In development, empties the frontend's `node_modules` volume, so the
+5. In development, empties the frontend's `node_modules` volume, so the
    next start uses the packages of the new image.
-5. Restarts what was running, unless you pass `--no-restart`.
+6. Restarts what was running, unless you pass `--no-restart`.
 
 Commit the changed lockfiles. On a server, `git pull` first, then
 `dstack update`.
@@ -277,6 +283,8 @@ npx @django-stack/cli production [directory] --domain example.com [options]
 | `--domain <domain>` | The domain of the site. Asked for when it is not given. |
 | `--email-url <url>` | The SMTP server, such as `smtp+tls://user:password@smtp.example.com:587`. Without it, `EMAIL_URL` gets a placeholder to fill in. |
 | `--database-url <url>` | Your own Postgres for the server: `.env.production` gets it as `DATABASE_URL`, without `db` in `COMPOSE_PROFILES`. URLs to other hosts get `sslmode=require` unless they set an `sslmode`. Without it, and without `PRODUCTION_DATABASE_URL` in `.env`, it asks. |
+| `--server` | The site runs on a server of your own: `.env.production` gets `COMPOSE_FILE=compose.yaml:compose.ports.yaml`, so Caddy publishes ports 80 and 443. The default without a terminal. |
+| `--platform` | The site runs behind the proxy of a platform such as Coolify or Dokploy: no `COMPOSE_FILE`, so no host ports are published. |
 | `--force` | Replace an existing `.env.production`. |
 | `-y`, `--yes` | Don't ask; fail when `--domain` is missing. |
 
@@ -287,7 +295,8 @@ database's password. The local S3 service's values are cleared. It then
 prints what is left to fill in and the admin password. The file is readable
 only by you. See [Deploy to a server](./production/server.md).
 
-In a terminal, it asks whether the server uses the bundled Postgres or
+In a terminal, it asks where the site runs, unless you pass `--server` or
+`--platform`, then whether the server uses the bundled Postgres or
 your own. For your own, you enter either a `postgres://` URL or the host,
 port, database name, user and password separately. Separate values are
 URL-encoded for you, so use them when the password has characters such as
@@ -400,7 +409,8 @@ for a server over SSH and Bunny, when you have uncommitted changes (commit them)
 
 It reads the variables and the domain from `.env.production`, so run
 [`production`](#production) first. For Coolify and Dokploy, it adds the
-variables that put Caddy behind the platform's proxy (see
+variables that put Caddy behind the platform's proxy and leaves out
+`COMPOSE_FILE` (see
 [Coolify and Dokploy](./production/platforms.md)), creates a Docker Compose
 application from the repository with `compose.yaml`, and gives the `proxy`
 service the domain. For a server over SSH, it checks Docker and
