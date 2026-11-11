@@ -4,7 +4,7 @@
  * server/routes/_content, so the key never reaches the browser.
  */
 
-import { createClient, createContent } from "@django-stack/utils";
+import { createClient, createContent, verifyPreviewToken } from "@django-stack/utils";
 import type { H3Event } from "h3";
 import type { Models } from "../../src/lib/headless";
 
@@ -30,8 +30,11 @@ export function getContent(event: H3Event) {
  * Content for a request, from the cache unless the request is a preview.
  * The key is the request's path and query.
  */
-export function cachedContent<T>(event: H3Event, load: () => Promise<T>): Promise<T> {
-  if (previewToken(event) || import.meta.dev) return load();
+export async function cachedContent<T>(event: H3Event, load: () => Promise<T>): Promise<T> {
+  // Only a valid token skips the cache: any other cookie value would let
+  // every request through to Django.
+  if (import.meta.dev || (await verifyPreviewToken(process.env.PREVIEW_SECRET, previewToken(event))))
+    return load();
   return cached(event.path, load);
 }
 
