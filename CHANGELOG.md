@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.13.1 (unreleased)
+## 0.13.1 (2026-11-11)
 
 ### Fixes
 

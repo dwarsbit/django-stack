@@ -1,6 +1,6 @@
 [project]
 name = "django-stack"
-version = "0.13.0"
+version = "0.13.1"
 description = "The backend glue of DjangoStack: settings from environment variables, API defaults, health checks and system checks."
 readme = "README.md"
 license = "MIT"

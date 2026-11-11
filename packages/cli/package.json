@@ -1,6 +1,6 @@
 {
   "name": "@django-stack/cli",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "The production-ready batteries included Django stack. Create and manage DjangoStack projects: a Django backend, a frontend, Postgres and Docker Compose in one command.",
   "license": "MIT",
   "author": "Leon van der Grient",
