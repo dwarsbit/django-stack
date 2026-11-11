@@ -13,6 +13,8 @@ export interface ProductionCommandOptions {
   domain?: string;
   emailUrl?: string;
   databaseUrl?: string;
+  platform?: boolean;
+  server?: boolean;
   force?: boolean;
   yes?: boolean;
 }
@@ -112,6 +114,25 @@ export async function production(directoryArgument: string | undefined, options:
       }),
     );
   }
+  if (options.platform && options.server) fail("Pass --platform or --server, not both.");
+  let platform = options.platform ?? (options.server ? false : undefined);
+  if (platform === undefined && interactive) {
+    platform =
+      unwrap(
+        await p.select<string>({
+          message: "Where does it run?",
+          initialValue: "server",
+          options: [
+            { value: "server", label: "A server of your own", hint: "Caddy publishes ports 80 and 443" },
+            {
+              value: "platform",
+              label: "Coolify, Dokploy or another platform",
+              hint: "its proxy reaches Caddy, no host ports",
+            },
+          ],
+        }),
+      ) === "platform";
+  }
   const devEnv = readFileSync(envPath, "utf8");
   let databaseUrl = options.databaseUrl;
   if (databaseUrl) {
@@ -131,6 +152,7 @@ export async function production(directoryArgument: string | undefined, options:
       emailUrl: options.emailUrl,
       databaseUrl,
       media: context.media,
+      platform,
     });
   } catch (error) {
     fail((error as Error).message);
@@ -162,11 +184,21 @@ export async function production(directoryArgument: string | undefined, options:
     p.note(todo.map((item) => `${pc.yellow("•")} ${item}`).join("\n"), "Before the first deploy");
   p.note(
     [
-      `Copy the project to the server, with ${pc.bold(".env.production")} as ${pc.bold(".env")}, then:`,
-      command("docker compose up -d --build"),
+      ...(platform
+        ? [
+            `Set up the platform with ${command("dstack deploy setup")}, or put every line of ${pc.bold(".env.production")} into its variables.`,
+          ]
+        : [
+            `Copy the project to the server, with ${pc.bold(".env.production")} as ${pc.bold(".env")}, then:`,
+            command("docker compose up -d --build"),
+          ]),
       "",
       `${pc.bold("Admin")}  ${url(`https://${domain}/admin/`)}  user ${secret("admin")}, password ${secret(result.adminPassword)}`,
-      pc.dim("Point the domain's DNS at the server first: Caddy needs it for the certificate."),
+      pc.dim(
+        platform
+          ? "Point the domain's DNS at the platform's server first: its proxy needs it for the certificate."
+          : "Point the domain's DNS at the server first: Caddy needs it for the certificate.",
+      ),
     ].join("\n"),
     "Deploy",
   );

@@ -31,8 +31,6 @@ export const PLATFORM_ENV: Record<string, string> = {
   CADDY_ADDRESS: ":80",
   TRUSTED_PROXIES: "private_ranges",
   NUM_PROXIES: "2",
-  HTTP_PORT: "127.0.0.1:8080",
-  HTTPS_PORT: "127.0.0.1:8443",
 };
 
 export type Fetch = typeof fetch;

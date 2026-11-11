@@ -28,6 +28,7 @@ import {
   writeLink,
 } from "../deploy";
 import { parseEnv } from "../env";
+import { PORTS_COMPOSE_FILE, SERVER_COMPOSE_FILE } from "../production";
 import { readProject } from "../project";
 import { command, fail, intro, isInteractive, unwrap, url } from "../ui";
 
@@ -86,7 +87,13 @@ function deployEnv(directory: string, provider: DeployProvider): Record<string, 
       );
     file = join(directory, ".env");
   }
-  return { ...parseEnv(readFileSync(file, "utf8")), ...provider.platformEnv };
+  const env: Record<string, string> = { ...parseEnv(readFileSync(file, "utf8")), ...provider.platformEnv };
+  // compose.ports.yaml publishes Caddy's host ports: a server of your own
+  // needs them, a platform reaches the proxy over its Docker network.
+  if (provider.id !== "ssh") delete env.COMPOSE_FILE;
+  else if (!env.COMPOSE_FILE && existsSync(join(directory, PORTS_COMPOSE_FILE)))
+    env.COMPOSE_FILE = SERVER_COMPOSE_FILE;
+  return env;
 }
 
 type TokenAuth = Extract<DeployProvider["auth"], { kind: "token" }>;

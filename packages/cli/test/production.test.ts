@@ -16,6 +16,15 @@ function devEnv(options: { localS3?: boolean; databaseUrl?: string; analytics?: 
 }
 
 describe("productionEnv", () => {
+  it("loads compose.ports.yaml on a server of your own, not behind a platform", () => {
+    const text = devEnv();
+    const server = productionEnv(text, { domain: "example.com" }).text;
+    expect(parseEnv(server).COMPOSE_FILE).toBe("compose.yaml:compose.ports.yaml");
+    expect(server).toMatch(/^COMPOSE_PROFILES=prod,db\nCOMPOSE_FILE=compose.yaml:compose.ports.yaml$/m);
+    const platform = productionEnv(server, { domain: "example.com", platform: true }).text;
+    expect(parseEnv(platform).COMPOSE_FILE).toBeUndefined();
+  });
+
   it("gives Umami new secrets and keeps its website", () => {
     const text = devEnv({ analytics: true });
     const dev = parseEnv(text);

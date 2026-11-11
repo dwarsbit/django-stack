@@ -5,7 +5,27 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.12.11 (unreleased)
+## 0.13.0 (unreleased)
+
+- **Several projects on one Coolify or Dokploy server.** `compose.yaml` no
+  longer publishes host ports for the `proxy` service, so a second project
+  on the same server no longer fails with `port is already allocated`.
+  Coolify and Dokploy reach the proxy over the Docker network, on port 80.
+  The ports are in the new `compose.ports.yaml`, which a server of your own
+  loads with `COMPOSE_FILE=compose.yaml:compose.ports.yaml` in `.env`.
+  `dstack production` asks where the site runs and writes that line for a
+  server of your own (`--server`, the default without a terminal) and
+  leaves it out for a platform (`--platform`). `dstack deploy` leaves it
+  out for Coolify, Dokploy, Railway and Bunny, and adds it for a server
+  over SSH. The deploy workflow copies `compose.ports.yaml` to the server.
+  In an existing project, `dstack update` moves the ports out of
+  `compose.yaml` and writes `compose.ports.yaml`. Then:
+  - On a server of your own, copy `compose.ports.yaml` to the server and
+    add `COMPOSE_FILE=compose.yaml:compose.ports.yaml` to its `.env`
+    (`shared/.env` for a server set up with `dstack deploy`), or the site
+    is not reachable after the next deploy.
+  - On Coolify or Dokploy, remove `HTTP_PORT` and `HTTPS_PORT` from the
+    application's environment variables.
 
 ### Improvements
 

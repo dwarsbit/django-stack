@@ -6,6 +6,7 @@ import pc from "picocolors";
 import { applyStack, SWITCHABLE, setManifestPreset } from "../config";
 import { runDoctor } from "../doctor";
 import { setEnvValues, writePrivateFile } from "../env";
+import { migrateProxyPorts } from "../migrate";
 import { chooseFreePorts, DEV_PORTS, describeMove, envPorts, portValues } from "../ports";
 import { productionEnv } from "../production";
 import {
@@ -351,8 +352,13 @@ const BACKEND_PACKAGES = ["django-stack", "django-headless", "django-content-stu
 export async function update(
   options: DirectoryOptions & { all?: boolean; cache: boolean; restart: boolean },
 ) {
-  const project = open(options);
   intro("Update");
+  const migration = migrateProxyPorts(open(options).directory);
+  for (const line of migration.changed) p.log.success(line);
+  if (migration.todo.length)
+    p.note(migration.todo.map((item) => `${pc.yellow("•")} ${item}`).join("\n"), "Change by hand");
+  // Read again: the migration may have changed the .env files.
+  const project = open(options);
   const targets = [project, readLocalRun(project)].filter((target): target is Project => Boolean(target));
   const running = targets.filter((target) => runningServices(target).length > 0);
 

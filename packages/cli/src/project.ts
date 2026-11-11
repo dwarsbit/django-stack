@@ -102,7 +102,14 @@ function fromEnv(directory: string, name: string, envFile: string, localRun: boo
     },
     composeArgs: localRun ? ["--env-file", envFile, "--project-name", `${name}-run`] : [],
     // compose.yaml reads the containers' variables from ${ENV_FILE:-.env}.
-    composeEnv: localRun ? { ENV_FILE: envFile, COMPOSE_PROFILES: env.COMPOSE_PROFILES ?? "" } : {},
+    composeEnv: localRun
+      ? {
+          ENV_FILE: envFile,
+          COMPOSE_PROFILES: env.COMPOSE_PROFILES ?? "",
+          // compose.ports.yaml for Caddy's ports; `:` on Windows too.
+          ...(env.COMPOSE_FILE ? { COMPOSE_FILE: env.COMPOSE_FILE, COMPOSE_PATH_SEPARATOR: ":" } : {}),
+        }
+      : {},
   };
 }
 

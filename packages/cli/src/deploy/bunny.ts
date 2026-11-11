@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseEnv } from "../env";
+import { PORTS_COMPOSE_FILE } from "../production";
 import { dockerNotRunning, isDockerDown } from "../tools";
 import { listDirectoryFiles } from "./bind-files";
 import {
@@ -150,7 +151,11 @@ export async function resolveCompose(
       .join("\n")}\n`,
     { mode: 0o600 },
   );
-  const args = ["compose", "--env-file", file, "config", "--format", "json"];
+  // With compose.ports.yaml, which publishes the proxy's ports: the public service.
+  const files = existsSync(join(directory, PORTS_COMPOSE_FILE))
+    ? ["--file", "compose.yaml", "--file", PORTS_COMPOSE_FILE]
+    : [];
+  const args = ["compose", ...files, "--env-file", file, "config", "--format", "json"];
   try {
     const result = await run("docker", args, { cwd: directory, env: { ...env, ENV_FILE: file } });
     if (result.code !== 0) {
