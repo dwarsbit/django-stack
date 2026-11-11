@@ -23,5 +23,5 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
   });
   const path = url.searchParams.get("path") ?? "/";
   // Only paths on this site, never another origin.
-  redirect(302, path.startsWith("/") && !path.startsWith("//") ? path : "/");
+  redirect(302, /^\/(?![/\\])/.test(path) ? path : "/");
 };

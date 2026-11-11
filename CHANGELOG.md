@@ -9,6 +9,25 @@ the unreleased version; the release workflow releases it.
 
 ### Fixes
 
+- Fixed: the content API showed drafts to the read-only key through
+  relations. `?expand=` of a relation to a model with a draft state, such
+  as `/api/content.author?expand=posts`, listed unpublished posts, a
+  forward relation such as `?expand=parent` returned a draft page, and a
+  filter across such a relation, such as `?posts__title__startswith=`,
+  told which drafts exist. Expanded relations and links in blocks now
+  leave out the drafts the request may not see (`null` for a single
+  relation), and such filters answer 400, unless the request has the
+  full-access key or a preview token.
+- Fixed: the preview route of the Astro, Nuxt and SvelteKit frontends and
+  `previewHandler` of `@django-stack/next` redirected a preview link with
+  `path=/\example.com` to another site. They now redirect only to paths on
+  the site. In an existing project, change the check in
+  `src/pages/preview/index.ts` (Astro), `server/routes/preview/index.get.ts`
+  (Nuxt) or `src/routes/preview/+server.ts` (SvelteKit) to
+  `/^\/(?![/\\])/.test(path) ? path : "/"`.
+- Fixed: the generated `.github/workflows/deploy.yml` wrote the SSH key
+  and the registry token into its scripts; it now passes them as
+  environment variables.
 - Fixed: the first deploy on Coolify failed with "cannot overwrite
   directory "Caddyfile" with non-directory". Coolify creates the source of
   every bind mount as a directory before it copies the repository, so the

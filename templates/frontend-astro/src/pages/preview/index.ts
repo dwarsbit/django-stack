@@ -22,5 +22,5 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
   });
   const path = url.searchParams.get("path") ?? "/";
   // Only paths on this site, never another origin.
-  return redirect(path.startsWith("/") && !path.startsWith("//") ? path : "/", 302);
+  return redirect(/^\/(?![/\\])/.test(path) ? path : "/", 302);
 };

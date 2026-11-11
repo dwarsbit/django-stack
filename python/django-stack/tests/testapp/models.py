@@ -15,8 +15,22 @@ class ImageBlock(Block):
     caption = models.CharField(max_length=200, blank=True)
 
 
+@expose()
+class Writer(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
 @expose(lookup_fields=["slug"])
 class Article(PublishableModel):
+    writer = models.ForeignKey(
+        Writer, null=True, blank=True, on_delete=models.SET_NULL, related_name="articles"
+    )
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children"
+    )
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     cover = MediaField(null=True, blank=True, on_delete=models.SET_NULL, related_name="+")

@@ -22,5 +22,5 @@ export default defineEventHandler(async (event) => {
   });
   const path = typeof query.path === "string" ? query.path : "/";
   // Only paths on this site, never another origin.
-  return sendRedirect(event, path.startsWith("/") && !path.startsWith("//") ? path : "/", 302);
+  return sendRedirect(event, /^\/(?![/\\])/.test(path) ? path : "/", 302);
 });
