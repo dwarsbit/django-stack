@@ -16,6 +16,7 @@ from content_studio.media_library.models import Media
 from django.core.exceptions import ValidationError
 from django.db import models
 from django_stack.models import PublishableModel
+from django_stack.validators import validate_link
 from headless import expose, expose_model
 
 from .blocks import BODY_BLOCKS
@@ -144,7 +145,9 @@ class Post(PublishableModel, SeoFields):
 class LinkBlock(Block):
     label = models.CharField(max_length=100)
     page = models.ForeignKey(Page, null=True, blank=True, on_delete=models.SET_NULL)
-    url = models.CharField(max_length=500, blank=True, help_text="Used when no page is chosen.")
+    url = models.CharField(
+        max_length=500, blank=True, help_text="Used when no page is chosen.", validators=[validate_link]
+    )
 
     class Meta:
         name = "link"

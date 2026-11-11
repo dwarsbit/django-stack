@@ -9,7 +9,8 @@ Template tags of a site Django renders: ``{% load stack %}``.
 - ``{% seo page site type="article" %}`` renders the title, description,
   canonical URL, Open Graph and Twitter tags; empty fields fall back to the
   site settings.
-- ``{{ item|link_href }}``: the URL of a menu link; ``{{ href|is_current:request.path }}``.
+- ``{{ item|link_href }}``: the URL of a menu link; ``{{ url|safe_href }}``: a link an
+  editor typed, without ``javascript:`` and the like; ``{{ href|is_current:request.path }}``.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from django.utils.safestring import mark_safe
 
 from django_stack import conf
 from django_stack.rest.serializers import serialize_media
+from django_stack.validators import safe_href as _safe_href
 
 register = template.Library()
 
@@ -156,7 +158,13 @@ def link_href(item) -> str:
         url = get_url() if callable(get_url) else _value(page, "url")
         if url:
             return url
-    return _value(value, "url") or "/"
+    return _safe_href(_value(value, "url"))
+
+
+@register.filter
+def safe_href(url) -> str:
+    """A link an editor typed, or ``/`` when it would run script, such as ``javascript:``."""
+    return _safe_href(url)
 
 
 @register.filter

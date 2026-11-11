@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CallToActionBlock } from "@django-stack/utils";
+  import { type CallToActionBlock, safeHref } from "@django-stack/utils";
 
   let { block }: { block: CallToActionBlock } = $props();
 </script>
@@ -9,5 +9,5 @@
   {#if block.value.text}
     <p>{block.value.text}</p>
   {/if}
-  <a class="button" href={block.value.button_url}>{block.value.button_label}</a>
+  <a class="button" href={safeHref(block.value.button_url)}>{block.value.button_label}</a>
 </aside>

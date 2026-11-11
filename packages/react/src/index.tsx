@@ -7,6 +7,7 @@ import {
   loadCaptcha,
   type Media,
   type QuoteBlock as QuoteBlockData,
+  safeHref,
   type TextBlock as TextBlockData,
 } from "@django-stack/utils";
 import { type ComponentType, createElement, useEffect } from "react";
@@ -92,7 +93,7 @@ export function CallToActionBlock({ block }: { block: CallToActionBlockData }) {
     <aside className="cta">
       <h2>{block.value.title}</h2>
       {block.value.text ? <p>{block.value.text}</p> : null}
-      <a className="button" href={block.value.button_url}>
+      <a className="button" href={safeHref(block.value.button_url)}>
         {block.value.button_label}
       </a>
     </aside>

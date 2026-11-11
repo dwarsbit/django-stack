@@ -8,6 +8,7 @@ from content_studio.blocks import Block
 from content_studio.fields import HTMLField
 from content_studio.media_library.fields import MediaField
 from django.db import models
+from django_stack.validators import validate_link
 
 
 class TextBlock(Block):
@@ -40,7 +41,11 @@ class CallToActionBlock(Block):
     title = models.CharField(max_length=200)
     text = models.TextField(blank=True)
     button_label = models.CharField(max_length=60)
-    button_url = models.CharField(max_length=500, help_text="A path on the site, such as /contact, or a full URL.")
+    button_url = models.CharField(
+        max_length=500,
+        help_text="A path on the site, such as /contact, or a full URL.",
+        validators=[validate_link],
+    )
 
     class Meta:
         name = "call_to_action"

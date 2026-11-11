@@ -144,7 +144,23 @@ export function createContent(client: DjangoRestClient<any>, labels: Partial<Con
 
 export type Content = ReturnType<typeof createContent>;
 
+/**
+ * A link URL an editor typed, safe to put in `href`: a path, a fragment, or
+ * an http(s), mailto or tel URL. Anything else, such as `javascript:`,
+ * becomes `fallback`, so a link can't run script on the site.
+ */
+export function safeHref(url: string | null | undefined, fallback = "/"): string {
+  const value = (url ?? "").trim();
+  if (!value) return fallback;
+  // As browsers read it: without control characters in front, tabs or line breaks.
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: these are what browsers strip.
+  const normalized = value.replace(/^[\u0000- ]+/, "").replace(/[\t\n\r]/g, "");
+  const scheme = normalized.match(/^([a-z][a-z0-9+.-]*):/i)?.[1]?.toLowerCase();
+  if (scheme === undefined) return value;
+  return ["http", "https", "mailto", "tel"].includes(scheme) ? value : fallback;
+}
+
 /** The URL a menu link points to: its page's path, or its own URL. */
 export function linkHref(item: { value: { page: { url?: string } | null; url: string } }): string {
-  return item.value.page?.url ?? (item.value.url || "/");
+  return item.value.page?.url ?? safeHref(item.value.url);
 }
