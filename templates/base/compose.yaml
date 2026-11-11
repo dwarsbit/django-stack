@@ -233,8 +233,8 @@ services:
       backend-prod:
         condition: service_healthy
     healthcheck: *worker-health
-    # Explicit, so a platform that adds its own network (Coolify) keeps this
-    # service on the network where the backend and frontend aliases live.
+    # Explicit, as on every production service: see the proxy. The worker
+    # calls the frontend's /revalidate by its alias.
     networks: [default]
     deploy:
       replicas: ${TASK_WORKERS:-1}
@@ -288,8 +288,10 @@ services:
       - media:/srv/media:ro
       - caddy_data:/data
       - caddy_config:/config
-    # Explicit, so a platform that adds its own network (Coolify) keeps Caddy
-    # on the network where the backend and frontend aliases live.
+    # Explicit, as on every production service: Coolify and Dokploy attach
+    # services to a network of their own, and a service without a networks
+    # key then loses `default`, where the backend and frontend aliases live
+    # (Caddy answers 502). On a server of your own this changes nothing.
     networks: [default]
     depends_on:
       backend-prod:
@@ -331,6 +333,8 @@ services:
       timeout: 5s
       start_period: 60s
       retries: 30
+    # Explicit, as on every production service: see the proxy.
+    networks: [default]
     deploy:
       resources:
         limits:
@@ -353,6 +357,8 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+    # Explicit, as on every production service: see the proxy.
+    networks: [default]
     security_opt:
       - no-new-privileges:true
     deploy:
@@ -375,6 +381,8 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+    # Explicit, as on every production service: see the proxy.
+    networks: [default]
     <<: *hardened
     deploy:
       resources:

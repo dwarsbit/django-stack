@@ -6,7 +6,7 @@ import pc from "picocolors";
 import { applyStack, SWITCHABLE, setManifestPreset } from "../config";
 import { runDoctor } from "../doctor";
 import { setEnvValues, writePrivateFile } from "../env";
-import { migrateProxyPorts } from "../migrate";
+import { migrateDefaultNetwork, migrateProxyPorts } from "../migrate";
 import { chooseFreePorts, DEV_PORTS, describeMove, envPorts, portValues } from "../ports";
 import { productionEnv } from "../production";
 import {
@@ -353,10 +353,11 @@ export async function update(
   options: DirectoryOptions & { all?: boolean; cache: boolean; restart: boolean },
 ) {
   intro("Update");
-  const migration = migrateProxyPorts(open(options).directory);
-  for (const line of migration.changed) p.log.success(line);
-  if (migration.todo.length)
-    p.note(migration.todo.map((item) => `${pc.yellow("•")} ${item}`).join("\n"), "Change by hand");
+  const directory = open(options).directory;
+  const migrations = [migrateProxyPorts(directory), migrateDefaultNetwork(directory)];
+  for (const line of migrations.flatMap((migration) => migration.changed)) p.log.success(line);
+  const todo = migrations.flatMap((migration) => migration.todo);
+  if (todo.length) p.note(todo.map((item) => `${pc.yellow("•")} ${item}`).join("\n"), "Change by hand");
   // Read again: the migration may have changed the .env files.
   const project = open(options);
   const targets = [project, readLocalRun(project)].filter((target): target is Project => Boolean(target));

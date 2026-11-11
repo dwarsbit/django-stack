@@ -5,6 +5,20 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.13.1 (unreleased)
+
+### Fixes
+
+- Fixed: on Coolify, a project made before 0.12.8 answered 502 (Caddy:
+  `lookup frontend on 127.0.0.11:53: server misbehaving`) and content
+  changes never cleared the frontend's page cache. Coolify and Dokploy
+  attach services to a network of their own, and a service without a
+  `networks` key then loses the `default` network, where the `frontend`
+  and `backend` aliases live. `dstack update` now adds
+  `networks: [default]` to `proxy`, `worker-prod`, `umami`, `db` and
+  `cache` in `compose.yaml` when it is missing; commit it and deploy
+  again. New projects list it on every production service.
+
 ## 0.13.0 (2026-11-11)
 
 - **Several projects on one Coolify or Dokploy server.** `compose.yaml` no
