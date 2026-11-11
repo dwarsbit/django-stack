@@ -134,6 +134,14 @@ describe("leftover project data", () => {
     expect(leftoverVolumes("my-site", runner({}))).toEqual([]);
   });
 
+  it("lists the volumes of the earlier project's local run too", () => {
+    const run = runner({
+      [`docker volume ls --quiet --filter ${label}`]: "my-site_pgdata",
+      [`docker volume ls --quiet --filter ${label}-run`]: "my-site-run_pgdata",
+    });
+    expect(leftoverVolumes("my-site", run)).toEqual(["my-site_pgdata", "my-site-run_pgdata"]);
+  });
+
   it("removes the containers first, then the volumes", () => {
     const calls: string[] = [];
     const run: Run = (cmd, args) => {
@@ -144,7 +152,8 @@ describe("leftover project data", () => {
     expect(removeLeftovers("my-site", ["my-site_pgdata"], run)).toBe(true);
     expect(calls).toEqual([
       `docker ps --all --quiet --filter ${label}`,
-      "docker rm --force abc def",
+      `docker ps --all --quiet --filter ${label}-run`,
+      "docker rm --force abc def abc def",
       "docker volume rm my-site_pgdata",
     ]);
     expect(removeLeftovers("my-site", ["my-site_pgdata"], runner({}))).toBe(false);
