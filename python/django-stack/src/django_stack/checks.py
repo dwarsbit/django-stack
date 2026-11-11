@@ -15,6 +15,8 @@ DjangoStack's system checks.
   so Django does not see that requests came in over HTTPS.
 - ``django_stack.W006``: ``UMAMI_URL`` is set without ``UMAMI_ADMIN_PASSWORD`` or
   ``UMAMI_WEBSITE_ID``; Content Studio reports it with its analytics checks.
+- ``django_stack.W007`` (deploy): tasks run in the request (``TASKS_URL=immediate://``),
+  so there is no worker and no daily backup.
 """
 
 from django.apps import apps
@@ -140,7 +142,7 @@ def check_deploy(app_configs, **kwargs):
             Warning(
                 "Tasks run in the request and there is no worker, so the daily backup does not run.",
                 hint="Set TASKS_URL to db:// and run the worker, or back up yourself.",
-                id="django_stack.W006",
+                id="django_stack.W007",
             )
         )
     return warnings

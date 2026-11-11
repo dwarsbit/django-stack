@@ -65,3 +65,4 @@ kept, and dictionaries such as `REST_FRAMEWORK` are merged over the defaults.
 | `django_stack.W004` | The cache is in local memory (with `--deploy`). |
 | `django_stack.W005` | An `https` site without `NUM_PROXIES`, so Django cannot tell requests came over HTTPS (with `--deploy`). |
 | `django_stack.W006` | `UMAMI_URL` without `UMAMI_ADMIN_PASSWORD` or `UMAMI_WEBSITE_ID`. |
+| `django_stack.W007` | Tasks run in the request, so there is no worker and no daily backup (with `--deploy`). |
