@@ -9,6 +9,35 @@ the unreleased version; the release workflow releases it.
 
 ### Fixes
 
+- Fixed: an editor could save a menu link, a call to action button or a
+  social link as `javascript:...`, which ran script for every visitor who
+  clicked it. The starter `LinkBlock` and `CallToActionBlock` now refuse
+  links other than paths and `http(s)`, `mailto` and `tel` URLs
+  (`django_stack.validators.validate_link`), and every frontend renders
+  these links through the new `safeHref` of `@django-stack/utils` (the
+  `safe_href` filter in Django templates). In an existing project, add
+  `validators=[validate_link]` to those fields and wrap the `href` of the
+  call to action and the social links in `safeHref(...)`.
+- Fixed: any `stack_preview` cookie skipped the content cache of the Astro,
+  Next, Nuxt and SvelteKit frontends, so a visitor could send every request
+  through to Django. Only a valid preview token does now. In an existing
+  project, check the cookie with `verifyPreviewToken(process.env.PREVIEW_SECRET, token)`
+  where the middleware or `cachedContent` decides on the cache.
+- Fixed: a redirect to a full URL showed an error page on Nuxt, whose
+  `navigateTo` needs `external: true` for one.
+- Fixed: `dstack production --force`, `dstack settings`, `dstack config` and
+  the port moves of `dstack dev` kept the file mode of an existing `.env`;
+  they now make it readable by its owner only. `--email-url` with `$` or
+  `#` in the password is quoted, so Compose reads it as typed.
+- Fixed: `init` did not see the leftover volumes of an earlier project's
+  local run (`dstack run`), so the new project's local run failed with
+  "password authentication failed for user app".
+- Fixed: the deploy check for tasks that run in the request shared the id
+  `django_stack.W006` with the Umami check; it is now `django_stack.W007`.
+- `dstack deploy login` warns when the platform's URL is plain `http://`,
+  because the API key then travels unencrypted.
+- The GitHub Actions of the repository and of the generated deploy workflow
+  are pinned by commit SHA.
 - Fixed: the content API showed drafts to the read-only key through
   relations. `?expand=` of a relation to a model with a draft state, such
   as `/api/content.author?expand=posts`, listed unpublished posts, a
