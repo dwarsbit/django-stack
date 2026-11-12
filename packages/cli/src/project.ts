@@ -70,7 +70,7 @@ export function parseProfiles(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
-function projectName(directory: string): string {
+export function projectName(directory: string): string {
   try {
     const match = readFileSync(join(directory, "compose.yaml"), "utf8").match(/^name:\s*["']?([\w.-]+)/m);
     if (match?.[1]) return match[1];

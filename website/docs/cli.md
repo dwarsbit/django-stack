@@ -272,6 +272,39 @@ empty. The other options can only be set by `init`; `config` refuses them
 with the reason. For another Postgres version, see
 [Upgrade Postgres](production/backups.md#upgrade-postgres).
 
+## `env`
+
+Writes a development `.env` with fresh secrets, the way `init` does: for
+a fresh clone of a project, where `.env` is not in git, or to start over
+with new secrets.
+
+```bash
+dstack env [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `-C`, `--dir <directory>` | The project directory. The default is this one or the nearest parent with `compose.yaml` and `.env.example`. |
+| `--force` | Replace an existing `.env` without asking. |
+| `--no-demo-content` | Start a new database empty: `SEED_DEMO_CONTENT=0`. Without it, the value of the current `.env` stays, or demo content is on. |
+| `-y`, `--yes` | Don't ask; fail when `.env` exists and `--force` is missing. |
+
+It takes the names from `.env.example` and generates new secrets for all
+of them, including the admin password and the bundled database's
+password, which it prints. The stack options come from the current
+`.env`, with its ports and `PRODUCTION_DATABASE_URL`, or, without one,
+from the preset `init` saved in `package.json`. Other values you changed
+in the current `.env`, such as `EMAIL_URL`, are not kept. The file is
+readable only by you.
+
+Postgres keeps the password it was created with, and the admin user is
+created on the first start only. When Docker still has the project's
+database, `env` warns that the backend will fail with "password
+authentication failed for user app": run `docker compose down --volumes`
+to start on an empty database (this deletes its data and uploads for
+good), or set `POSTGRES_PASSWORD` and `DATABASE_URL` in `.env` to the old
+password.
+
 ## `production`
 
 Writes `.env.production`, the settings for a server, from the project's

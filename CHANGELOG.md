@@ -5,6 +5,16 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
+## 0.15.0 (unreleased)
+
+- **`dstack env`.** Writes a development `.env` with fresh secrets, the
+  way `init` does, for a fresh clone of a project or to start over with
+  new secrets. It keeps the stack options, the ports and
+  `PRODUCTION_DATABASE_URL` of the current `.env`, or takes the stack from
+  the preset in `package.json` when there is none. It asks before it
+  replaces a `.env` (`--force` replaces it without asking), and warns when
+  Docker still has the project's database, which keeps its old password.
+
 ## 0.14.0 (2026-11-11)
 
 - **Database connection pool.** Set `DATABASE_POOL=1` in `.env` to reuse
