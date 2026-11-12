@@ -177,6 +177,82 @@ export function umamiEnv(databaseUrl: string, secrets: Record<string, string>): 
   };
 }
 
+/** The `.env` variable of each project secret, by the name used in `{{secret:<name>}}`. */
+export const SECRET_ENV: Record<string, string> = {
+  DJANGO_SECRET_KEY: "django",
+  POSTGRES_PASSWORD: "postgres",
+  API_SECRET_KEY: "api",
+  API_READ_KEY: "api_read",
+  PREVIEW_SECRET: "preview",
+  REVALIDATE_SECRET: "revalidate",
+  ADMIN_PASSWORD: "admin",
+};
+
+export interface DevelopmentEnvOptions {
+  /** A headless project, which has no analytics. */
+  headless: boolean;
+  /** Demo pages and posts on the first start. */
+  demoContent: boolean;
+  /** An external Postgres URL for production, saved as PRODUCTION_DATABASE_URL. */
+  databaseUrl?: string;
+  localS3?: boolean;
+  analytics?: boolean;
+  cache?: Stack["cache"];
+  tasks?: Stack["tasks"];
+  errors?: Stack["errors"];
+  captcha?: boolean;
+  /** The development ports by `.env` variable, such as SITE_PORT; the usual ones when not set. */
+  ports?: Record<string, number>;
+}
+
+/**
+ * A development `.env`: the text of `.env.example` (the names without the
+ * secrets) with fresh secrets and the values of the stack. Used by `init`
+ * and `dstack env`.
+ */
+export function developmentEnv(
+  example: string,
+  options: DevelopmentEnvOptions,
+  secrets: Record<string, string> = generateProjectSecrets(),
+): string {
+  const values = parseEnv(example);
+  let env = setEnvValues(
+    example,
+    Object.fromEntries(
+      Object.entries(SECRET_ENV)
+        .filter(([name]) => name in values)
+        .map(([name, key]) => [name, secrets[key] ?? ""]),
+    ),
+  );
+  // The bundled Postgres: its URL with the new password.
+  if (/@db:5432\//.test(values.DATABASE_URL ?? "")) {
+    const user = values.POSTGRES_USER || "app";
+    const name = values.POSTGRES_DB || "app";
+    env = setEnvValues(env, { DATABASE_URL: `postgres://${user}:${secrets.postgres}@db:5432/${name}` });
+  }
+  const profiles = ["dev", "db"];
+  if (options.databaseUrl) {
+    env = setEnvValues(env, { PRODUCTION_DATABASE_URL: normalizeDatabaseUrl(options.databaseUrl) });
+  }
+  if (options.localS3) {
+    profiles.push("s3");
+    env = setEnvValues(env, LOCAL_S3);
+  }
+  if (options.analytics && !options.headless) {
+    profiles.push("analytics");
+    env = setEnvValues(env, umamiEnv(parseEnv(env).DATABASE_URL ?? "", secrets));
+  }
+  const cache = cacheEnv({ cache: options.cache ?? "database", tasks: options.tasks ?? "huey" });
+  env = setEnvValues(env, cache);
+  if (usesValkey(cache)) profiles.push("valkey");
+  env = setEnvValues(env, { COMPOSE_PROFILES: profiles.join(",") });
+  if (options.ports) env = setEnvValues(env, portValues(parseEnv(env), options.ports));
+  if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });
+  if (options.errors && options.errors !== "email") env = setEnvValues(env, { ERRORS: options.errors });
+  if (options.captcha === false) env = setEnvValues(env, { CAPTCHA: "off" });
+  return env;
+}
+
 const CACHE_URLS: Record<Stack["cache"], string> = {
   database: "db://",
   valkey: "redis://cache:6379/0",
@@ -473,31 +549,11 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     );
   }
 
-  // .env with fresh secrets; .env.example with the names only.
+  // .env.example with the names only; .env from it with fresh secrets.
   const template = readFileSync(join(target, "env.example"), "utf8");
-  const secrets = generateProjectSecrets();
-  let env = template.replace(/\{\{secret:([a-z_]+)\}\}/g, (match, key: string) => secrets[key] ?? match);
   const envExample = template.replace(/\{\{secret:[a-z_]+\}\}/g, "");
-  const profiles = ["dev", "db"];
-  if (options.databaseUrl) {
-    env = setEnvValues(env, { PRODUCTION_DATABASE_URL: normalizeDatabaseUrl(options.databaseUrl) });
-  }
-  if (options.localS3) {
-    profiles.push("s3");
-    env = setEnvValues(env, LOCAL_S3);
-  }
-  if (options.analytics && !headless) {
-    profiles.push("analytics");
-    env = setEnvValues(env, umamiEnv(parseEnv(env).DATABASE_URL ?? "", secrets));
-  }
-  const cache = cacheEnv({ cache: options.cache ?? "database", tasks: options.tasks ?? "huey" });
-  env = setEnvValues(env, cache);
-  if (usesValkey(cache)) profiles.push("valkey");
-  env = setEnvValues(env, { COMPOSE_PROFILES: profiles.join(",") });
-  if (options.ports) env = setEnvValues(env, portValues(parseEnv(env), options.ports));
-  if (!options.demoContent) env = setEnvValues(env, { SEED_DEMO_CONTENT: "0" });
-  if (options.errors && options.errors !== "email") env = setEnvValues(env, { ERRORS: options.errors });
-  if (options.captcha === false) env = setEnvValues(env, { CAPTCHA: "off" });
+  const secrets = generateProjectSecrets();
+  const env = developmentEnv(envExample, { ...options, headless }, secrets);
   writeFileSync(join(target, ".env"), env, { mode: 0o600 });
   writeFileSync(join(target, ".env.example"), envExample);
   rmSync(join(target, "env.example"));

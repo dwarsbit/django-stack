@@ -13,6 +13,7 @@ import {
   deployStatus,
 } from "./commands/deploy";
 import { doctor } from "./commands/doctor";
+import { env } from "./commands/env";
 import { init } from "./commands/init";
 import { preset } from "./commands/preset";
 import { production } from "./commands/production";
@@ -327,6 +328,15 @@ export function createProgram(): Command {
     .option("--force", "Overwrite an existing .env.production")
     .option("-y, --yes", "Don't ask; fail when --domain is missing")
     .action(production);
+
+  program
+    .command("env")
+    .description("Write a development .env with fresh secrets, such as in a fresh clone")
+    .addOption(dirOption())
+    .option("--force", "Replace an existing .env without asking")
+    .option("--no-demo-content", "Start a new database empty (default: as in the current .env)")
+    .option("-y, --yes", "Don't ask; fail when .env exists and --force is missing")
+    .action((options, cmd: Command) => env(options, (option) => cmd.getOptionValueSource(option) === "cli"));
 
   program
     .command("settings")

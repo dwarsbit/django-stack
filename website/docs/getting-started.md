@@ -31,7 +31,8 @@ content, and creates `my-site` with:
   `--frontend headless` has no site at all;
 - `compose.yaml`, which runs both with Postgres and Mailpit;
 - `.env` with fresh secrets for this project, and `.env.example` with the
-  same names and no values;
+  same names and no values. `.env` is not in git: in a fresh clone,
+  [`dstack env`](./cli.md#env) writes a new one;
 - `AGENTS.md` and `CLAUDE.md` for AI coding agents: the layout, the
   commands, the rules, and links to the agent skills of Django Headless
   and Django Content Studio.
