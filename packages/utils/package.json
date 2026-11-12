@@ -44,7 +44,7 @@
     "provenance": true
   },
   "dependencies": {
-    "@django-headless/client": "^1.1.1",
+    "@django-headless/client": "^1.2.0",
     "@cap.js/widget": "0.1.58"
   }
 }
