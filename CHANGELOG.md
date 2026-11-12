@@ -5,7 +5,7 @@ All packages share one version: `@django-stack/cli`, `@django-stack/utils`,
 `@django-stack/vue` on npm and `django-stack` on PyPI. Add your change under
 the unreleased version; the release workflow releases it.
 
-## 0.15.0 (unreleased)
+## 0.15.0 (2026-11-12)
 
 - **`dstack env`.** Writes a development `.env` with fresh secrets, the
   way `init` does, for a fresh clone of a project or to start over with
